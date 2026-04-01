@@ -13,6 +13,7 @@
 // ── DOM Ready ──────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
   buildYearDropdown();
+  setFooterYear();
   loadDraft();
   bindEvents();
 });
@@ -33,7 +34,14 @@ function buildYearDropdown() {
 }
 
 // ═══════════════════════════════════════════════
-// 2. IC → DATE OF BIRTH AUTO-FILL
+// 1b. DYNAMIC FOOTER YEAR
+// ═══════════════════════════════════════════════
+function setFooterYear() {
+  const el = document.getElementById("footerYear");
+  if (el) el.textContent = new Date().getFullYear();
+}
+
+
 // ═══════════════════════════════════════════════
 function parseICToDOB(ic) {
   // Remove dashes
@@ -167,6 +175,7 @@ function bindEvents() {
 function checkNextButton() {
   const btn = document.getElementById("btnNext");
 
+  const memberRole   = document.querySelector('input[name="memberRole"]:checked');
   const fullName     = document.getElementById("fullName").value.trim();
   const icNo         = document.getElementById("icNo").value.replace(/-/g, "");
   const gender       = document.querySelector('input[name="gender"]:checked');
@@ -185,6 +194,7 @@ function checkNextButton() {
     document.getElementById("countryOfOrigin").value.trim() !== "";
 
   const allFilled =
+    memberRole &&
     fullName &&
     icNo.length === 12 &&
     gender &&
@@ -222,6 +232,7 @@ function collectSectionAData() {
     yearJoining:    document.getElementById("yearJoining").value,
     komselCode:     document.getElementById("komselCode").value,
     currentAddress: document.getElementById("currentAddress").value,
+    memberRole:     document.querySelector('input[name="memberRole"]:checked')?.value || "",
     savedAt:        new Date().toISOString(),
   };
 }
@@ -252,6 +263,12 @@ function loadDraft() {
     // Radio: Gender
     if (data.gender) {
       const radio = document.querySelector(`input[name="gender"][value="${data.gender}"]`);
+      if (radio) radio.checked = true;
+    }
+
+    // Radio: Member Role
+    if (data.memberRole) {
+      const radio = document.querySelector(`input[name="memberRole"][value="${data.memberRole}"]`);
       if (radio) radio.checked = true;
     }
 
@@ -302,6 +319,12 @@ function validateSectionA() {
   // Clear all errors first
   document.querySelectorAll(".error-msg").forEach(el => el.textContent = "");
   document.querySelectorAll(".form-input").forEach(el => el.classList.remove("error-state"));
+
+  // Member Role
+  if (!document.querySelector('input[name="memberRole"]:checked')) {
+    showError("memberRole", STRINGS.requiredField);
+    isValid = false;
+  }
 
   // Full Name
   const fullName = document.getElementById("fullName");

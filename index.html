@@ -17,7 +17,10 @@
       </div>
       <div class="header-text">
         <h1 class="church-name">BEM On The Rock</h1>
-        <p class="church-subtitle">Pendaftaran Ahli Jemaat &nbsp;/&nbsp; Church Member Registration</p>
+        <p class="church-subtitle">Pendaftaran Keanggotaan Gereja &nbsp;/&nbsp; Church Membership Registration</p>
+      </div>
+      <div class="logo-wrap logo-wrap-right">
+        <img src="Images/logo_bem_sib.png" alt="B.E.M Logo" class="logo-img logo-bem" />
       </div>
     </div>
   </header>
@@ -83,6 +86,34 @@
             <li>Have attended Komsel for 3 consecutive months.</li>
             <li>Attending Sunday services at BEM On the Rock for 3 consecutive months.</li>
           </ul>
+        </div>
+
+        <!-- Member Role Selection -->
+        <div class="form-group full-width member-role-box">
+          <span class="required" style="display:block; margin-bottom:0.5rem;">*</span>
+          <div class="checkbox-group">
+            <label class="checkbox-label">
+              <input type="radio" name="memberRole" value="pastoral" id="rolePastoral" />
+              <span class="custom-radio"></span>
+              Pastoral <em>/ Pastoral</em>
+            </label>
+            <label class="checkbox-label">
+              <input type="radio" name="memberRole" value="zoneLeader" id="roleZoneLeader" />
+              <span class="custom-radio"></span>
+              Ketua Zon <em>/ Zone Leader</em>
+            </label>
+            <label class="checkbox-label">
+              <input type="radio" name="memberRole" value="komselLeader" id="roleKomselLeader" />
+              <span class="custom-radio"></span>
+              Ketua Komsel <em>/ Komsel Leader</em>
+            </label>
+            <label class="checkbox-label">
+              <input type="radio" name="memberRole" value="komselMember" id="roleKomselMember" />
+              <span class="custom-radio"></span>
+              Ahli Komsel <em>/ Komsel Member</em>
+            </label>
+          </div>
+          <span class="error-msg" id="err-memberRole"></span>
         </div>
 
         <div class="section-header">
@@ -309,7 +340,7 @@
   </main>
 
   <footer class="site-footer">
-    <p>&copy; 2025 BEM On The Rock. Hak Cipta Terpelihara / All Rights Reserved.</p>
+    <p>&copy; <span id="footerYear"></span> BEM On The Rock. Hak Cipta Terpelihara / All Rights Reserved.</p>
   </footer>
 
   <script src="language_strings.js"></script>

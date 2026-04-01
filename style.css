@@ -85,6 +85,9 @@ body {
   z-index: 1;
 }
 
+.logo-wrap { flex-shrink: 0; }
+.logo-wrap-right { margin-left: auto; }
+
 .logo-img {
   width: 80px;
   height: 80px;
@@ -93,6 +96,10 @@ body {
   border: 2px solid var(--gold-dim);
   box-shadow: 0 0 18px rgba(201,168,76,0.3);
   flex-shrink: 0;
+}
+
+.logo-bem {
+  border-radius: 8px;
 }
 
 .church-name {
@@ -112,6 +119,15 @@ body {
   letter-spacing: 0.04em;
   margin-top: 0.2rem;
   font-style: italic;
+}
+
+/* ── Member Role Box ── */
+.member-role-box {
+  background: rgba(201,168,76,0.05);
+  border: 1px solid rgba(201,168,76,0.25);
+  border-radius: var(--radius);
+  padding: 1.2rem 1.4rem;
+  margin-bottom: 1.8rem;
 }
 
 /* ── Step Navigator ── */
@@ -591,7 +607,20 @@ input[type="date"].form-input::-webkit-calendar-picker-indicator {
 
 /* ═══ RESPONSIVE — Mobile ═══ */
 @media (max-width: 640px) {
-  .header-inner { flex-direction: column; text-align: center; }
+  .header-inner {
+    flex-wrap: wrap;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .logo-wrap { flex-shrink: 0; }
+  .logo-wrap-right { margin-left: 0; }
+
+  .header-text {
+    width: 100%;
+    order: 3;
+  }
+
   .logo-img { width: 65px; height: 65px; }
 
   .step-nav { padding: 0.9rem 0.5rem; }
