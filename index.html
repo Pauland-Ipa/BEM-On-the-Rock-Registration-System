@@ -13,7 +13,7 @@
   <header class="site-header">
     <div class="header-inner">
       <div class="logo-wrap">
-        <img src="Images/logo.jpg" alt="BEM On The Rock Logo" class="logo-img" />
+        <img src="logo.jpg" alt="BEM On The Rock Logo" class="logo-img" />
       </div>
       <div class="header-text">
         <h1 class="church-name">BEM On The Rock</h1>
@@ -64,6 +64,27 @@
 
       <!-- ── SECTION A ── -->
       <section class="form-section active" id="section-a">
+
+        <!-- Eligibility Notice -->
+        <div class="eligibility-notice">
+          <p class="eligibility-bm">
+            <strong>Nota: Borang ini hanya layak diisi oleh;</strong>
+          </p>
+          <ul class="eligibility-list bm">
+            <li>Jemaat yang berumur 13 tahun dan ke atas.</li>
+            <li>Sudah menghadiri Komsel selama 3 bulan berturut-turut.</li>
+            <li>Menghadiri Ibadahraya ahad di BEM On the Rock selama 3 bulan berturut-turut.</li>
+          </ul>
+          <p class="eligibility-en">
+            <strong>Note: This form is only eligible to be filled out by;</strong>
+          </p>
+          <ul class="eligibility-list en">
+            <li>Members who are aged 13 years and above.</li>
+            <li>Have attended Komsel for 3 consecutive months.</li>
+            <li>Attending Sunday services at BEM On the Rock for 3 consecutive months.</li>
+          </ul>
+        </div>
+
         <div class="section-header">
           <div class="section-badge">A</div>
           <div>
@@ -95,7 +116,6 @@
             <input type="text" id="icNo" name="icNo"
               class="form-input" placeholder="cth/e.g. 901231-14-5678"
               maxlength="14" autocomplete="off" />
-            <span class="field-hint">6 digit pertama akan mengisi tarikh lahir secara automatik / First 6 digits will auto-fill date of birth</span>
             <span class="error-msg" id="err-icNo"></span>
           </div>
 
@@ -127,7 +147,6 @@
               <span class="required">*</span>
             </label>
             <input type="date" id="dob" name="dob" class="form-input" />
-            <span class="field-hint">Diisi automatik dari No. KP / Auto-filled from IC No. (boleh diedit / editable)</span>
             <span class="error-msg" id="err-dob"></span>
           </div>
 
@@ -245,10 +264,10 @@
           <!-- 11. Komsel Code -->
           <div class="form-group">
             <label class="form-label" for="komselCode">
-              Kod Komsel <span class="label-en">/ Cell Group Code</span>
+              Kod Komsel <span class="label-en">/ Komsel Code</span>
             </label>
             <input type="text" id="komselCode" name="komselCode"
-              class="form-input" placeholder="cth/e.g. KS-01" />
+              class="form-input" placeholder="Masukkan Kod / Enter Code" />
           </div>
 
           <!-- 12. Current Address -->
@@ -266,12 +285,17 @@
 
         </div><!-- /form-grid -->
 
+        <!-- Required fields note -->
+        <p class="required-note">
+          <span class="required">*</span> Ruangan bertanda asterisk wajib diisi sebelum meneruskan ke seksyen berikutnya. / Fields marked with an asterisk must be filled in before proceeding to the next section.
+        </p>
+
         <!-- Action Buttons -->
         <div class="form-actions">
           <button type="button" class="btn btn-secondary" id="btnSaveDraft">
             💾 Simpan Draf / Save Draft
           </button>
-          <button type="button" class="btn btn-primary" id="btnNext">
+          <button type="button" class="btn btn-primary" id="btnNext" disabled>
             Seterusnya / Next &rarr;
           </button>
         </div>

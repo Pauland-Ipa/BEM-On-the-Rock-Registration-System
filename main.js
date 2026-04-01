@@ -86,6 +86,7 @@ function bindEvents() {
       dobField.style.borderColor = "var(--gold-dim)";
     }
     saveDraft();
+    checkNextButton();
   });
 
   // ── Baptism Status: show/hide date field ──
@@ -103,6 +104,7 @@ function bindEvents() {
         clearError("baptismDate");
       }
       saveDraft();
+      checkNextButton();
     });
   });
 
@@ -121,13 +123,15 @@ function bindEvents() {
         clearError("countryOfOrigin");
       }
       saveDraft();
+      checkNextButton();
     });
   });
 
   // ── Auto-save draft on any input change ──
   const allInputs = document.querySelectorAll("#section-a input, #section-a select, #section-a textarea");
   allInputs.forEach(input => {
-    input.addEventListener("change", saveDraft);
+    input.addEventListener("change", () => { saveDraft(); checkNextButton(); });
+    input.addEventListener("input", () => checkNextButton());
   });
 
   // ── Save Draft Button ──
@@ -152,6 +156,49 @@ function bindEvents() {
       navigateTo(target);
     });
   });
+
+  // Run once on load in case draft was restored
+  checkNextButton();
+}
+
+// ═══════════════════════════════════════════════
+// 3b. CHECK IF REQUIRED FIELDS ARE FILLED → enable/disable Next button
+// ═══════════════════════════════════════════════
+function checkNextButton() {
+  const btn = document.getElementById("btnNext");
+
+  const fullName     = document.getElementById("fullName").value.trim();
+  const icNo         = document.getElementById("icNo").value.replace(/-/g, "");
+  const gender       = document.querySelector('input[name="gender"]:checked');
+  const dob          = document.getElementById("dob").value;
+  const race         = document.getElementById("race").value.trim();
+  const marital      = document.getElementById("maritalStatus").value;
+  const baptism      = document.querySelector('input[name="baptismStatus"]:checked');
+  const citizenship  = document.querySelector('input[name="citizenship"]:checked');
+  const yearJoining  = document.getElementById("yearJoining").value;
+  const address      = document.getElementById("currentAddress").value.trim();
+
+  // Conditional checks
+  const baptismDateOk = !baptism || baptism.value !== "baptised" ||
+    document.getElementById("baptismDate").value !== "";
+  const countryOk = !citizenship || citizenship.value !== "nonCitizen" ||
+    document.getElementById("countryOfOrigin").value.trim() !== "";
+
+  const allFilled =
+    fullName &&
+    icNo.length === 12 &&
+    gender &&
+    dob &&
+    race &&
+    marital &&
+    baptism &&
+    baptismDateOk &&
+    citizenship &&
+    countryOk &&
+    yearJoining &&
+    address;
+
+  btn.disabled = !allFilled;
 }
 
 // ═══════════════════════════════════════════════
