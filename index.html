@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BEM On The Rock — Pendaftaran Ahli Jemaat</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet"/>
+</head>
+<body>
+
+  <!-- ═══ HEADER ═══ -->
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="logo-wrap">
+        <img src="logo.jpg" alt="BEM On The Rock Logo" class="logo-img" />
+      </div>
+      <div class="header-text">
+        <h1 class="church-name">BEM On The Rock</h1>
+        <p class="church-subtitle">Pendaftaran Ahli Jemaat &nbsp;/&nbsp; Church Member Registration</p>
+      </div>
+    </div>
+  </header>
+
+  <!-- ═══ STEP NAVIGATOR ═══ -->
+  <nav class="step-nav" aria-label="Form Sections">
+    <div class="step-nav-inner">
+
+      <div class="step active" id="step-a" data-section="a">
+        <div class="step-circle">A</div>
+        <span class="step-label">Peribadi<br/><em>Personal</em></span>
+      </div>
+      <div class="step-line"></div>
+
+      <div class="step locked" id="step-b" data-section="b">
+        <div class="step-circle">B</div>
+        <span class="step-label">Pelayanan<br/><em>Service</em></span>
+      </div>
+      <div class="step-line"></div>
+
+      <div class="step locked" id="step-c" data-section="c">
+        <div class="step-circle">C</div>
+        <span class="step-label">Kanak-kanak<br/><em>Children</em></span>
+      </div>
+      <div class="step-line"></div>
+
+      <div class="step locked" id="step-d" data-section="d">
+        <div class="step-circle">D</div>
+        <span class="step-label">Ikrar<br/><em>Pledge</em></span>
+      </div>
+      <div class="step-line"></div>
+
+      <div class="step locked" id="step-e" data-section="e">
+        <div class="step-circle">E</div>
+        <span class="step-label">Pengakuan<br/><em>Confession</em></span>
+      </div>
+
+    </div>
+  </nav>
+
+  <!-- ═══ MAIN FORM ═══ -->
+  <main class="form-main">
+    <form id="registrationForm" novalidate>
+
+      <!-- ── SECTION A ── -->
+      <section class="form-section active" id="section-a">
+        <div class="section-header">
+          <div class="section-badge">A</div>
+          <div>
+            <h2 class="section-title">Maklumat Peribadi</h2>
+            <p class="section-subtitle">Personal Information</p>
+          </div>
+        </div>
+
+        <div class="form-grid">
+
+          <!-- 1. Full Name -->
+          <div class="form-group full-width">
+            <label class="form-label" for="fullName">
+              Nama Penuh <span class="label-en">/ Full Name</span>
+              <span class="required">*</span>
+            </label>
+            <input type="text" id="fullName" name="fullName"
+              class="form-input" placeholder="Masukkan nama penuh / Enter full name"
+              autocomplete="name" />
+            <span class="error-msg" id="err-fullName"></span>
+          </div>
+
+          <!-- 2. IC No -->
+          <div class="form-group">
+            <label class="form-label" for="icNo">
+              No. KP <span class="label-en">/ IC No.</span>
+              <span class="required">*</span>
+            </label>
+            <input type="text" id="icNo" name="icNo"
+              class="form-input" placeholder="cth/e.g. 901231-14-5678"
+              maxlength="14" autocomplete="off" />
+            <span class="field-hint">6 digit pertama akan mengisi tarikh lahir secara automatik / First 6 digits will auto-fill date of birth</span>
+            <span class="error-msg" id="err-icNo"></span>
+          </div>
+
+          <!-- 3. Gender -->
+          <div class="form-group">
+            <label class="form-label">
+              Jantina <span class="label-en">/ Gender</span>
+              <span class="required">*</span>
+            </label>
+            <div class="checkbox-group">
+              <label class="checkbox-label">
+                <input type="radio" name="gender" value="male" id="genderMale" />
+                <span class="custom-radio"></span>
+                Lelaki <em>/ Male</em>
+              </label>
+              <label class="checkbox-label">
+                <input type="radio" name="gender" value="female" id="genderFemale" />
+                <span class="custom-radio"></span>
+                Perempuan <em>/ Female</em>
+              </label>
+            </div>
+            <span class="error-msg" id="err-gender"></span>
+          </div>
+
+          <!-- 4. Date of Birth -->
+          <div class="form-group">
+            <label class="form-label" for="dob">
+              Tarikh Lahir <span class="label-en">/ Date of Birth</span>
+              <span class="required">*</span>
+            </label>
+            <input type="date" id="dob" name="dob" class="form-input" />
+            <span class="field-hint">Diisi automatik dari No. KP / Auto-filled from IC No. (boleh diedit / editable)</span>
+            <span class="error-msg" id="err-dob"></span>
+          </div>
+
+          <!-- 5. Race -->
+          <div class="form-group">
+            <label class="form-label" for="race">
+              Bangsa <span class="label-en">/ Race</span>
+              <span class="required">*</span>
+            </label>
+            <input type="text" id="race" name="race"
+              class="form-input" placeholder="cth/e.g. Kadazan, Iban, Melayu, Cina..." />
+            <span class="error-msg" id="err-race"></span>
+          </div>
+
+          <!-- 6. Marital Status -->
+          <div class="form-group">
+            <label class="form-label" for="maritalStatus">
+              Status Perkahwinan <span class="label-en">/ Marital Status</span>
+              <span class="required">*</span>
+            </label>
+            <select id="maritalStatus" name="maritalStatus" class="form-input form-select">
+              <option value="">-- Pilih / Select --</option>
+              <option value="single">Bujang / Single</option>
+              <option value="married">Berkahwin / Married</option>
+              <option value="divorced">Bercerai / Divorced</option>
+              <option value="widowed">Janda/Duda / Widowed</option>
+            </select>
+            <span class="error-msg" id="err-maritalStatus"></span>
+          </div>
+
+          <!-- 7. Baptism Status -->
+          <div class="form-group full-width">
+            <label class="form-label">
+              Status Pembaptisan <span class="label-en">/ Baptism Status</span>
+              <span class="required">*</span>
+            </label>
+            <div class="checkbox-group">
+              <label class="checkbox-label">
+                <input type="radio" name="baptismStatus" value="baptised" id="baptised" />
+                <span class="custom-radio"></span>
+                Sudah Dibaptis <em>/ Already Baptised</em>
+              </label>
+              <label class="checkbox-label">
+                <input type="radio" name="baptismStatus" value="notBaptised" id="notBaptised" />
+                <span class="custom-radio"></span>
+                Belum Dibaptis <em>/ Not Yet Baptised</em>
+              </label>
+            </div>
+            <span class="error-msg" id="err-baptismStatus"></span>
+
+            <!-- Conditional: Baptism Date -->
+            <div class="conditional-field" id="baptismDateField">
+              <label class="form-label" for="baptismDate">
+                Tarikh Pembaptisan <span class="label-en">/ Date of Baptism</span>
+                <span class="required">*</span>
+              </label>
+              <input type="date" id="baptismDate" name="baptismDate" class="form-input" />
+              <span class="error-msg" id="err-baptismDate"></span>
+            </div>
+          </div>
+
+          <!-- 8. Citizenship -->
+          <div class="form-group full-width">
+            <label class="form-label">
+              Warganegara <span class="label-en">/ Citizenship</span>
+              <span class="required">*</span>
+            </label>
+            <div class="checkbox-group">
+              <label class="checkbox-label">
+                <input type="radio" name="citizenship" value="citizen" id="isCitizen" />
+                <span class="custom-radio"></span>
+                Warganegara Malaysia <em>/ Malaysian Citizen</em>
+              </label>
+              <label class="checkbox-label">
+                <input type="radio" name="citizenship" value="nonCitizen" id="isNonCitizen" />
+                <span class="custom-radio"></span>
+                Bukan Warganegara <em>/ Not a Malaysian Citizen</em>
+              </label>
+            </div>
+            <span class="error-msg" id="err-citizenship"></span>
+
+            <!-- Conditional: Country of Origin -->
+            <div class="conditional-field" id="countryField">
+              <label class="form-label" for="countryOfOrigin">
+                Negara Asal <span class="label-en">/ Country of Origin</span>
+                <span class="required">*</span>
+              </label>
+              <input type="text" id="countryOfOrigin" name="countryOfOrigin"
+                class="form-input" placeholder="Masukkan negara asal / Enter country of origin" />
+              <span class="error-msg" id="err-countryOfOrigin"></span>
+            </div>
+          </div>
+
+          <!-- 9. Original Church -->
+          <div class="form-group">
+            <label class="form-label" for="originalChurch">
+              Gereja Asal <span class="label-en">/ Original Church</span>
+            </label>
+            <input type="text" id="originalChurch" name="originalChurch"
+              class="form-input" placeholder="Nama gereja asal / Name of original church" />
+          </div>
+
+          <!-- 10. Year Joining -->
+          <div class="form-group">
+            <label class="form-label" for="yearJoining">
+              Tahun Menyertai On The Rock <span class="label-en">/ Year Joining On The Rock</span>
+              <span class="required">*</span>
+            </label>
+            <select id="yearJoining" name="yearJoining" class="form-input form-select">
+              <option value="">-- Pilih Tahun / Select Year --</option>
+            </select>
+            <span class="error-msg" id="err-yearJoining"></span>
+          </div>
+
+          <!-- 11. Komsel Code -->
+          <div class="form-group">
+            <label class="form-label" for="komselCode">
+              Kod Komsel <span class="label-en">/ Cell Group Code</span>
+            </label>
+            <input type="text" id="komselCode" name="komselCode"
+              class="form-input" placeholder="cth/e.g. KS-01" />
+          </div>
+
+          <!-- 12. Current Address -->
+          <div class="form-group full-width">
+            <label class="form-label" for="currentAddress">
+              Alamat Terkini <span class="label-en">/ Current Address</span>
+              <span class="required">*</span>
+            </label>
+            <textarea id="currentAddress" name="currentAddress"
+              class="form-input form-textarea"
+              placeholder="Masukkan alamat penuh / Enter full address"
+              rows="3"></textarea>
+            <span class="error-msg" id="err-currentAddress"></span>
+          </div>
+
+        </div><!-- /form-grid -->
+
+        <!-- Action Buttons -->
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary" id="btnSaveDraft">
+            💾 Simpan Draf / Save Draft
+          </button>
+          <button type="button" class="btn btn-primary" id="btnNext">
+            Seterusnya / Next &rarr;
+          </button>
+        </div>
+
+        <div class="draft-notice" id="draftNotice"></div>
+
+      </section>
+      <!-- /section-a -->
+
+    </form>
+  </main>
+
+  <footer class="site-footer">
+    <p>&copy; 2025 BEM On The Rock. Hak Cipta Terpelihara / All Rights Reserved.</p>
+  </footer>
+
+  <script src="language_strings.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
