@@ -761,6 +761,18 @@ function loadSectionCDraft() {
 
 // ── Init Section C ──
 document.addEventListener("DOMContentLoaded", () => {
-  loadSectionCDraft();
   bindSectionCEvents();
+  const draft = localStorage.getItem(DRAFT_KEY_C);
+  let draftLoaded = false;
+  if (draft) {
+    try {
+      const data = JSON.parse(draft);
+      if (data.children && data.children.length > 0) {
+        loadSectionCDraft();
+        draftLoaded = true;
+      }
+    } catch (e) {}
+  }
+  // No saved draft — show first child card by default
+  if (!draftLoaded) addChild();
 });
