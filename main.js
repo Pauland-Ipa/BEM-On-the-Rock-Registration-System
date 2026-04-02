@@ -185,6 +185,7 @@ function checkNextButton() {
   const baptism      = document.querySelector('input[name="baptismStatus"]:checked');
   const citizenship  = document.querySelector('input[name="citizenship"]:checked');
   const yearJoining  = document.getElementById("yearJoining").value;
+  const phoneNumber  = document.getElementById("phoneNumber").value.trim();
   const address      = document.getElementById("currentAddress").value.trim();
 
   // Conditional checks
@@ -206,6 +207,7 @@ function checkNextButton() {
     citizenship &&
     countryOk &&
     yearJoining &&
+    phoneNumber &&
     address;
 
   btn.disabled = !allFilled;
@@ -231,6 +233,8 @@ function collectSectionAData() {
     originalChurch: document.getElementById("originalChurch").value,
     yearJoining:    document.getElementById("yearJoining").value,
     komselCode:     document.getElementById("komselCode").value,
+    occupation:     document.getElementById("occupation").value,
+    phoneNumber:    document.getElementById("phoneNumber").value,
     currentAddress: document.getElementById("currentAddress").value,
     memberRole:     document.querySelector('input[name="memberRole"]:checked')?.value || "",
     savedAt:        new Date().toISOString(),
@@ -253,7 +257,8 @@ function loadDraft() {
     const fieldMap = [
       "fullName", "icNo", "dob", "race",
       "maritalStatus", "baptismDate", "countryOfOrigin",
-      "originalChurch", "yearJoining", "komselCode", "currentAddress"
+      "originalChurch", "yearJoining", "komselCode",
+      "occupation", "phoneNumber", "currentAddress"
     ];
     fieldMap.forEach(id => {
       const el = document.getElementById(id);
@@ -399,6 +404,13 @@ function validateSectionA() {
   const year = document.getElementById("yearJoining");
   if (!year.value) {
     showError("yearJoining", STRINGS.requiredField);
+    isValid = false;
+  }
+
+  // Phone Number
+  const phone = document.getElementById("phoneNumber");
+  if (!phone.value.trim()) {
+    showError("phoneNumber", STRINGS.requiredField);
     isValid = false;
   }
 
