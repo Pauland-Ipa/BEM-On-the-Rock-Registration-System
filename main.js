@@ -605,3 +605,162 @@ document.addEventListener("DOMContentLoaded", () => {
   loadSectionBDraft();
   bindSectionBEvents();
 });
+
+// ═══════════════════════════════════════════════
+// 8. SECTION C — CHILDREN INFORMATION
+// ═══════════════════════════════════════════════
+
+let childCount = 0;
+const DRAFT_KEY_C = "bem_otr_draft_sectionC";
+
+function createChildCard(num, data = {}) {
+  const card = document.createElement("div");
+  card.className = "child-card";
+  card.dataset.childNum = num;
+
+  const genderMaleChecked  = data.gender === "male"   ? "checked" : "";
+  const genderFemaleChecked = data.gender === "female" ? "checked" : "";
+
+  card.innerHTML = `
+    <div class="child-card-header">
+      <span class="child-card-title">
+        Anak Ke-${num} &nbsp;/&nbsp; Child No. ${num}
+      </span>
+      <button type="button" class="btn-remove-child" data-child="${num}">
+        ✕ Padam / Remove
+      </button>
+    </div>
+
+    <div class="form-grid">
+
+      <!-- Full Name -->
+      <div class="form-group full-width">
+        <label class="form-label" for="childName-${num}">
+          Nama Penuh Anak <span class="label-en">/ Child's Full Name</span>
+        </label>
+        <input type="text" id="childName-${num}" name="childName-${num}"
+          class="form-input child-field"
+          placeholder="Masukkan nama penuh / Enter full name"
+          value="${data.name || ''}" />
+      </div>
+
+      <!-- Gender -->
+      <div class="form-group">
+        <label class="form-label">
+          Jantina <span class="label-en">/ Gender</span>
+        </label>
+        <div class="checkbox-group">
+          <label class="checkbox-label">
+            <input type="radio" name="childGender-${num}" value="male" ${genderMaleChecked} />
+            <span class="custom-radio"></span>
+            Lelaki <em>/ Boy</em>
+          </label>
+          <label class="checkbox-label">
+            <input type="radio" name="childGender-${num}" value="female" ${genderFemaleChecked} />
+            <span class="custom-radio"></span>
+            Perempuan <em>/ Girl</em>
+          </label>
+        </div>
+      </div>
+
+      <!-- MyKid -->
+      <div class="form-group">
+        <label class="form-label" for="childMyKid-${num}">
+          MyKid <span class="label-en">/ MyKid</span>
+        </label>
+        <input type="text" id="childMyKid-${num}" name="childMyKid-${num}"
+          class="form-input child-field"
+          placeholder="cth/e.g. 120131-14-1234"
+          value="${data.myKid || ''}" />
+      </div>
+
+    </div>
+  `;
+
+  // Remove button
+  card.querySelector(".btn-remove-child").addEventListener("click", function () {
+    card.remove();
+    renumberChildren();
+    saveSectionCDraft();
+  });
+
+  // Auto-save on any input change
+  card.querySelectorAll("input").forEach(input => {
+    input.addEventListener("input", saveSectionCDraft);
+    input.addEventListener("change", saveSectionCDraft);
+  });
+
+  return card;
+}
+
+function renumberChildren() {
+  const cards = document.querySelectorAll(".child-card");
+  childCount = cards.length;
+  cards.forEach((card, i) => {
+    const num = i + 1;
+    card.dataset.childNum = num;
+    const title = card.querySelector(".child-card-title");
+    if (title) title.innerHTML = `Anak Ke-${num} &nbsp;/&nbsp; Child No. ${num}`;
+    card.querySelector(".btn-remove-child").dataset.child = num;
+  });
+}
+
+function addChild(data = {}) {
+  childCount++;
+  const card = createChildCard(childCount, data);
+  document.getElementById("childrenList").appendChild(card);
+  saveSectionCDraft();
+}
+
+function bindSectionCEvents() {
+  document.getElementById("btnAddChild").addEventListener("click", () => {
+    addChild();
+  });
+
+  document.getElementById("btnBackC").addEventListener("click", () => {
+    navigateTo("b");
+  });
+
+  document.getElementById("btnNextC").addEventListener("click", () => {
+    saveSectionCDraft();
+    navigateTo("d");
+  });
+}
+
+// ── Draft ──
+function collectSectionCData() {
+  const children = [];
+  document.querySelectorAll(".child-card").forEach((card, i) => {
+    const num = i + 1;
+    const genderEl = card.querySelector(`input[name="childGender-${card.dataset.childNum}"]:checked`);
+    children.push({
+      name:   card.querySelector(`[id^="childName-"]`)?.value || "",
+      gender: genderEl?.value || "",
+      myKid:  card.querySelector(`[id^="childMyKid-"]`)?.value || "",
+    });
+  });
+  return { children, savedAt: new Date().toISOString() };
+}
+
+function saveSectionCDraft() {
+  localStorage.setItem(DRAFT_KEY_C, JSON.stringify(collectSectionCData()));
+}
+
+function loadSectionCDraft() {
+  const raw = localStorage.getItem(DRAFT_KEY_C);
+  if (!raw) return;
+  try {
+    const data = JSON.parse(raw);
+    if (data.children && data.children.length > 0) {
+      data.children.forEach(child => addChild(child));
+    }
+  } catch (e) {
+    console.warn("Could not load Section C draft:", e);
+  }
+}
+
+// ── Init Section C ──
+document.addEventListener("DOMContentLoaded", () => {
+  loadSectionCDraft();
+  bindSectionCEvents();
+});

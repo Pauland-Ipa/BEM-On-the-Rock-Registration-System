@@ -751,6 +751,108 @@ input[type="date"].form-input::-webkit-calendar-picker-indicator {
 
 .others-label-text em { color: var(--silver); }
 
+/* ══════════════════════════════════════
+   SECTION C — CHILDREN INFORMATION
+══════════════════════════════════════ */
+
+/* ── Section Notice ── */
+.section-notice {
+  background: rgba(255,140,0,0.06);
+  border-left: 4px solid var(--marigold);
+  border-radius: var(--radius);
+  padding: 1rem 1.3rem;
+  margin-bottom: 2rem;
+}
+
+.notice-bm {
+  color: var(--text-light);
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+  line-height: 1.6;
+}
+
+.notice-en {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  font-style: italic;
+  line-height: 1.6;
+}
+
+/* ── Child Card ── */
+.child-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  padding: 1.4rem 1.5rem;
+  margin-bottom: 1.2rem;
+  position: relative;
+  animation: fadeSlideIn 0.3s ease forwards;
+}
+
+.child-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.2rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(255,140,0,0.15);
+}
+
+.child-card-title {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  color: var(--marigold-bright);
+  letter-spacing: 0.05em;
+}
+
+.btn-remove-child {
+  background: transparent;
+  border: 1px solid rgba(224,85,85,0.4);
+  color: #E05555;
+  border-radius: var(--radius);
+  padding: 0.3rem 0.7rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  font-family: var(--font-body);
+  transition: all var(--transition);
+}
+
+.btn-remove-child:hover {
+  background: rgba(224,85,85,0.1);
+  border-color: #E05555;
+}
+
+/* ── Add Child Button ── */
+.btn-add-child {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: transparent;
+  border: 1.5px dashed var(--marigold-dim);
+  color: var(--marigold);
+  border-radius: var(--radius);
+  padding: 0.75rem 1.5rem;
+  font-family: var(--font-display);
+  font-size: 0.88rem;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all var(--transition);
+  width: 100%;
+  justify-content: center;
+  margin-top: 0.5rem;
+}
+
+.btn-add-child:hover {
+  background: rgba(255,140,0,0.06);
+  border-color: var(--marigold);
+  transform: translateY(-1px);
+}
+
+.add-icon {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
 /* ═══ RESPONSIVE ═══ */
 @media (max-width: 640px) {
   .header-inner {
