@@ -554,6 +554,196 @@ input[type="date"].form-input::-webkit-calendar-picker-indicator {
   font-style: italic;
 }
 
+/* ══════════════════════════════════════
+   SECTION B — SERVICE TABLE
+══════════════════════════════════════ */
+
+.service-instruction {
+  background: rgba(255,140,0,0.06);
+  border-left: 4px solid var(--marigold);
+  border-radius: var(--radius);
+  padding: 1rem 1.3rem;
+  margin-bottom: 1.8rem;
+}
+
+.instruction-bm {
+  color: var(--text-light);
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+  line-height: 1.6;
+}
+
+.instruction-en {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  font-style: italic;
+  line-height: 1.6;
+}
+
+.service-table-wrap {
+  overflow-x: auto;
+  max-height: 520px;
+  overflow-y: auto;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  margin-bottom: 1.8rem;
+  position: relative;
+}
+
+.service-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-body);
+  font-size: 1rem;
+}
+
+.service-table thead tr {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.service-table thead th {
+  background: #1a1000;
+  color: var(--marigold-bright);
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 0.85rem 0.75rem;
+  text-align: center;
+  border-bottom: 2px solid var(--marigold-dim);
+  line-height: 1.4;
+}
+
+.service-table thead th.col-service { text-align: left; }
+
+.service-table tbody tr {
+  border-bottom: 1px solid var(--silver-border);
+  transition: background var(--transition);
+}
+
+.service-table tbody tr:last-child { border-bottom: none; }
+.service-table tbody tr:nth-child(even) { background: rgba(255,255,255,0.02); }
+.service-table tbody tr:hover { background: rgba(255,140,0,0.05); }
+
+.service-table td {
+  padding: 0.7rem 0.75rem;
+  vertical-align: middle;
+  color: var(--text-light);
+}
+
+.service-table td.col-num {
+  text-align: center;
+  color: var(--silver-dim);
+  font-size: 0.9rem;
+  width: 50px;
+}
+
+.service-table td.col-service {
+  text-align: left;
+  min-width: 200px;
+}
+
+.service-table td.col-check {
+  text-align: center;
+  width: 130px;
+}
+
+.service-check-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.service-checkbox {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--silver-border);
+  border-radius: 4px;
+  background: var(--input-bg);
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  transition: all var(--transition);
+  flex-shrink: 0;
+}
+
+.service-checkbox:hover {
+  border-color: var(--marigold-dim);
+  background: rgba(255,140,0,0.05);
+}
+
+.service-checkbox:checked {
+  background: var(--marigold);
+  border-color: var(--marigold);
+}
+
+.service-checkbox:checked::after {
+  content: '✓';
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--black);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.others-section {
+  margin-bottom: 1.8rem;
+  padding: 1.2rem 1.4rem;
+  background: rgba(255,140,0,0.04);
+  border: 1px solid rgba(255,140,0,0.2);
+  border-radius: var(--radius);
+}
+
+.others-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.others-toggle-label input[type="checkbox"] { display: none; }
+
+.custom-checkbox {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--silver-border);
+  border-radius: 4px;
+  background: var(--input-bg);
+  position: relative;
+  flex-shrink: 0;
+  transition: all var(--transition);
+}
+
+.others-toggle-label input[type="checkbox"]:checked ~ .custom-checkbox {
+  background: var(--marigold);
+  border-color: var(--marigold);
+}
+
+.others-toggle-label input[type="checkbox"]:checked ~ .custom-checkbox::after {
+  content: '✓';
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--black);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.others-label-text {
+  font-size: 1rem;
+  color: var(--text-light);
+  font-family: var(--font-body);
+}
+
+.others-label-text em { color: var(--silver); }
+
 /* ═══ RESPONSIVE ═══ */
 @media (max-width: 640px) {
   .header-inner {
@@ -578,6 +768,10 @@ input[type="date"].form-input::-webkit-calendar-picker-indicator {
   .form-actions { flex-direction: column-reverse; }
   .btn { width: 100%; justify-content: center; }
   .checkbox-group { flex-direction: column; }
+
+  .service-table td.col-check { width: 80px; }
+  .service-table thead th { font-size: 0.65rem; padding: 0.6rem 0.35rem; }
+  .service-table td { padding: 0.55rem 0.35rem; font-size: 0.9rem; }
 }
 
 @media (max-width: 400px) {

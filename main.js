@@ -148,17 +148,16 @@ function bindEvents() {
     showDraftNotice("✅ Draf disimpan! / Draft saved!");
   });
 
-  // ── Next Button ──
+  // ── Next Button — TEMPORARILY UNRESTRICTED FOR TESTING ──
+  // TODO: Re-enable validation once all sections A–E are complete
+  document.getElementById("btnNext").disabled = false;
   document.getElementById("btnNext").addEventListener("click", () => {
-    if (validateSectionA()) {
-      saveDraft();
-      // TODO: Advance to Section B (will be built later)
-      alert("Section A selesai! / Section A complete!\n\nSection B akan dibina seterusnya. / Section B will be built next.");
-    }
+    saveDraft();
+    navigateTo("b");
   });
 
   // ── Step Navigator clicks ──
-  document.querySelectorAll(".step.completed").forEach(step => {
+  document.querySelectorAll(".step").forEach(step => {
     step.addEventListener("click", function () {
       const target = this.dataset.section;
       navigateTo(target);
@@ -170,47 +169,13 @@ function bindEvents() {
 }
 
 // ═══════════════════════════════════════════════
-// 3b. CHECK IF REQUIRED FIELDS ARE FILLED → enable/disable Next button
+// 3b. CHECK IF REQUIRED FIELDS ARE FILLED — TEMPORARILY BYPASSED
+// TODO: Re-enable once all sections A–E are complete
 // ═══════════════════════════════════════════════
 function checkNextButton() {
+  // Temporarily disabled for cross-section testing
   const btn = document.getElementById("btnNext");
-
-  const memberRole   = document.querySelector('input[name="memberRole"]:checked');
-  const fullName     = document.getElementById("fullName").value.trim();
-  const icNo         = document.getElementById("icNo").value.replace(/-/g, "");
-  const gender       = document.querySelector('input[name="gender"]:checked');
-  const dob          = document.getElementById("dob").value;
-  const race         = document.getElementById("race").value.trim();
-  const marital      = document.getElementById("maritalStatus").value;
-  const baptism      = document.querySelector('input[name="baptismStatus"]:checked');
-  const citizenship  = document.querySelector('input[name="citizenship"]:checked');
-  const yearJoining  = document.getElementById("yearJoining").value;
-  const phoneNumber  = document.getElementById("phoneNumber").value.trim();
-  const address      = document.getElementById("currentAddress").value.trim();
-
-  // Conditional checks
-  const baptismDateOk = !baptism || baptism.value !== "baptised" ||
-    document.getElementById("baptismDate").value !== "";
-  const countryOk = !citizenship || citizenship.value !== "nonCitizen" ||
-    document.getElementById("countryOfOrigin").value.trim() !== "";
-
-  const allFilled =
-    memberRole &&
-    fullName &&
-    icNo.length === 12 &&
-    gender &&
-    dob &&
-    race &&
-    marital &&
-    baptism &&
-    baptismDateOk &&
-    citizenship &&
-    countryOk &&
-    yearJoining &&
-    phoneNumber &&
-    address;
-
-  btn.disabled = !allFilled;
+  if (btn) btn.disabled = false;
 }
 
 // ═══════════════════════════════════════════════
@@ -445,7 +410,7 @@ function clearError(fieldId) {
 }
 
 // ═══════════════════════════════════════════════
-// 6. SECTION NAVIGATION (for future sections)
+// 6. SECTION NAVIGATION
 // ═══════════════════════════════════════════════
 function navigateTo(sectionId) {
   document.querySelectorAll(".form-section").forEach(s => s.classList.remove("active"));
@@ -459,3 +424,184 @@ function navigateTo(sectionId) {
 
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
+
+// ═══════════════════════════════════════════════
+// 7. SECTION B — SERVICE TABLE
+// ═══════════════════════════════════════════════
+
+const SERVICES = [
+  "Pastoral / Pastoral",
+  "Pekerja Sepenuh Masa (Gereja) / Full Time Staff (Church)",
+  "[Rock Wave] Penyanyi / Singer",
+  "[Rock Wave] Pemain Muzik / Musician",
+  "[Rock Wave] Penari Kreatif / Creative Dancer",
+  "Multimedia / Multimedia",
+  "Pengendali Sistem Bunyi / Sound System Handler",
+  "Pengendali Pencahayaan / Lighting Handler",
+  "Usher / Usher",
+  "Keselamatan & Parkir / Security & Parking",
+  "Krew Pentas / Stage Crew",
+  "Keramahan untuk Jemaat Baru / Hospitality for Newcomers",
+  "Keramahan untuk VIP / Hospitality for VIP",
+  "Rock Essence / Rock Essence",
+  "Rock Resource / Rock Resource",
+  "Kaunter Maklumat / Information Counter",
+  "Pengangkutan / Transportation",
+  "Pendoa Syafaat / Intercessor",
+  "Kebajikan & Sosial / Welfare & Social",
+  "Adiwira / Adiwira",
+  "P.A Pastor & Penceramah / P.A Pastor & Speakers",
+  "Penginjilan / Evangelism",
+  "Tim Persembahan / Offering Team",
+];
+
+function buildServiceTable() {
+  const tbody = document.getElementById("serviceTableBody");
+  if (!tbody) return;
+
+  SERVICES.forEach((service, index) => {
+    const row = document.createElement("tr");
+    const num = index + 1;
+
+    row.innerHTML = `
+      <td class="col-num">${num}</td>
+      <td class="col-service">${service}</td>
+      <td class="col-check">
+        <div class="service-check-wrap">
+          <input type="checkbox" class="service-checkbox"
+            id="svc-have-${num}" name="svc-have-${num}"
+            data-index="${num}" data-type="have" />
+        </div>
+      </td>
+      <td class="col-check">
+        <div class="service-check-wrap">
+          <input type="checkbox" class="service-checkbox"
+            id="svc-want-${num}" name="svc-want-${num}"
+            data-index="${num}" data-type="want" />
+        </div>
+      </td>
+    `;
+    tbody.appendChild(row);
+  });
+
+  // Enforce mutual exclusivity: can't tick both columns on same row
+  tbody.addEventListener("change", function (e) {
+    const cb = e.target;
+    if (!cb.classList.contains("service-checkbox")) return;
+    const idx = cb.dataset.index;
+    const type = cb.dataset.type;
+
+    if (cb.checked) {
+      const otherType = type === "have" ? "want" : "have";
+      const other = document.getElementById(`svc-${otherType}-${idx}`);
+      if (other) other.checked = false;
+    }
+
+    saveSectionBDraft();
+  });
+}
+
+// ── Others toggle ──
+function bindSectionBEvents() {
+  const othersCheck = document.getElementById("othersCheck");
+  const othersFields = document.getElementById("othersFields");
+
+  if (othersCheck) {
+    othersCheck.addEventListener("change", function () {
+      if (this.checked) {
+        othersFields.classList.add("visible");
+      } else {
+        othersFields.classList.remove("visible");
+        document.getElementById("othersServiceName").value = "";
+        const radios = document.querySelectorAll('input[name="othersInvolvement"]');
+        radios.forEach(r => r.checked = false);
+        clearError("othersServiceName");
+        clearError("othersInvolvement");
+      }
+      saveSectionBDraft();
+    });
+  }
+
+  // Back button
+  const btnBackB = document.getElementById("btnBackB");
+  if (btnBackB) btnBackB.addEventListener("click", () => navigateTo("a"));
+
+  // Next button
+  const btnNextB = document.getElementById("btnNextB");
+  if (btnNextB) btnNextB.addEventListener("click", () => {
+    saveSectionBDraft();
+    navigateTo("c");
+  });
+
+  // Auto-save on others fields
+  const othersName = document.getElementById("othersServiceName");
+  if (othersName) othersName.addEventListener("input", saveSectionBDraft);
+
+  const othersRadios = document.querySelectorAll('input[name="othersInvolvement"]');
+  othersRadios.forEach(r => r.addEventListener("change", saveSectionBDraft));
+}
+
+// ── Draft: save Section B ──
+const DRAFT_KEY_B = "bem_otr_draft_sectionB";
+
+function collectSectionBData() {
+  const services = {};
+  SERVICES.forEach((_, i) => {
+    const num = i + 1;
+    services[num] = {
+      have: document.getElementById(`svc-have-${num}`)?.checked || false,
+      want: document.getElementById(`svc-want-${num}`)?.checked || false,
+    };
+  });
+  return {
+    services,
+    othersChecked:     document.getElementById("othersCheck")?.checked || false,
+    othersServiceName: document.getElementById("othersServiceName")?.value || "",
+    othersInvolvement: document.querySelector('input[name="othersInvolvement"]:checked')?.value || "",
+    savedAt: new Date().toISOString(),
+  };
+}
+
+function saveSectionBDraft() {
+  localStorage.setItem(DRAFT_KEY_B, JSON.stringify(collectSectionBData()));
+}
+
+function loadSectionBDraft() {
+  const raw = localStorage.getItem(DRAFT_KEY_B);
+  if (!raw) return;
+  try {
+    const data = JSON.parse(raw);
+
+    // Restore service checkboxes
+    if (data.services) {
+      Object.entries(data.services).forEach(([num, val]) => {
+        const haveEl = document.getElementById(`svc-have-${num}`);
+        const wantEl = document.getElementById(`svc-want-${num}`);
+        if (haveEl) haveEl.checked = val.have;
+        if (wantEl) wantEl.checked = val.want;
+      });
+    }
+
+    // Restore others
+    const othersCheck = document.getElementById("othersCheck");
+    if (othersCheck && data.othersChecked) {
+      othersCheck.checked = true;
+      document.getElementById("othersFields").classList.add("visible");
+    }
+    const othersName = document.getElementById("othersServiceName");
+    if (othersName && data.othersServiceName) othersName.value = data.othersServiceName;
+    if (data.othersInvolvement) {
+      const radio = document.querySelector(`input[name="othersInvolvement"][value="${data.othersInvolvement}"]`);
+      if (radio) radio.checked = true;
+    }
+  } catch (e) {
+    console.warn("Could not load Section B draft:", e);
+  }
+}
+
+// ── Init Section B ──
+document.addEventListener("DOMContentLoaded", () => {
+  buildServiceTable();
+  loadSectionBDraft();
+  bindSectionBEvents();
+});

@@ -35,25 +35,25 @@
       </div>
       <div class="step-line"></div>
 
-      <div class="step locked" id="step-b" data-section="b">
+      <div class="step" id="step-b" data-section="b">
         <div class="step-circle">B</div>
         <span class="step-label">Pelayanan<br/><em>Service</em></span>
       </div>
       <div class="step-line"></div>
 
-      <div class="step locked" id="step-c" data-section="c">
+      <div class="step" id="step-c" data-section="c">
         <div class="step-circle">C</div>
         <span class="step-label">Kanak-kanak<br/><em>Children</em></span>
       </div>
       <div class="step-line"></div>
 
-      <div class="step locked" id="step-d" data-section="d">
+      <div class="step" id="step-d" data-section="d">
         <div class="step-circle">D</div>
         <span class="step-label">Ikrar<br/><em>Pledge</em></span>
       </div>
       <div class="step-line"></div>
 
-      <div class="step locked" id="step-e" data-section="e">
+      <div class="step" id="step-e" data-section="e">
         <div class="step-circle">E</div>
         <span class="step-label">Pengakuan<br/><em>Confession</em></span>
       </div>
@@ -356,6 +356,99 @@
 
       </section>
       <!-- /section-a -->
+
+      <!-- ── SECTION B ── -->
+      <section class="form-section" id="section-b">
+
+        <div class="section-header">
+          <div class="section-badge">B</div>
+          <div>
+            <h2 class="section-title">Bidang Pelayanan</h2>
+            <p class="section-subtitle">Field of Service</p>
+          </div>
+        </div>
+
+        <!-- Instruction Text -->
+        <div class="service-instruction">
+          <p class="instruction-bm">Sila tandakan (✓) pada kotak tanda yang berkaitan sekiranya anda pernah terlibat dengan pelayanan-pelayanan berikut atau sekiranya anda ingin terlibat dengan pelayanan tersebut.</p>
+          <p class="instruction-en">Please tick (✓) in the respective boxes if you have been involved in the following services or if you would like to be involved in these services.</p>
+        </div>
+
+        <!-- Service Table -->
+        <div class="service-table-wrap">
+          <table class="service-table" id="serviceTable">
+            <thead>
+              <tr>
+                <th class="col-num">Bil.<br/><em>Num.</em></th>
+                <th class="col-service">Pelayanan<br/><em>Services</em></th>
+                <th class="col-check">Pernah Terlibat<br/><em>Have Been Involved</em></th>
+                <th class="col-check">Ingin Terlibat<br/><em>Would Like to Be Involved</em></th>
+              </tr>
+            </thead>
+            <tbody id="serviceTableBody">
+              <!-- Rows injected by JS -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Others Section -->
+        <div class="others-section">
+          <label class="others-toggle-label">
+            <input type="checkbox" id="othersCheck" name="othersCheck" />
+            <span class="custom-checkbox"></span>
+            <span class="others-label-text">Lain-lain <em>/ Others</em></span>
+          </label>
+
+          <div class="conditional-field" id="othersFields">
+            <div class="form-group" style="margin-bottom:1rem;">
+              <label class="form-label" for="othersServiceName">
+                Nama Pelayanan <span class="label-en">/ Name of Service</span>
+                <span class="required">*</span>
+              </label>
+              <input type="text" id="othersServiceName" name="othersServiceName"
+                class="form-input" placeholder="Nyatakan pelayanan / State the service" />
+              <span class="error-msg" id="err-othersServiceName"></span>
+            </div>
+
+            <div class="form-group">
+              <p class="form-label" style="margin-bottom:0.6rem;">
+                Adakah anda pernah menyertai pelayanan ini atau anda ingin menyertainya? <br/>
+                <span class="label-en">Have you been involved in this service or do you want to be involved with it in the future?</span>
+              </p>
+              <div class="checkbox-group">
+                <label class="checkbox-label">
+                  <input type="radio" name="othersInvolvement" value="haveInvolved" id="othersHaveInvolved" />
+                  <span class="custom-radio"></span>
+                  Pernah Terlibat <em>/ Have Been Involved</em>
+                </label>
+                <label class="checkbox-label">
+                  <input type="radio" name="othersInvolvement" value="wouldLike" id="othersWouldLike" />
+                  <span class="custom-radio"></span>
+                  Ingin Terlibat <em>/ Would Like to Be Involved</em>
+                </label>
+              </div>
+              <span class="error-msg" id="err-othersInvolvement"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Required Note -->
+        <p class="required-note">
+          <span class="required">*</span> Ruangan bertanda asterisk wajib diisi sebelum meneruskan ke seksyen berikutnya. / Fields marked with an asterisk must be filled in before proceeding to the next section.
+        </p>
+
+        <!-- Action Buttons -->
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary" id="btnBackB">
+            &larr; Kembali / Back
+          </button>
+          <button type="button" class="btn btn-primary" id="btnNextB">
+            Seterusnya / Next &rarr;
+          </button>
+        </div>
+
+      </section>
+      <!-- /section-b -->
 
     </form>
   </main>
