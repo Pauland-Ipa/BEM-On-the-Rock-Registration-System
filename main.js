@@ -759,6 +759,64 @@ function loadSectionCDraft() {
   }
 }
 
+// ═══════════════════════════════════════════════
+// 9. SECTION D — CHURCH PLEDGE
+// ═══════════════════════════════════════════════
+
+const DRAFT_KEY_D = "bem_otr_draft_sectionD";
+
+function bindSectionDEvents() {
+  // Save pledge agreement to draft on change
+  const pledgeAgree = document.getElementById("pledgeAgree");
+  if (pledgeAgree) {
+    pledgeAgree.addEventListener("change", () => {
+      saveSectionDDraft();
+      // Highlight agreement box when ticked
+      const label = document.getElementById("pledgeAgreeLabel");
+      if (pledgeAgree.checked) {
+        label.style.borderColor = "var(--marigold)";
+      }
+    });
+  }
+
+  // Back button
+  document.getElementById("btnBackD")?.addEventListener("click", () => navigateTo("c"));
+
+  // Next button — unrestricted for now (TODO: enforce pledge tick when re-enabling)
+  document.getElementById("btnNextD")?.addEventListener("click", () => {
+    saveSectionDDraft();
+    navigateTo("e");
+  });
+}
+
+function saveSectionDDraft() {
+  const data = {
+    pledgeAgreed: document.getElementById("pledgeAgree")?.checked || false,
+    savedAt: new Date().toISOString(),
+  };
+  localStorage.setItem(DRAFT_KEY_D, JSON.stringify(data));
+}
+
+function loadSectionDDraft() {
+  const raw = localStorage.getItem(DRAFT_KEY_D);
+  if (!raw) return;
+  try {
+    const data = JSON.parse(raw);
+    const pledgeAgree = document.getElementById("pledgeAgree");
+    if (pledgeAgree && data.pledgeAgreed) {
+      pledgeAgree.checked = true;
+    }
+  } catch (e) {
+    console.warn("Could not load Section D draft:", e);
+  }
+}
+
+// ── Init Section D ──
+document.addEventListener("DOMContentLoaded", () => {
+  loadSectionDDraft();
+  bindSectionDEvents();
+});
+
 // ── Init Section C ──
 document.addEventListener("DOMContentLoaded", () => {
   bindSectionCEvents();
