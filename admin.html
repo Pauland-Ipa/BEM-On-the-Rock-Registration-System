@@ -5,24 +5,165 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>BEM On The Rock — Admin</title>
   <link rel="stylesheet" href="style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="admin.css"/>
 </head>
-<body>
-  <header class="site-header">
-    <div class="header-inner">
-      <img src="Images/logo.jpg" alt="BEM On The Rock" class="logo-img"/>
-      <div class="header-text">
-        <h1 class="church-name">BEM On The Rock</h1>
-        <p class="church-subtitle">Portal Admin / Admin Portal</p>
+<body class="admin-body">
+
+  <!-- ═══ LOGIN OVERLAY ═══ -->
+  <div class="login-overlay" id="loginOverlay">
+    <div class="login-card">
+      <div class="login-logo">
+        <img src="Images/logo.jpg" alt="BEM On The Rock" class="logo-img login-logo-img"/>
+        <img src="Images/logo_bem_sib.png" alt="B.E.M" class="logo-img login-logo-img"/>
+      </div>
+      <h2 class="login-title">BEM On The Rock</h2>
+      <p class="login-subtitle">Laman Admin / Admin Page</p>
+
+      <div class="login-form">
+        <div class="form-group">
+          <label class="form-label" for="adminUsername">
+            Nama Pengguna / Username
+          </label>
+          <input type="text" id="adminUsername" class="form-input"
+            placeholder="Masukkan nama pengguna / Enter username"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="adminPassword">
+            Kata Laluan / Password
+          </label>
+          <input type="password" id="adminPassword" class="form-input"
+            placeholder="Masukkan kata laluan / Enter password"/>
+        </div>
+        <span class="error-msg" id="loginError"></span>
+        <button class="btn btn-primary login-btn" id="btnLogin">
+          Log Masuk / Login
+        </button>
       </div>
     </div>
-  </header>
-  <main class="form-main" style="text-align:center; padding-top:4rem;">
-    <p style="color:var(--gold); font-family:var(--font-display); font-size:1.3rem;">
-      🔒 Halaman Admin / Admin Page
-    </p>
-    <p style="color:var(--text-muted); margin-top:1rem;">
-      Akan dibina selepas semua seksyen selesai. / To be built after all sections are complete.
-    </p>
-  </main>
+  </div>
+
+  <!-- ═══ ADMIN PAGE ═══ -->
+  <div class="admin-page" id="adminPage" style="display:none;">
+
+    <!-- Header -->
+    <header class="site-header">
+      <div class="header-inner">
+        <div class="logo-wrap">
+          <img src="Images/logo.jpg" alt="BEM On The Rock Logo" class="logo-img"/>
+        </div>
+        <div class="header-text">
+          <h1 class="church-name">BEM On The Rock</h1>
+          <p class="church-subtitle">Laman Admin &nbsp;/&nbsp; Admin Page</p>
+        </div>
+        <div class="logo-wrap logo-wrap-right">
+          <img src="Images/logo_bem_sib.png" alt="B.E.M Logo" class="logo-img logo-bem"/>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="admin-main">
+
+      <!-- Top Bar -->
+      <div class="admin-topbar">
+        <div class="admin-topbar-left">
+          <h2 class="admin-section-title">Senarai Pendaftaran <span>/ Registration List</span></h2>
+        </div>
+        <div class="admin-topbar-right">
+          <button class="btn btn-secondary admin-logout-btn" id="btnLogout">
+            Log Keluar / Logout
+          </button>
+        </div>
+      </div>
+
+      <!-- Controls: Sort & Filter -->
+      <div class="admin-controls">
+        <div class="admin-sort-group">
+          <label class="admin-control-label">Susun / Sort:</label>
+          <select id="sortBy" class="form-input form-select admin-select">
+            <option value="date">Mengikut Tarikh Dipohon / By Date Applied</option>
+            <option value="name">Susunan Abjad / Alphabetical Order</option>
+          </select>
+        </div>
+        <div class="admin-sort-group">
+          <label class="admin-control-label">Tertib / Order:</label>
+          <select id="sortOrder" class="form-input form-select admin-select">
+            <option value="asc">Menaik / Ascending</option>
+            <option value="desc">Menurun / Descending</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Registrations Table -->
+      <div class="admin-table-wrap">
+        <table class="admin-table" id="adminTable">
+          <thead>
+            <tr>
+              <th class="col-num">Bil.<br/><em class="th-en">Num.</em></th>
+              <th>Nama Pendaftar<br/><em class="th-en">Applicant Name</em></th>
+              <th>Tarikh Mendaftar<br/><em class="th-en">Date Applied</em></th>
+              <th>No. KP<br/><em class="th-en">IC No.</em></th>
+              <th>Status<br/><em class="th-en">Status</em></th>
+              <th>Tindakan<br/><em class="th-en">Action</em></th>
+            </tr>
+          </thead>
+          <tbody id="adminTableBody">
+            <!-- Rows injected by JS -->
+          </tbody>
+        </table>
+        <div class="admin-empty" id="adminEmpty" style="display:none;">
+          <p>Tiada rekod pendaftaran. / No registration records found.</p>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+      <p>&copy; <span id="adminFooterYear"></span> BEM On The Rock. Hak Cipta Terpelihara / All Rights Reserved.</p>
+    </footer>
+
+  </div><!-- /admin-page -->
+
+  <!-- ═══ VIEW MODAL ═══ -->
+  <div class="modal-overlay" id="viewModal" style="display:none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Maklumat Pendaftar / Applicant Information</h3>
+        <button class="modal-close" id="closeViewModal">&times;</button>
+      </div>
+      <div class="modal-body" id="viewModalBody">
+        <!-- Populated by JS -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="closeViewModalBtn">Tutup / Close</button>
+        <button class="btn btn-primary" id="editModalBtn">✏️ Edit</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ DELETE CONFIRM MODAL ═══ -->
+  <div class="modal-overlay" id="deleteModal" style="display:none;">
+    <div class="modal-card modal-card--sm">
+      <div class="modal-header">
+        <h3 class="modal-title">Padam Rekod / Delete Record</h3>
+        <button class="modal-close" id="closeDeleteModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="delete-confirm-text">
+          Pastikah anda ingin memadam data jemaat ini?<br/>
+          <em>Are you sure you want to delete this member's data?</em>
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="cancelDeleteBtn">Tidak / No</button>
+        <button class="btn btn-danger" id="confirmDeleteBtn">Ya / Yes</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="language_strings.js"></script>
+  <script src="admin.js"></script>
 </body>
 </html>

@@ -544,7 +544,6 @@ input[type="date"].form-input::-webkit-calendar-picker-indicator {
   font-style: italic;
 }
 
-/* ── Footer ── */
 .site-footer {
   text-align: center;
   padding: 1.5rem;
@@ -552,6 +551,49 @@ input[type="date"].form-input::-webkit-calendar-picker-indicator {
   font-size: 0.85rem;
   border-top: 1px solid rgba(255,140,0,0.1);
   font-style: italic;
+  position: relative;
+}
+
+.admin-footer-link {
+  display: inline-block;
+  margin-top: 0.6rem;
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  color: var(--silver-border);
+  text-decoration: none;
+  padding: 0.2rem 0.7rem;
+  border: 1px solid var(--silver-border);
+  border-radius: 4px;
+  transition: all var(--transition);
+  opacity: 0.5;
+}
+
+.admin-footer-link:hover {
+  color: var(--marigold-dim);
+  border-color: var(--marigold-dim);
+  opacity: 1;
+}
+
+.admin-footer-link {
+  display: inline-block;
+  margin-top: 0.6rem;
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  color: var(--silver-border);
+  text-decoration: none;
+  padding: 0.25rem 0.75rem;
+  border: 1px solid var(--silver-border);
+  border-radius: 4px;
+  transition: all var(--transition);
+  font-style: normal;
+}
+
+.admin-footer-link:hover {
+  color: var(--marigold);
+  border-color: var(--marigold-dim);
+  background: rgba(255,140,0,0.05);
 }
 
 /* ══════════════════════════════════════
