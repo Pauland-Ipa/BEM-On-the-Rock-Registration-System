@@ -417,10 +417,21 @@ function navigateTo(sectionId) {
   document.querySelectorAll(".step").forEach(s => s.classList.remove("active"));
 
   const targetSection = document.getElementById(`section-${sectionId}`);
-  const targetStep = document.getElementById(`step-${sectionId}`);
+  const targetStep    = document.getElementById(`step-${sectionId}`);
 
   if (targetSection) targetSection.classList.add("active");
-  if (targetStep) targetStep.classList.add("active");
+  if (targetStep)    targetStep.classList.add("active");
+
+  // Sync Section E readonly fields whenever user navigates to E
+  if (sectionId === "e") {
+    const komselCode = document.getElementById("komselCode");
+    const confKomsel = document.getElementById("confessionKomsel");
+    if (komselCode && confKomsel) confKomsel.value = komselCode.value;
+
+    const fullName = document.getElementById("fullName");
+    const confName = document.getElementById("confessionName");
+    if (fullName && confName) confName.value = fullName.value;
+  }
 
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -892,22 +903,6 @@ function initSectionE() {
     // TODO: Firebase submission will be wired here
     alert("Terima kasih! / Thank you!\n\nBorang anda telah dihantar. / Your form has been submitted.\n\n(Firebase submission will be implemented next.)");
   });
-}
-
-// Also sync confession fields when navigating to Section E
-const _origNavigateTo = navigateTo;
-function navigateTo(sectionId) {
-  _origNavigateTo(sectionId);
-  if (sectionId === "e") {
-    // Re-sync readonly fields in case user edited Section A after visiting E
-    const komselCode = document.getElementById("komselCode");
-    const confKomsel = document.getElementById("confessionKomsel");
-    if (komselCode && confKomsel) confKomsel.value = komselCode.value;
-
-    const fullName = document.getElementById("fullName");
-    const confName = document.getElementById("confessionName");
-    if (fullName && confName) confName.value = fullName.value;
-  }
 }
 
 function saveSectionEDraft() {
