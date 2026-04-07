@@ -318,9 +318,11 @@
           <div class="form-group">
             <label class="form-label" for="komselCode">
               Kod Komsel <span class="label-en">/ Komsel Code</span>
+              <span class="required">*</span>
             </label>
             <input type="text" id="komselCode" name="komselCode"
               class="form-input" placeholder="Masukkan Kod / Enter Code" />
+            <span class="error-msg" id="err-komselCode"></span>
           </div>
 
           <!-- 12. Current Address -->
@@ -566,6 +568,108 @@
 
       </section>
       <!-- /section-d -->
+
+      <!-- ── SECTION E ── -->
+      <section class="form-section" id="section-e">
+
+        <div class="section-header">
+          <div class="section-badge">E</div>
+          <div>
+            <h2 class="section-title">Pengakuan Jemaat</h2>
+            <p class="section-subtitle">Confession of the Church</p>
+          </div>
+        </div>
+
+        <!-- Confession Form -->
+        <div class="confession-card">
+
+          <!-- Sentence 1: KOMSEL attendance -->
+          <div class="confession-block">
+            <p class="confession-text">
+              Saya mengaku bahawa saya telah menghadiri KOMSEL
+              <span class="confession-inline">
+                <input type="text" id="confessionKomsel" name="confessionKomsel"
+                  class="form-input confession-input" placeholder="Kod Komsel" readonly />
+              </span>
+              sejak
+              <span class="confession-inline">
+                <input type="text" id="confessionSince" name="confessionSince"
+                  class="form-input confession-input"
+                  placeholder="cth: Jan 2024" />
+              </span>
+              dibawah pimpinan saudara/i
+              <span class="confession-inline confession-inline--wide">
+                <input type="text" id="confessionLeader" name="confessionLeader"
+                  class="form-input confession-input"
+                  placeholder="Nama pemimpin / Leader's name" />
+              </span>.
+            </p>
+            <p class="confession-text confession-text--en">
+              I acknowledge that I have attended KOMSEL
+              <span class="confession-label-ref">[Komsel Code]</span>
+              since
+              <span class="confession-label-ref">[Since]</span>
+              under the leadership of
+              <span class="confession-label-ref">[Leader]</span>.
+            </p>
+          </div>
+
+          <div class="confession-divider"></div>
+
+          <!-- Sentence 2: I acknowledge info is true -->
+          <div class="confession-block">
+            <p class="confession-text">
+              Saya,
+              <span class="confession-inline confession-inline--wide">
+                <input type="text" id="confessionName" name="confessionName"
+                  class="form-input confession-input"
+                  placeholder="Nama penuh / Full name" readonly />
+              </span>
+              akui bahawa maklumat di atas adalah benar.
+            </p>
+            <p class="confession-text confession-text--en">
+              I,
+              <span class="confession-label-ref">[Full Name]</span>
+              acknowledge that the above information is true.
+            </p>
+          </div>
+
+          <div class="confession-divider"></div>
+
+          <!-- Date -->
+          <div class="confession-block">
+            <p class="confession-text confession-date-row">
+              <span class="confession-date-label">Tarikh / Date:</span>
+              <input type="date" id="confessionDate" name="confessionDate"
+                class="form-input confession-input confession-input--date" />
+            </p>
+          </div>
+
+        </div>
+
+        <!-- Error messages -->
+        <div class="confession-errors">
+          <span class="error-msg" id="err-confessionSince"></span>
+          <span class="error-msg" id="err-confessionLeader"></span>
+        </div>
+
+        <!-- Required Note -->
+        <p class="required-note">
+          <span class="required">*</span> Ruangan bertanda asterisk wajib diisi sebelum meneruskan ke seksyen berikutnya. / Fields marked with an asterisk must be filled in before proceeding to the next section.
+        </p>
+
+        <!-- Action Buttons -->
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary" id="btnBackE">
+            &larr; Kembali / Back
+          </button>
+          <button type="button" class="btn btn-primary" id="btnSubmit">
+            Hantar / Submit &rarr;
+          </button>
+        </div>
+
+      </section>
+      <!-- /section-e -->
 
     </form>
   </main>

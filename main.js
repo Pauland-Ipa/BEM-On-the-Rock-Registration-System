@@ -831,6 +831,109 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     } catch (e) {}
   }
-  // No saved draft — show first child card by default
   if (!draftLoaded) addChild();
+});
+
+// ═══════════════════════════════════════════════
+// 10. SECTION E — CONFESSION
+// ═══════════════════════════════════════════════
+
+const DRAFT_KEY_E = "bem_otr_draft_sectionE";
+
+function initSectionE() {
+  // Auto-fill Komsel code from Section A
+  const komselInput = document.getElementById("komselCode");
+  const confKomsel  = document.getElementById("confessionKomsel");
+  if (komselInput && confKomsel) {
+    confKomsel.value = komselInput.value;
+    // Keep in sync if user edits Section A komsel later
+    komselInput.addEventListener("input", () => {
+      confKomsel.value = komselInput.value;
+      saveSectionEDraft();
+    });
+  }
+
+  // Auto-fill Full Name from Section A (readonly)
+  const fullNameInput = document.getElementById("fullName");
+  const confName      = document.getElementById("confessionName");
+  if (fullNameInput && confName) {
+    confName.value = fullNameInput.value;
+    fullNameInput.addEventListener("input", () => {
+      confName.value = fullNameInput.value;
+      saveSectionEDraft();
+    });
+  }
+
+  // Auto-fill today's date
+  const confDate = document.getElementById("confessionDate");
+  if (confDate) {
+    const today = new Date();
+    const yyyy  = today.getFullYear();
+    const mm    = String(today.getMonth() + 1).padStart(2, "0");
+    const dd    = String(today.getDate()).padStart(2, "0");
+    confDate.value = `${yyyy}-${mm}-${dd}`;
+  }
+
+  // Load saved draft (overwrites auto-fills if user had saved values)
+  loadSectionEDraft();
+
+  // Auto-save on any change
+  ["confessionSince", "confessionLeader", "confessionDate"].forEach(id => {
+    document.getElementById(id)?.addEventListener("input", saveSectionEDraft);
+    document.getElementById(id)?.addEventListener("change", saveSectionEDraft);
+  });
+
+  // Back button
+  document.getElementById("btnBackE")?.addEventListener("click", () => navigateTo("d"));
+
+  // Submit button — placeholder for now
+  document.getElementById("btnSubmit")?.addEventListener("click", () => {
+    saveSectionEDraft();
+    // TODO: Firebase submission will be wired here
+    alert("Terima kasih! / Thank you!\n\nBorang anda telah dihantar. / Your form has been submitted.\n\n(Firebase submission will be implemented next.)");
+  });
+}
+
+// Also sync confession fields when navigating to Section E
+const _origNavigateTo = navigateTo;
+function navigateTo(sectionId) {
+  _origNavigateTo(sectionId);
+  if (sectionId === "e") {
+    // Re-sync readonly fields in case user edited Section A after visiting E
+    const komselCode = document.getElementById("komselCode");
+    const confKomsel = document.getElementById("confessionKomsel");
+    if (komselCode && confKomsel) confKomsel.value = komselCode.value;
+
+    const fullName = document.getElementById("fullName");
+    const confName = document.getElementById("confessionName");
+    if (fullName && confName) confName.value = fullName.value;
+  }
+}
+
+function saveSectionEDraft() {
+  const data = {
+    since:   document.getElementById("confessionSince")?.value  || "",
+    leader:  document.getElementById("confessionLeader")?.value || "",
+    date:    document.getElementById("confessionDate")?.value   || "",
+    savedAt: new Date().toISOString(),
+  };
+  localStorage.setItem(DRAFT_KEY_E, JSON.stringify(data));
+}
+
+function loadSectionEDraft() {
+  const raw = localStorage.getItem(DRAFT_KEY_E);
+  if (!raw) return;
+  try {
+    const data = JSON.parse(raw);
+    if (data.since)  document.getElementById("confessionSince").value  = data.since;
+    if (data.leader) document.getElementById("confessionLeader").value = data.leader;
+    if (data.date)   document.getElementById("confessionDate").value   = data.date;
+  } catch (e) {
+    console.warn("Could not load Section E draft:", e);
+  }
+}
+
+// ── Init Section E ──
+document.addEventListener("DOMContentLoaded", () => {
+  initSectionE();
 });
