@@ -1,349 +1,463 @@
+"use strict";
+
 /* ═══════════════════════════════════════════════
    BEM On The Rock — admin.js
 ═══════════════════════════════════════════════ */
-"use strict";
 
-// ── Sample data for testing (replaced by Firebase later) ──
-const SAMPLE_DATA = [
+document.getElementById("adminFooterYear").textContent = new Date().getFullYear();
+
+// ─────────────────────────────────────────────
+// SAMPLE DATA
+// ─────────────────────────────────────────────
+let registrations = JSON.parse(localStorage.getItem("bem_otr_registrations") || "null") || [
   {
-    id: "001", fullName: "Sarah Jane Majilis", icNo: "920314-12-5678",
-    dateApplied: "2025-01-15", approved: false, memberRole: "komselMember",
-    gender: "female", dob: "1992-03-14", race: "Kadazan", maritalStatus: "single",
-    phoneNumber: "011-23456789", occupation: "Guru", baptismStatus: "baptised",
-    baptismDate: "2010-06-12", citizenship: "citizen", originalChurch: "BEM Likas",
-    yearJoining: "2018", komselCode: "KS-04", currentAddress: "No. 12, Jalan Damai, KK, Sabah",
-    confessionKomsel: "KS-04", confessionSince: "Mac 2018", confessionLeader: "Bro Daniel Koh",
-    confessionDate: "2025-01-15", pledgeAgreed: true, children: [],
-    services: { have: ["Usher / Usher"], want: ["Penginjilan / Evangelism"] },
+    id:"1", name:"Sarah Anak Thomas", dateApplied:"2025-03-10", icNo:"950312-13-5678", approved:false,
+    sectionA:{ fullName:"Sarah Anak Thomas", icNo:"950312-13-5678", gender:"female", dob:"1995-03-12", race:"Iban", maritalStatus:"single", baptismStatus:"baptised", baptismDate:"2010-06-15", citizenship:"citizen", originalChurch:"BEM Betong", yearJoining:"2018", komselCode:"KS-03", phoneNumber:"011-23456789", occupation:"Jururawat", currentAddress:"No. 12, Jln Bunga Raya, Kuching, Sarawak." },
+    sectionB:{ services:{ 9:{have:true,want:false}, 18:{have:false,want:true} }, othersChecked:false },
+    sectionC:{ children:[] },
+    sectionD:{ pledgeAgreed:true },
+    sectionE:{ komsel:"KS-03", since:"Mac 2018", leader:"Bro. James", name:"Sarah Anak Thomas", date:"2025-03-10" }
   },
   {
-    id: "002", fullName: "Marcus Lim Wei Jian", icNo: "880921-12-3456",
-    dateApplied: "2025-01-22", approved: true, memberRole: "komselLeader",
-    gender: "male", dob: "1988-09-21", race: "Cina", maritalStatus: "married",
-    phoneNumber: "016-78901234", occupation: "Jurutera", baptismStatus: "baptised",
-    baptismDate: "2005-04-17", citizenship: "citizen", originalChurch: "SIB KK",
-    yearJoining: "2015", komselCode: "KS-02", currentAddress: "No. 5, Taman Maju, Penampang",
-    confessionKomsel: "KS-02", confessionSince: "Feb 2015", confessionLeader: "Bro James Tan",
-    confessionDate: "2025-01-22", pledgeAgreed: true,
-    children: [{ name: "Lim Ai Ling", gender: "female", myKid: "150312-12-1234" }],
-    services: { have: ["Multimedia / Multimedia"], want: [] },
+    id:"2", name:"David Lim Wei Xiang", dateApplied:"2025-04-02", icNo:"880714-12-3456", approved:true,
+    sectionA:{ fullName:"David Lim Wei Xiang", icNo:"880714-12-3456", gender:"male", dob:"1988-07-14", race:"Cina", maritalStatus:"married", baptismStatus:"baptised", baptismDate:"2005-12-24", citizenship:"citizen", originalChurch:"SIB Miri", yearJoining:"2015", komselCode:"KS-07", phoneNumber:"012-9876543", occupation:"Jurutera", currentAddress:"Lot 22, Jln Tun Razak, Miri, Sarawak." },
+    sectionB:{ services:{ 6:{have:true,want:false}, 7:{have:true,want:false} }, othersChecked:false },
+    sectionC:{ children:[{name:"Lim Xiao En", gender:"female", myKid:"150203-12-1234"}] },
+    sectionD:{ pledgeAgreed:true },
+    sectionE:{ komsel:"KS-07", since:"Jan 2015", leader:"Sis. Rachel", name:"David Lim Wei Xiang", date:"2025-04-02" }
   },
   {
-    id: "003", fullName: "Ruth Anastasia Panggul", icNo: "950607-12-9012",
-    dateApplied: "2025-02-03", approved: false, memberRole: "komselMember",
-    gender: "female", dob: "1995-06-07", race: "Dusun", maritalStatus: "single",
-    phoneNumber: "013-45678901", occupation: "Pelajar", baptismStatus: "notBaptised",
-    baptismDate: "", citizenship: "citizen", originalChurch: "",
-    yearJoining: "2022", komselCode: "KS-07", currentAddress: "Blok C, No. 3, Taman Sri Kepayan, KK",
-    confessionKomsel: "KS-07", confessionSince: "Sep 2022", confessionLeader: "Sis Grace Mohd",
-    confessionDate: "2025-02-03", pledgeAgreed: true, children: [],
-    services: { have: [], want: ["Usher / Usher", "Keramahan untuk Jemaat Baru / Hospitality for Newcomers"] },
-  },
+    id:"3", name:"Mary Juk Anak Luta", dateApplied:"2025-01-20", icNo:"010520-13-7890", approved:false,
+    sectionA:{ fullName:"Mary Juk Anak Luta", icNo:"010520-13-7890", gender:"female", dob:"2001-05-20", race:"Bidayuh", maritalStatus:"single", baptismStatus:"notBaptised", citizenship:"citizen", originalChurch:"", yearJoining:"2022", komselCode:"KS-01", phoneNumber:"013-1122334", occupation:"Pelajar", currentAddress:"Asrama Universiti Malaysia Sarawak, Kota Samarahan." },
+    sectionB:{ services:{ 9:{have:false,want:true}, 12:{have:false,want:true} }, othersChecked:false },
+    sectionC:{ children:[] },
+    sectionD:{ pledgeAgreed:true },
+    sectionE:{ komsel:"KS-01", since:"Feb 2022", leader:"Bro. Kevin", name:"Mary Juk Anak Luta", date:"2025-01-20" }
+  }
 ];
 
-let registrations  = [...SAMPLE_DATA];
-let deleteTargetId = null;
+const SERVICE_NAMES = [
+  "","Pastoral","Pekerja Sepenuh Masa (Gereja)","[Rock Wave] Penyanyi","[Rock Wave] Pemain Muzik",
+  "[Rock Wave] Penari Kreatif","Multimedia","Pengendali Sistem Bunyi","Pengendali Pencahayaan",
+  "Usher","Keselamatan & Parkir","Krew Pentas","Keramahan untuk Jemaat Baru","Keramahan untuk VIP",
+  "Rock Essence","Rock Resource","Kaunter Maklumat","Pengangkutan","Pendoa Syafaat",
+  "Kebajikan & Sosial","Adiwira","P.A Pastor & Penceramah","Penginjilan","Tim Persembahan"
+];
 
-document.addEventListener("DOMContentLoaded", () => {
-  setFooterYear();
-  bindLoginEvents();
-  bindAdminEvents();
+let pendingDeleteId = null;
+let currentSort = { by:"date", order:"asc" };
+let searchQuery = "";
+
+// ─────────────────────────────────────────────
+// LOGIN
+// ─────────────────────────────────────────────
+document.getElementById("btnLogin").addEventListener("click", () => {
+  document.getElementById("loginOverlay").style.display = "none";
+  document.getElementById("adminPage").style.display = "block";
   renderTable();
 });
 
-function setFooterYear() {
-  const el = document.getElementById("adminFooterYear");
-  if (el) el.textContent = new Date().getFullYear();
-}
+document.getElementById("btnLogout").addEventListener("click", () => {
+  document.getElementById("adminPage").style.display = "none";
+  document.getElementById("loginOverlay").style.display = "flex";
+  document.getElementById("adminUsername").value = "";
+  document.getElementById("adminPassword").value = "";
+});
 
-// ── LOGIN ──
-function bindLoginEvents() {
-  document.getElementById("btnLogin")?.addEventListener("click", showAdminPage);
-  document.getElementById("adminPassword")?.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") showAdminPage();
+["adminUsername","adminPassword"].forEach(id => {
+  document.getElementById(id).addEventListener("keydown", e => {
+    if (e.key === "Enter") document.getElementById("btnLogin").click();
   });
-}
+});
 
-function showAdminPage() {
-  document.getElementById("loginOverlay").style.display = "none";
-  document.getElementById("adminPage").style.display    = "block";
-}
+// ─────────────────────────────────────────────
+// SEARCH
+// ─────────────────────────────────────────────
+document.getElementById("adminSearch").addEventListener("input", function() {
+  searchQuery = this.value.trim().toLowerCase();
+  renderTable();
+});
 
-// ── ADMIN EVENTS ──
-function bindAdminEvents() {
-  document.getElementById("btnLogout")?.addEventListener("click", () => {
-    document.getElementById("adminPage").style.display    = "none";
-    document.getElementById("loginOverlay").style.display = "flex";
-    document.getElementById("adminUsername").value = "";
-    document.getElementById("adminPassword").value = "";
-  });
+// ─────────────────────────────────────────────
+// SORT
+// ─────────────────────────────────────────────
+document.getElementById("sortBy").addEventListener("change", function() {
+  currentSort.by = this.value; renderTable();
+});
+document.getElementById("sortOrder").addEventListener("change", function() {
+  currentSort.order = this.value; renderTable();
+});
 
-  document.getElementById("sortBy")?.addEventListener("change",    renderTable);
-  document.getElementById("sortOrder")?.addEventListener("change", renderTable);
-
-  document.getElementById("closeViewModal")?.addEventListener("click",    () => closeModal("viewModal"));
-  document.getElementById("closeViewModalBtn")?.addEventListener("click", () => closeModal("viewModal"));
-  document.getElementById("editModalBtn")?.addEventListener("click", () => {
-    closeModal("viewModal");
-    alert("Edit functionality will be connected to Firebase in the next phase.");
-  });
-
-  document.getElementById("cancelDeleteBtn")?.addEventListener("click",  () => closeModal("deleteModal"));
-  document.getElementById("closeDeleteModal")?.addEventListener("click", () => closeModal("deleteModal"));
-  document.getElementById("confirmDeleteBtn")?.addEventListener("click", confirmDelete);
-
-  document.addEventListener("click", (e) => {
-    if (!e.target.closest(".action-wrap")) {
-      document.querySelectorAll(".action-dropdown.open").forEach(d => d.classList.remove("open"));
-    }
-  });
-}
-
-// ── RENDER TABLE ──
-function getSortedData() {
-  const sortBy    = document.getElementById("sortBy")?.value    || "date";
-  const sortOrder = document.getElementById("sortOrder")?.value || "asc";
-  const data = [...registrations];
-  data.sort((a, b) => {
-    const valA = sortBy === "name" ? a.fullName.toLowerCase() : a.dateApplied;
-    const valB = sortBy === "name" ? b.fullName.toLowerCase() : b.dateApplied;
-    if (valA < valB) return sortOrder === "asc" ? -1 : 1;
-    if (valA > valB) return sortOrder === "asc" ?  1 : -1;
+// ─────────────────────────────────────────────
+// RENDER TABLE
+// ─────────────────────────────────────────────
+function getSortedFiltered() {
+  let data = [...registrations];
+  if (searchQuery) {
+    data = data.filter(r =>
+      (r.name||"").toLowerCase().includes(searchQuery) ||
+      (r.icNo||"").replace(/-/g,"").includes(searchQuery.replace(/-/g,""))
+    );
+  }
+  data.sort((a,b) => {
+    let vA = currentSort.by === "name" ? (a.name||"").toLowerCase() : (a.dateApplied||"");
+    let vB = currentSort.by === "name" ? (b.name||"").toLowerCase() : (b.dateApplied||"");
+    if (vA < vB) return currentSort.order === "asc" ? -1 : 1;
+    if (vA > vB) return currentSort.order === "asc" ? 1 : -1;
     return 0;
   });
   return data;
+}
+
+function formatDate(d) {
+  if (!d) return "—";
+  return new Date(d).toLocaleDateString("ms-MY", {day:"2-digit",month:"short",year:"numeric"});
 }
 
 function renderTable() {
   const tbody = document.getElementById("adminTableBody");
   const empty = document.getElementById("adminEmpty");
   tbody.innerHTML = "";
-  const data = getSortedData();
-
-  if (data.length === 0) { empty.style.display = "block"; return; }
+  const data = getSortedFiltered();
+  if (!data.length) { empty.style.display = "block"; return; }
   empty.style.display = "none";
 
-  data.forEach((reg, index) => {
-    const row = document.createElement("tr");
-    row.innerHTML = `
-      <td class="col-num">${index + 1}</td>
-      <td>${escHtml(reg.fullName)}</td>
-      <td>${formatDisplayDate(reg.dateApplied)}</td>
-      <td>${escHtml(reg.icNo)}</td>
-      <td class="col-status">
+  data.forEach((reg, i) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="col-num">${i+1}</td>
+      <td>${reg.name||"—"}</td>
+      <td>${formatDate(reg.dateApplied)}</td>
+      <td>${reg.icNo||"—"}</td>
+      <td class="status-cell">
         <div class="toggle-wrap">
           <label class="toggle-switch">
-            <input type="checkbox" class="status-toggle" data-id="${reg.id}" ${reg.approved ? "checked" : ""}/>
-            <span class="toggle-slider"></span>
+            <input type="checkbox" class="status-toggle" data-id="${reg.id}" ${reg.approved?"checked":""}/>
+            <span class="toggle-track"></span>
+            <span class="toggle-knob"></span>
           </label>
-          <span class="toggle-label ${reg.approved ? "approved" : ""}" id="toggle-lbl-${reg.id}">
-            ${reg.approved ? "Diluluskan /<br>Approved" : "Belum Diluluskan /<br>Yet to be Approved"}
+          <span class="toggle-status-text ${reg.approved?"approved":""}" id="status-text-${reg.id}">
+            ${reg.approved ? "Diluluskan / Approved" : "Belum Diluluskan / Yet to be Approved"}
           </span>
         </div>
       </td>
-      <td class="col-action">
-        <div class="action-wrap">
-          <button class="btn-action-dots" data-id="${reg.id}">•••</button>
-          <div class="action-dropdown" id="dropdown-${reg.id}">
-            <button class="dropdown-item view-btn"   data-id="${reg.id}"><span class="dropdown-icon">📄</span> Lihat / View</button>
-            <button class="dropdown-item print-btn"  data-id="${reg.id}"><span class="dropdown-icon">🖨️</span> Cetak / Print</button>
-            <button class="dropdown-item delete delete-btn" data-id="${reg.id}"><span class="dropdown-icon">🗑️</span> Padam / Delete</button>
-          </div>
+      <td class="action-cell" id="action-cell-${reg.id}">
+        <button class="btn-action-dots" data-id="${reg.id}">•••</button>
+        <div class="action-dropdown" id="dropdown-${reg.id}">
+          <button class="action-dropdown-item view-btn" data-id="${reg.id}"><span class="action-icon">📄</span> Lihat / View</button>
+          <button class="action-dropdown-item print-btn" data-id="${reg.id}"><span class="action-icon">🖨️</span> Cetak / Print</button>
+          <button class="action-dropdown-item delete delete-btn" data-id="${reg.id}"><span class="action-icon">🗑️</span> Padam / Delete</button>
         </div>
       </td>`;
-    tbody.appendChild(row);
+    tbody.appendChild(tr);
   });
-
-  bindTableRowEvents();
+  bindTableEvents();
 }
 
-function bindTableRowEvents() {
-  document.querySelectorAll(".status-toggle").forEach(toggle => {
-    toggle.addEventListener("change", function () {
+// ─────────────────────────────────────────────
+// TABLE EVENTS
+// ─────────────────────────────────────────────
+function bindTableEvents() {
+  document.querySelectorAll(".status-toggle").forEach(t => {
+    t.addEventListener("change", function() {
       const reg = registrations.find(r => r.id === this.dataset.id);
       if (!reg) return;
       reg.approved = this.checked;
-      const lbl = document.getElementById(`toggle-lbl-${reg.id}`);
-      if (lbl) {
-        lbl.innerHTML = reg.approved ? "Diluluskan /<br>Approved" : "Belum Diluluskan /<br>Yet to be Approved";
-        lbl.className = `toggle-label ${reg.approved ? "approved" : ""}`;
-      }
+      const el = document.getElementById(`status-text-${this.dataset.id}`);
+      if (el) { el.textContent = reg.approved ? "Diluluskan / Approved" : "Belum Diluluskan / Yet to be Approved"; el.className = `toggle-status-text ${reg.approved?"approved":""}`; }
+      saveRegistrations();
     });
   });
 
   document.querySelectorAll(".btn-action-dots").forEach(btn => {
-    btn.addEventListener("click", function (e) {
+    btn.addEventListener("click", function(e) {
       e.stopPropagation();
-      const dropdown = document.getElementById(`dropdown-${this.dataset.id}`);
-      document.querySelectorAll(".action-dropdown.open").forEach(d => { if (d !== dropdown) d.classList.remove("open"); });
-      dropdown?.classList.toggle("open");
+      document.querySelectorAll(".action-dropdown").forEach(d => { if (d.id !== `dropdown-${this.dataset.id}`) d.classList.remove("open"); });
+      document.getElementById(`dropdown-${this.dataset.id}`).classList.toggle("open");
     });
   });
 
-  document.querySelectorAll(".view-btn").forEach(btn => {
-    btn.addEventListener("click", function () { closeAllDropdowns(); openViewModal(this.dataset.id); });
-  });
+  document.addEventListener("click", () => document.querySelectorAll(".action-dropdown").forEach(d => d.classList.remove("open")));
 
-  document.querySelectorAll(".print-btn").forEach(btn => {
-    btn.addEventListener("click", function () { closeAllDropdowns(); printApplicant(this.dataset.id); });
-  });
-
+  document.querySelectorAll(".view-btn").forEach(btn => btn.addEventListener("click", function() { openViewModal(this.dataset.id); }));
+  document.querySelectorAll(".print-btn").forEach(btn => btn.addEventListener("click", function() { printRecord(this.dataset.id); }));
   document.querySelectorAll(".delete-btn").forEach(btn => {
-    btn.addEventListener("click", function () { closeAllDropdowns(); openDeleteModal(this.dataset.id); });
+    btn.addEventListener("click", function() {
+      pendingDeleteId = this.dataset.id;
+      document.getElementById("deleteModal").style.display = "flex";
+    });
   });
 }
 
-// ── VIEW MODAL ──
+// ─────────────────────────────────────────────
+// VIEW MODAL
+// ─────────────────────────────────────────────
+const genderMap   = { male:"Lelaki / Male", female:"Perempuan / Female" };
+const maritalMap  = { single:"Bujang / Single", engaged:"Bertunang / Engaged", married:"Berkahwin / Married", divorced:"Bercerai / Divorced", widowed:"Janda/Duda / Widowed" };
+const baptismMap  = { baptised:"Sudah Dibaptis", notBaptised:"Belum Dibaptis" };
+
+function buildViewHTML(reg) {
+  const a = reg.sectionA || {};
+  const servicesB = reg.sectionB?.services || {};
+  const haveList = [], wantList = [];
+  Object.entries(servicesB).forEach(([idx,val]) => {
+    const n = SERVICE_NAMES[parseInt(idx)] || `Service ${idx}`;
+    if (val.have) haveList.push(n);
+    if (val.want) wantList.push(n);
+  });
+  const children = reg.sectionC?.children || [];
+  const childrenHTML = children.length
+    ? children.map((c,i) => `<div class="view-field"><span class="view-field-label">Anak ${i+1} / Child ${i+1}</span><span class="view-field-value">${c.name||"—"} (${genderMap[c.gender]||"—"}) — MyKid: ${c.myKid||"—"}</span></div>`).join("")
+    : `<div class="view-field"><span class="view-field-value">Tiada Anak berumur 12 tahun dan ke bawah / No Children aged 12 and below</span></div>`;
+  const e = reg.sectionE || {};
+  return `
+    <div class="view-section"><div class="view-section-title">A. Maklumat Peribadi / Personal Information</div>
+    <div class="view-grid">
+      <div class="view-field"><span class="view-field-label">Nama Penuh / Full Name</span><span class="view-field-value">${a.fullName||"—"}</span></div>
+      <div class="view-field"><span class="view-field-label">No. KP / IC No.</span><span class="view-field-value">${a.icNo||"—"}</span></div>
+      <div class="view-field"><span class="view-field-label">Jantina / Gender</span><span class="view-field-value">${genderMap[a.gender]||"—"}</span></div>
+      <div class="view-field"><span class="view-field-label">Tarikh Lahir / DOB</span><span class="view-field-value">${a.dob||"—"}</span></div>
+      <div class="view-field"><span class="view-field-label">Bangsa / Race</span><span class="view-field-value">${a.race||"—"}</span></div>
+      <div class="view-field"><span class="view-field-label">Status Perkahwinan / Marital Status</span><span class="view-field-value">${maritalMap[a.maritalStatus]||"—"}</span></div>
+      <div class="view-field"><span class="view-field-label">Status Pembaptisan / Baptism</span><span class="view-field-value">${baptismMap[a.baptismStatus]||"—"}${a.baptismDate?" ("+a.baptismDate+")":""}</span></div>
+      <div class="view-field"><span class="view-field-label">Warganegara / Citizenship</span><span class="view-field-value">${a.citizenship==="citizen"?"Warganegara Malaysia":(a.countryOfOrigin||"—")}</span></div>
+      <div class="view-field"><span class="view-field-label">Nombor Telefon / Phone</span><span class="view-field-value">${a.phoneNumber||"—"}</span></div>
+      <div class="view-field"><span class="view-field-label">Pekerjaan / Occupation</span><span class="view-field-value">${a.occupation||"Tiada Maklumat / No Information"}</span></div>
+      <div class="view-field"><span class="view-field-label">Gereja Asal / Original Church</span><span class="view-field-value">${a.originalChurch||"Tiada Maklumat / No Information"}</span></div>
+      <div class="view-field"><span class="view-field-label">Tahun Menyertai / Year Joined</span><span class="view-field-value">${a.yearJoining||"—"}</span></div>
+      <div class="view-field"><span class="view-field-label">Kod Komsel / Komsel Code</span><span class="view-field-value">${a.komselCode||"—"}</span></div>
+      <div class="view-field" style="grid-column:1/-1"><span class="view-field-label">Alamat / Address</span><span class="view-field-value">${a.currentAddress||"—"}</span></div>
+    </div></div>
+    <div class="view-section"><div class="view-section-title">B. Bidang Pelayanan / Field of Service</div>
+    <div class="view-grid">
+      <div class="view-field"><span class="view-field-label">Pernah Terlibat / Have Been Involved</span><span class="view-field-value">${haveList.length?haveList.join(", "):"—"}</span></div>
+      <div class="view-field"><span class="view-field-label">Ingin Terlibat / Would Like to Be Involved</span><span class="view-field-value">${wantList.length?wantList.join(", "):"—"}</span></div>
+    </div></div>
+    <div class="view-section"><div class="view-section-title">C. Maklumat Kanak-kanak / Children Information</div><div class="view-grid">${childrenHTML}</div></div>
+    <div class="view-section"><div class="view-section-title">D. Ikrar Jemaat / Church Pledge</div>
+    <div class="view-grid"><div class="view-field"><span class="view-field-label">Bersetuju / Agreed</span><span class="view-field-value">${reg.sectionD?.pledgeAgreed?"✅ Ya / Yes":"❌ Tidak / No"}</span></div></div></div>
+    <div class="view-section"><div class="view-section-title">E. Pengakuan Jemaat / Confession</div>
+    <div class="view-grid">
+      <div class="view-field"><span class="view-field-label">Komsel</span><span class="view-field-value">${e.komsel||"—"}</span></div>
+      <div class="view-field"><span class="view-field-label">Sejak / Since</span><span class="view-field-value">${e.since||"—"}</span></div>
+      <div class="view-field"><span class="view-field-label">Pemimpin / Leader</span><span class="view-field-value">${e.leader||"—"}</span></div>
+      <div class="view-field"><span class="view-field-label">Tarikh / Date</span><span class="view-field-value">${formatDate(e.date)}</span></div>
+    </div></div>`;
+}
+
 function openViewModal(id) {
   const reg = registrations.find(r => r.id === id);
   if (!reg) return;
-
-  const val = v => v
-    ? `<span class="view-value">${escHtml(String(v))}</span>`
-    : `<span class="view-value view-value--empty">—</span>`;
-
-  const maritalLabels = {
-    single:"Bujang/Single", engaged:"Bertunang/Engaged", married:"Berkahwin/Married",
-    divorced:"Bercerai/Divorced", widowed:"Janda/Duda/Widowed"
-  };
-  const roleLabels = {
-    pastoral:"Pastoral", zoneLeader:"Ketua Zon/Zone Leader",
-    komselLeader:"Ketua Komsel/Komsel Leader", komselMember:"Ahli Komsel/Komsel Member"
-  };
-
-  const childrenHtml = reg.children?.length > 0
-    ? reg.children.map((c, i) => `
-        <div class="view-item view-item--full">
-          <span class="view-label">Anak Ke-${i+1} / Child ${i+1}</span>
-          ${val(`${c.name} (${c.gender==="male"?"Lelaki/Boy":"Perempuan/Girl"}) — MyKid: ${c.myKid||"—"}`)}
-        </div>`).join("")
-    : `<div class="view-item view-item--full"><span class="view-value view-value--empty">Tiada / None</span></div>`;
-
-  document.getElementById("viewModalBody").innerHTML = `
-    <div class="view-section">
-      <div class="view-section-title">A. Maklumat Peribadi / Personal Information</div>
-      <div class="view-grid">
-        <div class="view-item view-item--full"><span class="view-label">Nama Penuh / Full Name</span>${val(reg.fullName)}</div>
-        <div class="view-item"><span class="view-label">No. KP / IC No.</span>${val(reg.icNo)}</div>
-        <div class="view-item"><span class="view-label">Jantina / Gender</span>${val(reg.gender==="male"?"Lelaki/Male":"Perempuan/Female")}</div>
-        <div class="view-item"><span class="view-label">Nombor Telefon / Phone</span>${val(reg.phoneNumber)}</div>
-        <div class="view-item"><span class="view-label">Pekerjaan / Occupation</span>${val(reg.occupation)}</div>
-        <div class="view-item"><span class="view-label">Tarikh Lahir / DOB</span>${val(reg.dob)}</div>
-        <div class="view-item"><span class="view-label">Bangsa / Race</span>${val(reg.race)}</div>
-        <div class="view-item"><span class="view-label">Status Perkahwinan / Marital</span>${val(maritalLabels[reg.maritalStatus]||reg.maritalStatus)}</div>
-        <div class="view-item"><span class="view-label">Pembaptisan / Baptism</span>${val(reg.baptismStatus==="baptised"?`Sudah (${reg.baptismDate})`:"Belum")}</div>
-        <div class="view-item"><span class="view-label">Warganegara / Citizenship</span>${val(reg.citizenship==="citizen"?"Malaysia":reg.countryOfOrigin)}</div>
-        <div class="view-item"><span class="view-label">Gereja Asal / Original Church</span>${val(reg.originalChurch)}</div>
-        <div class="view-item"><span class="view-label">Tahun Menyertai / Year Joined</span>${val(reg.yearJoining)}</div>
-        <div class="view-item"><span class="view-label">Kod Komsel / Komsel Code</span>${val(reg.komselCode)}</div>
-        <div class="view-item"><span class="view-label">Peranan / Role</span>${val(roleLabels[reg.memberRole]||reg.memberRole)}</div>
-        <div class="view-item view-item--full"><span class="view-label">Alamat / Address</span>${val(reg.currentAddress)}</div>
-      </div>
-    </div>
-    <div class="view-section">
-      <div class="view-section-title">B. Bidang Pelayanan / Field of Service</div>
-      <div class="view-grid">
-        <div class="view-item view-item--full"><span class="view-label">Pernah Terlibat / Have Been Involved</span><span class="view-value">${escHtml(reg.services?.have?.join(", ")||"—")}</span></div>
-        <div class="view-item view-item--full"><span class="view-label">Ingin Terlibat / Would Like to Be Involved</span><span class="view-value">${escHtml(reg.services?.want?.join(", ")||"—")}</span></div>
-      </div>
-    </div>
-    <div class="view-section">
-      <div class="view-section-title">C. Maklumat Kanak-kanak / Children Information</div>
-      <div class="view-grid">${childrenHtml}</div>
-    </div>
-    <div class="view-section">
-      <div class="view-section-title">D. Ikrar Jemaat / Church Pledge</div>
-      <div class="view-grid">
-        <div class="view-item view-item--full"><span class="view-label">Persetujuan / Agreement</span>${val(reg.pledgeAgreed?"✅ Bersetuju / Agreed":"❌ Tidak / Not Agreed")}</div>
-      </div>
-    </div>
-    <div class="view-section">
-      <div class="view-section-title">E. Pengakuan Jemaat / Confession</div>
-      <div class="view-grid">
-        <div class="view-item"><span class="view-label">Kod Komsel</span>${val(reg.confessionKomsel)}</div>
-        <div class="view-item"><span class="view-label">Sejak / Since</span>${val(reg.confessionSince)}</div>
-        <div class="view-item"><span class="view-label">Pimpinan / Leader</span>${val(reg.confessionLeader)}</div>
-        <div class="view-item"><span class="view-label">Tarikh / Date</span>${val(reg.confessionDate)}</div>
-      </div>
-    </div>`;
-
+  document.getElementById("viewModalBody").innerHTML = buildViewHTML(reg);
+  document.getElementById("editModalBtn").onclick = () => alert("Edit feature will be connected to Firebase in the next phase.");
   document.getElementById("viewModal").style.display = "flex";
 }
 
-// ── PRINT ──
-function printApplicant(id) {
+document.getElementById("closeViewModal").addEventListener("click", () => document.getElementById("viewModal").style.display = "none");
+document.getElementById("closeViewModalBtn").addEventListener("click", () => document.getElementById("viewModal").style.display = "none");
+
+// ─────────────────────────────────────────────
+// PRINT
+// ─────────────────────────────────────────────
+function printRecord(id) {
   const reg = registrations.find(r => r.id === id);
   if (!reg) return;
-  const w = window.open("", "_blank", "width=800,height=600");
-  w.document.write(`<html><head><title>${reg.fullName}</title>
-    <style>body{font-family:Georgia,serif;padding:2rem;color:#111}h1{font-size:1.4rem}h2{font-size:1rem;color:#555;font-weight:normal;margin-bottom:1.5rem}h3{font-size:.9rem;border-bottom:1px solid #ccc;padding-bottom:4px;margin-top:1.2rem;color:#333}.grid{display:grid;grid-template-columns:1fr 1fr;gap:.4rem 1.5rem;margin-top:.5rem}.item{display:flex;flex-direction:column}.full{grid-column:1/-1}.lbl{font-size:.72rem;color:#888}.val{font-size:.92rem;font-weight:bold}</style>
-    </head><body>
+
+  const a = reg.sectionA || {};
+  const servicesB = reg.sectionB?.services || {};
+  const haveList = [], wantList = [];
+  Object.entries(servicesB).forEach(([idx,val]) => {
+    const n = SERVICE_NAMES[parseInt(idx)] || `Service ${idx}`;
+    if (val.have) haveList.push({ num:parseInt(idx), name:n });
+    if (val.want) wantList.push({ num:parseInt(idx), name:n });
+  });
+
+  // Build service rows for print table
+  const allNums = [...new Set([...haveList.map(x=>x.num), ...wantList.map(x=>x.num)])].sort((a,b)=>a-b);
+  const serviceRows = allNums.length
+    ? allNums.map((num, i) => {
+        const h = haveList.find(x=>x.num===num) ? "✓" : "";
+        const w = wantList.find(x=>x.num===num) ? "✓" : "";
+        return `<tr><td>${i+1}</td><td>${SERVICE_NAMES[num]||"—"}</td><td style="text-align:center;">${h}</td><td style="text-align:center;">${w}</td></tr>`;
+      }).join("")
+    : "<tr><td colspan='4' style='text-align:center;font-style:italic;'>—</td></tr>";
+
+  const children = reg.sectionC?.children || [];
+  const childrenPrint = children.length
+    ? children.map((c,i) => `<p>${i+1}. ${c.name||"—"} (${genderMap[c.gender]||"—"}) — MyKid: ${c.myKid||"—"}</p>`).join("")
+    : "<p>Tiada Anak berumur 12 tahun dan ke bawah / No Children aged 12 and below</p>";
+
+  const e = reg.sectionE || {};
+  const pledgeItems = [
+    "Saya mengokong penuh Visi, Misi, Nilai dan Struktur gereja ini memperluaskan kerajaan Syurga di Bumi. / I fully support the Vision, Mission, Values and Structure of this church to expand the kingdom of Heaven on Earth.",
+    "Saya siap untuk setia mendokong & terlibat dalam pelayanan gereja melalui Pemberian Persepuluhan & Sumbangan Kewangan. / I am ready to faithfully support & be involved in church ministry through Tithing & Financial Contributions.",
+    "Saya komited untuk setia mendokong pelayanan gereja seperti Ibadah Raya, Komsel & Doa Korporat / Syafaat. / I am committed to faithfully supporting church services such as Raya Worship, Komsel & Corporate Prayer / Intercession.",
+    "Saya akan selalu menjaga kesaksian hidup saya baik didalam mahupun diluar gereja. / I will always guard my life's testimony both inside and outside the church.",
+    "Saya akan selalu menjaga hubungan baik diantara anggota gereja. / I will always maintain good relations between fellow church members.",
+    "Saya akan taat berdoa bagi pertumbuhan & perkembangan gereja. / I will devoutly pray for the growth & development of the church.",
+    "Saya siap untuk dibimbing, dinasihati & ditegur bila keadaan memerlukan demi kebaikan saya. / I am ready to be guided, advised & reprimanded when the situation requires it for my good."
+  ];
+
+  const printHTML = `
+    <html><head><title>BEM On The Rock — ${a.fullName||"Pendaftar"}</title>
+    <style>
+      body { font-family: Arial, sans-serif; font-size: 11pt; color: #000; margin: 2cm; }
+      h1 { text-align:center; font-size:14pt; margin-bottom:2px; }
+      h2 { text-align:center; font-size:11pt; font-weight:normal; margin-bottom:20px; }
+      h3 { font-size:11pt; border-bottom:1px solid #000; padding-bottom:3px; margin:18px 0 8px; text-transform:uppercase; letter-spacing:0.05em; }
+      p { margin:3px 0; line-height:1.6; }
+      table { width:100%; border-collapse:collapse; margin:8px 0; }
+      th, td { border:1px solid #000; padding:5px 8px; font-size:10pt; text-align:left; }
+      th { background:#f0f0f0; font-weight:bold; }
+      .row { display:flex; gap:20px; margin-bottom:4px; }
+      .lbl { font-weight:bold; min-width:200px; }
+      ol { margin:4px 0; padding-left:20px; }
+      ol li { margin-bottom:6px; }
+      .pledge-agreed { font-weight:bold; margin-top:8px; }
+      .section-f, .section-g { margin-top:24px; }
+      .blank { display:inline-block; border-bottom:1px solid #000; min-width:120px; }
+      .sig-line { margin-top:40px; display:flex; gap:60px; }
+      .sig-block { flex:1; }
+      .sig-block p { border-top:1px solid #000; margin-top:30px; font-size:9pt; }
+      .office-box { border:1px solid #000; padding:12px; margin-top:8px; }
+      @media print { body { margin:1.5cm; } }
+    </style></head><body>
     <h1>BEM On The Rock</h1>
-    <h2>Maklumat Keanggotaan — ${escHtml(reg.fullName)}</h2>
-    <h3>A. Maklumat Peribadi</h3>
-    <div class="grid">
-      <div class="item full"><span class="lbl">Nama Penuh</span><span class="val">${escHtml(reg.fullName)}</span></div>
-      <div class="item"><span class="lbl">No. KP</span><span class="val">${escHtml(reg.icNo)}</span></div>
-      <div class="item"><span class="lbl">Jantina</span><span class="val">${reg.gender==="male"?"Lelaki":"Perempuan"}</span></div>
-      <div class="item"><span class="lbl">Tarikh Lahir</span><span class="val">${escHtml(reg.dob)}</span></div>
-      <div class="item"><span class="lbl">Bangsa</span><span class="val">${escHtml(reg.race)}</span></div>
-      <div class="item"><span class="lbl">Telefon</span><span class="val">${escHtml(reg.phoneNumber)}</span></div>
-      <div class="item"><span class="lbl">Pekerjaan</span><span class="val">${escHtml(reg.occupation||"—")}</span></div>
-      <div class="item"><span class="lbl">Status Perkahwinan</span><span class="val">${escHtml(reg.maritalStatus)}</span></div>
-      <div class="item"><span class="lbl">Pembaptisan</span><span class="val">${reg.baptismStatus==="baptised"?`Sudah (${reg.baptismDate})`:"Belum"}</span></div>
-      <div class="item"><span class="lbl">Warganegara</span><span class="val">${reg.citizenship==="citizen"?"Malaysia":escHtml(reg.countryOfOrigin||"—")}</span></div>
-      <div class="item"><span class="lbl">Gereja Asal</span><span class="val">${escHtml(reg.originalChurch||"—")}</span></div>
-      <div class="item"><span class="lbl">Tahun Menyertai</span><span class="val">${escHtml(reg.yearJoining)}</span></div>
-      <div class="item"><span class="lbl">Kod Komsel</span><span class="val">${escHtml(reg.komselCode)}</span></div>
-      <div class="item full"><span class="lbl">Alamat</span><span class="val">${escHtml(reg.currentAddress)}</span></div>
-    </div>
-    <h3>B. Pelayanan</h3>
-    <div class="grid">
-      <div class="item full"><span class="lbl">Pernah Terlibat</span><span class="val">${escHtml(reg.services?.have?.join(", ")||"—")}</span></div>
-      <div class="item full"><span class="lbl">Ingin Terlibat</span><span class="val">${escHtml(reg.services?.want?.join(", ")||"—")}</span></div>
-    </div>
-    <h3>E. Pengakuan</h3>
-    <div class="grid">
-      <div class="item"><span class="lbl">Komsel</span><span class="val">${escHtml(reg.confessionKomsel)}</span></div>
-      <div class="item"><span class="lbl">Sejak</span><span class="val">${escHtml(reg.confessionSince)}</span></div>
-      <div class="item"><span class="lbl">Pimpinan</span><span class="val">${escHtml(reg.confessionLeader)}</span></div>
-      <div class="item"><span class="lbl">Tarikh</span><span class="val">${escHtml(reg.confessionDate)}</span></div>
-    </div>
-    <script>window.onload=()=>{window.print();window.close();}<\/script>
-    </body></html>`);
-  w.document.close();
+    <h2>Borang Pendaftaran Keanggotaan Gereja / Church Membership Registration Form</h2>
+
+    <h3>A. Maklumat Peribadi / Personal Information</h3>
+    <div class="row"><span class="lbl">Nama Penuh / Full Name:</span><span>${a.fullName||"—"}</span></div>
+    <div class="row"><span class="lbl">No. KP / IC No.:</span><span>${a.icNo||"—"}</span></div>
+    <div class="row"><span class="lbl">Jantina / Gender:</span><span>${genderMap[a.gender]||"—"}</span></div>
+    <div class="row"><span class="lbl">Tarikh Lahir / Date of Birth:</span><span>${a.dob||"—"}</span></div>
+    <div class="row"><span class="lbl">Bangsa / Race:</span><span>${a.race||"—"}</span></div>
+    <div class="row"><span class="lbl">Status Perkahwinan / Marital Status:</span><span>${maritalMap[a.maritalStatus]||"—"}</span></div>
+    <div class="row"><span class="lbl">Status Pembaptisan / Baptism Status:</span><span>${baptismMap[a.baptismStatus]||"—"}${a.baptismDate?" ("+a.baptismDate+")":""}</span></div>
+    <div class="row"><span class="lbl">Warganegara / Citizenship:</span><span>${a.citizenship==="citizen"?"Warganegara Malaysia":(a.countryOfOrigin||"—")}</span></div>
+    <div class="row"><span class="lbl">Nombor Telefon / Phone:</span><span>${a.phoneNumber||"—"}</span></div>
+    <div class="row"><span class="lbl">Pekerjaan / Occupation:</span><span>${a.occupation||"Tiada Maklumat / No Information"}</span></div>
+    <div class="row"><span class="lbl">Gereja Asal / Original Church:</span><span>${a.originalChurch||"Tiada Maklumat / No Information"}</span></div>
+    <div class="row"><span class="lbl">Tahun Menyertai / Year Joined:</span><span>${a.yearJoining||"—"}</span></div>
+    <div class="row"><span class="lbl">Kod Komsel / Komsel Code:</span><span>${a.komselCode||"—"}</span></div>
+    <div class="row"><span class="lbl">Alamat Terkini / Current Address:</span><span>${a.currentAddress||"—"}</span></div>
+
+    <h3>B. Bidang Pelayanan / Field of Service</h3>
+    <table>
+      <thead><tr><th>Bil./Num.</th><th>Pelayanan / Service</th><th>Pernah Terlibat / Have Been Involved</th><th>Ingin Terlibat / Would Like to Be Involved</th></tr></thead>
+      <tbody>${serviceRows}</tbody>
+    </table>
+
+    <h3>C. Maklumat Kanak-kanak / Children Information</h3>
+    ${childrenPrint}
+
+    <h3>D. Ikrar Jemaat / Church Pledge</h3>
+    <ol>${pledgeItems.map(p=>`<li>${p}</li>`).join("")}</ol>
+    <p class="pledge-agreed">Bersetuju / Agreed: ${reg.sectionD?.pledgeAgreed?"✓ Ya / Yes":"✗ Tidak / No"}</p>
+
+    <h3>E. Pengakuan Jemaat / Confession</h3>
+    <p>Saya mengaku bahawa saya telah menghadiri KOMSEL <strong>${e.komsel||"___"}</strong> sejak <strong>${e.since||"___"}</strong> dibawah pimpinan saudara/i <strong>${e.leader||"___"}</strong>.</p>
+    <p><em>I acknowledge that I have attended KOMSEL <strong>${e.komsel||"___"}</strong> since <strong>${e.since||"___"}</strong> under the leadership of <strong>${e.leader||"___"}</strong>.</em></p>
+    <br/>
+    <p>Saya, <strong>${e.name||"___"}</strong> akui bahawa maklumat di atas adalah benar.</p>
+    <p><em>I, <strong>${e.name||"___"}</strong> acknowledge that the above information is true.</em></p>
+    <br/>
+    <p>Tarikh / Date: <strong>${formatDate(e.date)}</strong></p>
+
+    <div class="section-f">
+    <h3>F. Pengakuan Pemimpin Komsel / Komsel Leader Confession</h3>
+    <p>Saya, <span class="blank">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span> dengan nombor kad pengenalan <span class="blank">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>, pemimpin bagi Kod Komsel <span class="blank">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span> dengan ini mengesahkan bahawa saudara/i <span class="blank">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span> telah menghadiri komsel sejak <span class="blank">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>.</p>
+    <p>Beliau telah menunjukkan komitmen dengan mematuhi peraturan dan ikrar di atas.</p>
+    <div class="sig-line">
+      <div class="sig-block"><p>Tarikh / Date</p></div>
+      <div class="sig-block"><p>Tandatangan / Signature</p></div>
+    </div></div>
+
+    <div class="section-g">
+    <h3>G. Untuk Kegunaan Pejabat / For Office Use</h3>
+    <div class="office-box">
+      <p>Borang diterima pada / Form received on: <span class="blank">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></p>
+      <p>Jenis Keanggotaan / Membership Type: &nbsp;&nbsp; ☐ Tetap / Fixed &nbsp;&nbsp;&nbsp;&nbsp; ☐ Bersekutu / Associate</p>
+    </div></div>
+
+    </body></html>`;
+
+  const win = window.open("", "_blank");
+  win.document.write(printHTML);
+  win.document.close();
+  win.focus();
+  setTimeout(() => { win.print(); }, 500);
 }
 
-// ── DELETE ──
-function openDeleteModal(id) {
-  deleteTargetId = id;
-  document.getElementById("deleteModal").style.display = "flex";
-}
-
-function confirmDelete() {
-  if (!deleteTargetId) return;
-  registrations  = registrations.filter(r => r.id !== deleteTargetId);
-  deleteTargetId = null;
-  closeModal("deleteModal");
+// ─────────────────────────────────────────────
+// DELETE
+// ─────────────────────────────────────────────
+document.getElementById("confirmDeleteBtn").addEventListener("click", () => {
+  if (!pendingDeleteId) return;
+  registrations = registrations.filter(r => r.id !== pendingDeleteId);
+  saveRegistrations();
   renderTable();
+  pendingDeleteId = null;
+  document.getElementById("deleteModal").style.display = "none";
+});
+
+document.getElementById("cancelDeleteBtn").addEventListener("click", () => {
+  pendingDeleteId = null;
+  document.getElementById("deleteModal").style.display = "none";
+});
+
+document.getElementById("closeDeleteModal").addEventListener("click", () => {
+  pendingDeleteId = null;
+  document.getElementById("deleteModal").style.display = "none";
+});
+
+// ─────────────────────────────────────────────
+// NEW ADMIN REGISTRATION
+// ─────────────────────────────────────────────
+document.getElementById("btnNewAdmin").addEventListener("click", () => {
+  document.getElementById("newAdminModal").style.display = "flex";
+});
+
+document.getElementById("closeNewAdminModal").addEventListener("click", closeNewAdminModal);
+document.getElementById("cancelNewAdminBtn").addEventListener("click", closeNewAdminModal);
+
+function closeNewAdminModal() {
+  document.getElementById("newAdminModal").style.display = "none";
+  ["newAdminUsername","newAdminEmail","newAdminPassword","newAdminRepeatPassword"].forEach(id => {
+    document.getElementById(id).value = "";
+  });
+  ["err-newAdminUsername","err-newAdminEmail","err-newAdminPassword","err-newAdminRepeatPassword"].forEach(id => {
+    document.getElementById(id).textContent = "";
+  });
 }
 
-// ── HELPERS ──
-function closeModal(id) {
-  const el = document.getElementById(id);
-  if (el) el.style.display = "none";
-}
+document.getElementById("confirmNewAdminBtn").addEventListener("click", () => {
+  let valid = true;
+  const username = document.getElementById("newAdminUsername").value.trim();
+  const email    = document.getElementById("newAdminEmail").value.trim();
+  const password = document.getElementById("newAdminPassword").value;
+  const repeat   = document.getElementById("newAdminRepeatPassword").value;
 
-function closeAllDropdowns() {
-  document.querySelectorAll(".action-dropdown.open").forEach(d => d.classList.remove("open"));
-}
+  const setErr = (id, msg) => { document.getElementById(id).textContent = msg; valid = false; };
+  const clearErr = id => { document.getElementById(id).textContent = ""; };
 
-function formatDisplayDate(dateStr) {
-  if (!dateStr) return "—";
-  const d = new Date(dateStr);
-  return isNaN(d) ? dateStr : d.toLocaleDateString("ms-MY", { day:"2-digit", month:"short", year:"numeric" });
-}
+  clearErr("err-newAdminUsername"); clearErr("err-newAdminEmail");
+  clearErr("err-newAdminPassword"); clearErr("err-newAdminRepeatPassword");
 
-function escHtml(str) {
-  return String(str||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  if (!username) setErr("err-newAdminUsername", "Nama pengguna diperlukan / Username is required");
+  if (!email || !email.includes("@")) setErr("err-newAdminEmail", "Emel tidak sah / Invalid email");
+  if (password.length < 6) setErr("err-newAdminPassword", "Minimum 6 aksara / Minimum 6 characters");
+  if (password !== repeat) setErr("err-newAdminRepeatPassword", "Kata laluan tidak sepadan / Passwords do not match");
+
+  if (!valid) return;
+
+  // TODO: Connect to Firebase Authentication createUserWithEmailAndPassword
+  alert(`Admin baharu berjaya didaftarkan!\nNew admin successfully registered!\n\nUsername: ${username}\nEmail: ${email}\n\n(Will be connected to Firebase Authentication.)`);
+  closeNewAdminModal();
+});
+
+// ─────────────────────────────────────────────
+// SAVE
+// ─────────────────────────────────────────────
+function saveRegistrations() {
+  localStorage.setItem("bem_otr_registrations", JSON.stringify(registrations));
 }

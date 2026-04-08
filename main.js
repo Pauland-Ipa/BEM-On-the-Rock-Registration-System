@@ -431,6 +431,8 @@ function navigateTo(sectionId) {
     const fullName = document.getElementById("fullName");
     const confName = document.getElementById("confessionName");
     if (fullName && confName) confName.value = fullName.value;
+
+    syncConfessionRefs();
   }
 
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -887,22 +889,73 @@ function initSectionE() {
 
   // Load saved draft (overwrites auto-fills if user had saved values)
   loadSectionEDraft();
+  // Sync English refs after loading
+  syncConfessionRefs();
 
-  // Auto-save on any change
+  // Auto-save and sync English refs on input
   ["confessionSince", "confessionLeader", "confessionDate"].forEach(id => {
-    document.getElementById(id)?.addEventListener("input", saveSectionEDraft);
-    document.getElementById(id)?.addEventListener("change", saveSectionEDraft);
+    document.getElementById(id)?.addEventListener("input", () => {
+      saveSectionEDraft();
+      syncConfessionRefs();
+    });
+    document.getElementById(id)?.addEventListener("change", () => {
+      saveSectionEDraft();
+      syncConfessionRefs();
+    });
   });
 
   // Back button
   document.getElementById("btnBackE")?.addEventListener("click", () => navigateTo("d"));
 
-  // Submit button — placeholder for now
+  // Submit button
   document.getElementById("btnSubmit")?.addEventListener("click", () => {
+    // IC duplicate check against localStorage registrations
+    const icVal = document.getElementById("icNo")?.value.replace(/-/g, "") || "";
+    const existing = JSON.parse(localStorage.getItem("bem_otr_registrations") || "[]");
+    const isDuplicate = existing.some(r => (r.icNo || "").replace(/-/g, "") === icVal && icVal !== "");
+    if (isDuplicate) {
+      document.getElementById("duplicateModal").style.display = "flex";
+      return;
+    }
     saveSectionEDraft();
-    // TODO: Firebase submission will be wired here
-    alert("Terima kasih! / Thank you!\n\nBorang anda telah dihantar. / Your form has been submitted.\n\n(Firebase submission will be implemented next.)");
+    showSuccessPage();
   });
+
+  // Close duplicate modal
+  document.getElementById("closeDuplicateModal")?.addEventListener("click", () => {
+    document.getElementById("duplicateModal").style.display = "none";
+  });
+
+  // Success page back button
+  document.getElementById("btnSuccessBack")?.addEventListener("click", () => {
+    document.getElementById("successPage").style.display = "none";
+    document.getElementById("registrationForm").style.display = "block";
+    // Clear all drafts and reset form
+    ["bem_otr_draft_sectionA","bem_otr_draft_sectionB","bem_otr_draft_sectionC",
+     "bem_otr_draft_sectionD","bem_otr_draft_sectionE"].forEach(k => localStorage.removeItem(k));
+    location.reload();
+  });
+}
+
+function syncConfessionRefs() {
+  const map = {
+    confessionKomsel: "syncKomsel",
+    confessionSince:  "syncSince",
+    confessionLeader: "syncLeader",
+    confessionName:   "syncName",
+  };
+  Object.entries(map).forEach(([inputId, refId]) => {
+    const input = document.getElementById(inputId);
+    const ref   = document.getElementById(refId);
+    if (!input || !ref) return;
+    ref.textContent = input.value.trim() || "___";
+  });
+}
+
+function showSuccessPage() {
+  document.getElementById("registrationForm").style.display = "none";
+  document.getElementById("successPage").style.display = "block";
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 function saveSectionEDraft() {

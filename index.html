@@ -300,6 +300,7 @@
             </label>
             <input type="text" id="originalChurch" name="originalChurch"
               class="form-input" placeholder="Nama gereja asal / Name of original church" />
+            <span class="field-hint">Jika ini adalah gereja pertama anda, sila biarkan kosong / If this is your first church, leave empty</span>
           </div>
 
           <!-- 10. Year Joining -->
@@ -500,6 +501,12 @@
           </div>
         </div>
 
+        <!-- Pledge Instruction -->
+        <div class="section-notice" style="margin-bottom:1.5rem;">
+          <p class="notice-bm">Baca teliti ikrar berikut dan tandakan pada kotak tik di bawah untuk menunjukkan bahawa saudara/i bersetuju dengan ikrar ini.</p>
+          <p class="notice-en">Please read the following pledge carefully and tick the box below to indicate that you agree to this pledge.</p>
+        </div>
+
         <!-- Pledge Card -->
         <div class="pledge-card">
           <ol class="pledge-list">
@@ -606,11 +613,11 @@
             </p>
             <p class="confession-text confession-text--en">
               I acknowledge that I have attended KOMSEL
-              <span class="confession-label-ref">[Komsel Code]</span>
+              <span class="confession-sync-ref" id="syncKomsel">___</span>
               since
-              <span class="confession-label-ref">[Since]</span>
+              <span class="confession-sync-ref" id="syncSince">___</span>
               under the leadership of
-              <span class="confession-label-ref">[Leader]</span>.
+              <span class="confession-sync-ref" id="syncLeader">___</span>.
             </p>
           </div>
 
@@ -629,7 +636,7 @@
             </p>
             <p class="confession-text confession-text--en">
               I,
-              <span class="confession-label-ref">[Full Name]</span>
+              <span class="confession-sync-ref" id="syncName">___</span>
               acknowledge that the above information is true.
             </p>
           </div>
@@ -672,7 +679,44 @@
       <!-- /section-e -->
 
     </form>
+
+    <!-- ═══ SUCCESS PAGE ═══ -->
+    <div id="successPage" style="display:none;">
+      <div class="success-card">
+        <div class="success-icon">✅</div>
+        <h2 class="success-title">Pendaftaran Berjaya!</h2>
+        <p class="success-title-en">Registration Successful!</p>
+        <p class="success-msg">Sila tunggu notis selanjutnya daripada pihak gereja.</p>
+        <p class="success-msg-en">Please wait for further notice from the church.</p>
+        <button type="button" class="btn btn-primary success-back-btn" id="btnSuccessBack">
+          &larr; Kembali / Back
+        </button>
+      </div>
+    </div>
+
   </main>
+
+  <!-- ═══ IC DUPLICATE MODAL ═══ -->
+  <div class="modal-overlay" id="duplicateModal" style="display:none;">
+    <div class="modal-card modal-card--sm">
+      <div class="modal-header">
+        <h3 class="modal-title" style="color:#E05555;">⚠️ Pendaftaran Tidak Berjaya</h3>
+      </div>
+      <div class="modal-body" style="text-align:center;">
+        <p style="color:var(--text-light); font-size:1rem; margin-bottom:0.8rem; line-height:1.6;">
+          Nombor KP ini sudah berdaftar di dalam sistem pendaftaran.<br/>
+          <em style="color:var(--text-muted); font-size:0.9rem;">This IC number has already existed in the registration system database.</em>
+        </p>
+        <p style="color:var(--silver-dim); font-size:0.88rem; font-style:italic; line-height:1.6;">
+          Sebarang pertanyaan, sila berhubung dengan kakitangan gereja.<br/>
+          Any questions regarding this matter, please ask any of the church staff.
+        </p>
+      </div>
+      <div class="modal-footer" style="justify-content:center;">
+        <button class="btn btn-primary" id="closeDuplicateModal">OK</button>
+      </div>
+    </div>
+  </div>
 
   <footer class="site-footer">
     <p>&copy; <span id="footerYear"></span> BEM On The Rock. Hak Cipta Terpelihara / All Rights Reserved.</p>
