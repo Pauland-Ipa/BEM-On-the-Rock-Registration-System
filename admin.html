@@ -23,10 +23,10 @@
       <div class="login-form">
         <div class="form-group">
           <label class="form-label" for="adminUsername">
-            Nama Pengguna / Username
+            Emel / E-mail
           </label>
-          <input type="text" id="adminUsername" class="form-input"
-            placeholder="Masukkan nama pengguna / Enter username"/>
+          <input type="email" id="adminUsername" class="form-input"
+            placeholder="Masukkan emel / Enter email"/>
         </div>
         <div class="form-group">
           <label class="form-label" for="adminPassword">
@@ -74,9 +74,6 @@
           <h2 class="admin-section-title">Senarai Pendaftaran <span>/ Registration List</span></h2>
         </div>
         <div class="admin-topbar-right">
-          <button class="btn btn-primary admin-newadmin-btn" id="btnNewAdmin">
-            ＋ Daftar Admin Baharu / Register New Admin
-          </button>
           <button class="btn btn-secondary admin-logout-btn" id="btnLogout">
             Log Keluar / Logout
           </button>
@@ -116,12 +113,11 @@
               <th>Nama Pendaftar<br/><em class="th-en">Applicant Name</em></th>
               <th>Tarikh Mendaftar<br/><em class="th-en">Date Applied</em></th>
               <th>No. KP<br/><em class="th-en">IC No.</em></th>
-              <th>Status<br/><em class="th-en">Status</em></th>
-              <th>Tindakan<br/><em class="th-en">Action</em></th>
+              <th class="col-status">Status<br/><em class="th-en">Status</em></th>
+              <th class="col-action">Tindakan<br/><em class="th-en">Action</em></th>
             </tr>
           </thead>
           <tbody id="adminTableBody">
-            <!-- Rows injected by JS -->
           </tbody>
         </table>
         <div class="admin-empty" id="adminEmpty" style="display:none;">
@@ -145,9 +141,7 @@
         <h3 class="modal-title">Maklumat Pendaftar / Applicant Information</h3>
         <button class="modal-close" id="closeViewModal">&times;</button>
       </div>
-      <div class="modal-body" id="viewModalBody">
-        <!-- Populated by JS -->
-      </div>
+      <div class="modal-body" id="viewModalBody"></div>
       <div class="modal-footer">
         <button class="btn btn-secondary" id="closeViewModalBtn">Tutup / Close</button>
         <button class="btn btn-primary" id="editModalBtn">✏️ Edit</button>
@@ -173,51 +167,6 @@
         <button class="btn btn-danger" id="confirmDeleteBtn">Ya / Yes</button>
       </div>
     </div>
-  </div>
-
-  <!-- ═══ NEW ADMIN MODAL ═══ -->
-  <div class="modal-overlay" id="newAdminModal" style="display:none;">
-    <div class="modal-card modal-card--sm">
-      <div class="modal-header">
-        <h3 class="modal-title">➕ Daftar Admin Baharu / Register New Admin</h3>
-        <button class="modal-close" id="closeNewAdminModal">&times;</button>
-      </div>
-      <div class="modal-body">
-        <div class="form-group" style="margin-bottom:1rem;">
-          <label class="form-label" for="newAdminUsername">Nama Pengguna / Username <span class="required">*</span></label>
-          <input type="text" id="newAdminUsername" class="form-input" placeholder="Masukkan nama pengguna / Enter username"/>
-          <span class="error-msg" id="err-newAdminUsername"></span>
-        </div>
-        <div class="form-group" style="margin-bottom:1rem;">
-          <label class="form-label" for="newAdminEmail">Emel / E-mail <span class="required">*</span></label>
-          <input type="email" id="newAdminEmail" class="form-input" placeholder="cth/e.g. admin@church.com"/>
-          <span class="error-msg" id="err-newAdminEmail"></span>
-        </div>
-        <div class="form-group" style="margin-bottom:1rem;">
-          <label class="form-label" for="newAdminPassword">Kata Laluan / Password <span class="required">*</span></label>
-          <input type="password" id="newAdminPassword" class="form-input" placeholder="Minimum 6 aksara / Min. 6 characters"/>
-          <span class="error-msg" id="err-newAdminPassword"></span>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="newAdminRepeatPassword">Ulang Kata Laluan / Repeat Password <span class="required">*</span></label>
-          <input type="password" id="newAdminRepeatPassword" class="form-input" placeholder="Ulang kata laluan / Repeat password"/>
-          <span class="error-msg" id="err-newAdminRepeatPassword"></span>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" id="cancelNewAdminBtn">
-          &larr; Kembali ke Laman Admin / Back to Admin Page
-        </button>
-        <button class="btn btn-primary" id="confirmNewAdminBtn">
-          Daftar / Register
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ═══ PRINT TEMPLATE (hidden, print-only) ═══ -->
-  <div id="printTemplate" style="display:none;">
-    <!-- Populated by JS before printing -->
   </div>
 
   <!-- Firebase CDN (compat version) -->

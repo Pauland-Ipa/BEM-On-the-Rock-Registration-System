@@ -410,7 +410,6 @@ document.getElementById("confirmDeleteBtn").addEventListener("click", async () =
   if (!pendingDeleteId) return;
   try {
     await db.collection("registrations").doc(pendingDeleteId).delete();
-    // onSnapshot will auto-refresh the table
   } catch (err) {
     console.error("Delete error:", err);
     alert("Ralat semasa memadam. / Error deleting record.");
@@ -427,81 +426,4 @@ document.getElementById("cancelDeleteBtn").addEventListener("click", () => {
 document.getElementById("closeDeleteModal").addEventListener("click", () => {
   pendingDeleteId = null;
   document.getElementById("deleteModal").style.display = "none";
-});
-
-// ─────────────────────────────────────────────
-// NEW ADMIN — Firebase Auth createUser
-// ─────────────────────────────────────────────
-document.getElementById("btnNewAdmin").addEventListener("click", () => {
-  document.getElementById("newAdminModal").style.display = "flex";
-});
-
-document.getElementById("closeNewAdminModal").addEventListener("click", closeNewAdminModal);
-document.getElementById("cancelNewAdminBtn").addEventListener("click", closeNewAdminModal);
-
-function closeNewAdminModal() {
-  document.getElementById("newAdminModal").style.display = "none";
-  ["newAdminUsername","newAdminEmail","newAdminPassword","newAdminRepeatPassword"].forEach(id => {
-    document.getElementById(id).value = "";
-  });
-  ["err-newAdminUsername","err-newAdminEmail","err-newAdminPassword","err-newAdminRepeatPassword"].forEach(id => {
-    document.getElementById(id).textContent = "";
-  });
-}
-
-document.getElementById("confirmNewAdminBtn").addEventListener("click", async () => {
-  let valid = true;
-  const username = document.getElementById("newAdminUsername").value.trim();
-  const email    = document.getElementById("newAdminEmail").value.trim();
-  const password = document.getElementById("newAdminPassword").value;
-  const repeat   = document.getElementById("newAdminRepeatPassword").value;
-  const btn      = document.getElementById("confirmNewAdminBtn");
-
-  const setErr   = (id, msg) => { document.getElementById(id).textContent = msg; valid = false; };
-  const clearErr = id        => { document.getElementById(id).textContent = ""; };
-
-  clearErr("err-newAdminUsername"); clearErr("err-newAdminEmail");
-  clearErr("err-newAdminPassword"); clearErr("err-newAdminRepeatPassword");
-
-  if (!username) setErr("err-newAdminUsername", "Nama pengguna diperlukan / Username is required");
-  if (!email || !email.includes("@")) setErr("err-newAdminEmail", "Emel tidak sah / Invalid email");
-  if (password.length < 6) setErr("err-newAdminPassword", "Minimum 6 aksara / Minimum 6 characters");
-  if (password !== repeat)  setErr("err-newAdminRepeatPassword", "Kata laluan tidak sepadan / Passwords do not match");
-  if (!valid) return;
-
-  btn.disabled = true;
-  btn.textContent = "Mendaftarkan... / Registering...";
-
-  try {
-    // Save current admin's credential to re-sign in after creating new user
-    const currentUser  = auth.currentUser;
-    const currentEmail = currentUser.email;
-
-    // Create new admin in Firebase Auth
-    await auth.createUserWithEmailAndPassword(email, password);
-
-    // Update the new user's display name
-    await auth.currentUser.updateProfile({ displayName: username });
-
-    // Store admin info in Firestore admins collection
-    await db.collection("admins").doc(auth.currentUser.uid).set({
-      username,
-      email,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-    });
-
-    // Sign back in as the original admin
-    // (Firebase automatically signs in as the newly created user)
-    // We need to re-auth the original admin — prompt them to re-login
-    alert(`Admin baharu berjaya didaftarkan!\nNew admin registered successfully!\n\nUsername: ${username}\nEmail: ${email}\n\nNote: You have been signed out. Please log back in.`);
-    await auth.signOut();
-    closeNewAdminModal();
-
-  } catch (err) {
-    let msg = "Ralat mendaftarkan admin. / Error registering admin.";
-    if (err.code === "auth/email-already-in-use") msg = "Emel ini sudah digunakan. / This email is already in use.";
-    document.getElementById("err-newAdminEmail").textContent = msg;
-    btn.disabled = false;
-    btn.textContent = "Daftar / Register";
-  }
 });

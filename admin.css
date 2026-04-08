@@ -194,11 +194,13 @@
 .admin-table td.col-action { text-align: center; }
 
 /* ── Status Toggle ── */
+.status-cell { text-align: center; }
+
 .toggle-wrap {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.4rem;
 }
 
 .toggle-switch {
@@ -206,21 +208,24 @@
   width: 46px;
   height: 24px;
   display: inline-block;
+  cursor: pointer;
 }
 
 .toggle-switch input { display: none; }
 
-.toggle-slider {
+/* track */
+.toggle-track {
   position: absolute;
   inset: 0;
   background: var(--silver-border);
   border-radius: 24px;
-  cursor: pointer;
   transition: background var(--transition);
 }
 
-.toggle-slider::before {
-  content: '';
+.toggle-switch input:checked + .toggle-track { background: var(--marigold); }
+
+/* knob */
+.toggle-knob {
   position: absolute;
   width: 18px;
   height: 18px;
@@ -229,24 +234,30 @@
   background: var(--white-off);
   border-radius: 50%;
   transition: transform var(--transition);
+  pointer-events: none;
 }
 
-.toggle-switch input:checked + .toggle-slider { background: var(--marigold); }
-.toggle-switch input:checked + .toggle-slider::before { transform: translateX(22px); }
+.toggle-switch input:checked ~ .toggle-knob { transform: translateX(22px); }
 
-.toggle-label {
+.toggle-status-text {
   font-size: 0.72rem;
   color: var(--silver-dim);
   font-style: italic;
   text-align: center;
-  line-height: 1.3;
-  transition: color var(--transition);
+  line-height: 1.4;
 }
 
-.toggle-label.approved { color: var(--marigold); }
+.toggle-status-text.approved {
+  color: var(--marigold);
+  font-style: normal;
+  font-weight: 600;
+}
 
-/* ── Action Dots Button ── */
-.action-wrap { position: relative; display: inline-block; }
+/* ── Action Cell ── */
+.action-cell {
+  text-align: center;
+  position: relative;
+}
 
 .btn-action-dots {
   background: var(--black-card);
@@ -255,7 +266,7 @@
   border-radius: var(--radius);
   width: 36px;
   height: 36px;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
@@ -272,12 +283,13 @@
 /* ── Dropdown Menu ── */
 .action-dropdown {
   position: absolute;
-  right: 0;
+  right: 50%;
+  transform: translateX(50%);
   top: calc(100% + 6px);
   background: #242424;
   border: 1px solid rgba(255,140,0,0.25);
   border-radius: var(--radius);
-  min-width: 155px;
+  min-width: 170px;
   box-shadow: 0 8px 24px rgba(0,0,0,0.6);
   z-index: 100;
   overflow: hidden;
@@ -286,7 +298,7 @@
 
 .action-dropdown.open { display: block; animation: fadeSlideIn 0.15s ease forwards; }
 
-.dropdown-item {
+.action-dropdown-item {
   display: flex;
   align-items: center;
   gap: 0.65rem;
@@ -302,11 +314,11 @@
   text-align: left;
 }
 
-.dropdown-item:hover { background: rgba(255,140,0,0.08); }
-.dropdown-item + .dropdown-item { border-top: 1px solid rgba(255,255,255,0.05); }
-.dropdown-item.delete { color: #E05555; }
-.dropdown-item.delete:hover { background: rgba(224,85,85,0.08); }
-.dropdown-icon { font-size: 1rem; width: 1.2rem; text-align: center; }
+.action-dropdown-item:hover { background: rgba(255,140,0,0.08); }
+.action-dropdown-item + .action-dropdown-item { border-top: 1px solid rgba(255,255,255,0.05); }
+.action-dropdown-item.delete { color: #E05555; }
+.action-dropdown-item.delete:hover { background: rgba(224,85,85,0.08); }
+.action-icon { font-size: 1rem; width: 1.2rem; text-align: center; }
 
 /* ── Empty State ── */
 .admin-empty {
