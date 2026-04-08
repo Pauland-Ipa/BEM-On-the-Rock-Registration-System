@@ -907,18 +907,105 @@ function initSectionE() {
   // Back button
   document.getElementById("btnBackE")?.addEventListener("click", () => navigateTo("d"));
 
-  // Submit button
-  document.getElementById("btnSubmit")?.addEventListener("click", () => {
-    // IC duplicate check against localStorage registrations
-    const icVal = document.getElementById("icNo")?.value.replace(/-/g, "") || "";
-    const existing = JSON.parse(localStorage.getItem("bem_otr_registrations") || "[]");
-    const isDuplicate = existing.some(r => (r.icNo || "").replace(/-/g, "") === icVal && icVal !== "");
-    if (isDuplicate) {
-      document.getElementById("duplicateModal").style.display = "flex";
-      return;
+  // Submit button — Firestore integration
+  document.getElementById("btnSubmit")?.addEventListener("click", async () => {
+    const btn = document.getElementById("btnSubmit");
+    const icVal = (document.getElementById("icNo")?.value || "").replace(/-/g, "");
+
+    // Disable button to prevent double submission
+    btn.disabled = true;
+    btn.textContent = "Menyemak... / Checking...";
+
+    try {
+      // ── IC Duplicate Check against Firestore ──
+      const snapshot = await db.collection("registrations")
+        .where("icNo", "==", icVal)
+        .get();
+
+      if (!snapshot.empty) {
+        document.getElementById("duplicateModal").style.display = "flex";
+        btn.disabled = false;
+        btn.innerHTML = "Hantar / Submit &rarr;";
+        return;
+      }
+
+      // ── Collect all section data ──
+      btn.textContent = "Menghantar... / Submitting...";
+      saveSectionEDraft();
+
+      const sectionADraft = JSON.parse(localStorage.getItem("bem_otr_draft_sectionA") || "{}");
+      const sectionBDraft = JSON.parse(localStorage.getItem("bem_otr_draft_sectionB") || "{}");
+      const sectionCDraft = JSON.parse(localStorage.getItem("bem_otr_draft_sectionC") || "{}");
+      const sectionDDraft = JSON.parse(localStorage.getItem("bem_otr_draft_sectionD") || "{}");
+      const sectionEDraft = JSON.parse(localStorage.getItem("bem_otr_draft_sectionE") || "{}");
+
+      const registrationData = {
+        // Top-level fields for admin table display
+        name:        sectionADraft.fullName  || "",
+        icNo:        icVal,
+        dateApplied: new Date().toISOString().split("T")[0],
+        approved:    false,
+
+        // Member role (from above Section A)
+        memberRole: sectionADraft.memberRole || "",
+
+        // Section data
+        sectionA: {
+          fullName:       sectionADraft.fullName       || "",
+          icNo:           icVal,
+          gender:         sectionADraft.gender         || "",
+          dob:            sectionADraft.dob            || "",
+          race:           sectionADraft.race           || "",
+          maritalStatus:  sectionADraft.maritalStatus  || "",
+          baptismStatus:  sectionADraft.baptismStatus  || "",
+          baptismDate:    sectionADraft.baptismDate     || "",
+          citizenship:    sectionADraft.citizenship     || "",
+          countryOfOrigin:sectionADraft.countryOfOrigin|| "",
+          phoneNumber:    sectionADraft.phoneNumber    || "",
+          occupation:     sectionADraft.occupation     || "",
+          originalChurch: sectionADraft.originalChurch || "",
+          yearJoining:    sectionADraft.yearJoining    || "",
+          komselCode:     sectionADraft.komselCode     || "",
+          currentAddress: sectionADraft.currentAddress || "",
+        },
+        sectionB: {
+          services:         sectionBDraft.services         || {},
+          othersChecked:    sectionBDraft.othersChecked     || false,
+          othersServiceName:sectionBDraft.othersServiceName || "",
+          othersInvolvement:sectionBDraft.othersInvolvement || "",
+        },
+        sectionC: {
+          children: sectionCDraft.children || [],
+        },
+        sectionD: {
+          pledgeAgreed: sectionDDraft.pledgeAgreed || false,
+        },
+        sectionE: {
+          komsel: document.getElementById("confessionKomsel")?.value || "",
+          since:  document.getElementById("confessionSince")?.value  || "",
+          leader: document.getElementById("confessionLeader")?.value || "",
+          name:   document.getElementById("confessionName")?.value   || "",
+          date:   document.getElementById("confessionDate")?.value   || "",
+        },
+
+        submittedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      };
+
+      // ── Save to Firestore ──
+      await db.collection("registrations").add(registrationData);
+
+      // ── Clear local drafts ──
+      ["bem_otr_draft_sectionA","bem_otr_draft_sectionB","bem_otr_draft_sectionC",
+       "bem_otr_draft_sectionD","bem_otr_draft_sectionE"].forEach(k => localStorage.removeItem(k));
+
+      showSuccessPage();
+
+    } catch (err) {
+      console.error("Submission error:", err);
+      alert("Ralat semasa menghantar borang. Sila cuba lagi.\nError submitting form. Please try again.\n\n" + err.message);
+      btn.disabled = false;
+      btn.innerHTML = "Hantar / Submit &rarr;";
     }
-    saveSectionEDraft();
-    showSuccessPage();
   });
 
   // Close duplicate modal
@@ -928,11 +1015,6 @@ function initSectionE() {
 
   // Success page back button
   document.getElementById("btnSuccessBack")?.addEventListener("click", () => {
-    document.getElementById("successPage").style.display = "none";
-    document.getElementById("registrationForm").style.display = "block";
-    // Clear all drafts and reset form
-    ["bem_otr_draft_sectionA","bem_otr_draft_sectionB","bem_otr_draft_sectionC",
-     "bem_otr_draft_sectionD","bem_otr_draft_sectionE"].forEach(k => localStorage.removeItem(k));
     location.reload();
   });
 }

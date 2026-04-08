@@ -1,20 +1,22 @@
-import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
+/* ═══════════════════════════════════════════════
+   BEM On The Rock — firebase-config.js
+   Firebase CDN Compat Version
+   (Works with plain HTML/JS — no bundler needed)
+═══════════════════════════════════════════════ */
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDQJ6-w0_ImxptJ3hzb8fFh7BSR0xt4JB8",
-  authDomain: "bemontherock-registration-form.firebaseapp.com",
-  projectId: "bemontherock-registration-form",
-  storageBucket: "bemontherock-registration-form.firebasestorage.app",
+  apiKey:            "AIzaSyDQJ6-w0_ImxptJ3hzb8fFh7BSR0xt4JB8",
+  authDomain:        "bemontherock-registration-form.firebaseapp.com",
+  projectId:         "bemontherock-registration-form",
+  storageBucket:     "bemontherock-registration-form.firebasestorage.app",
   messagingSenderId: "550906923157",
-  appId: "1:550906923157:web:b8852e078955760b4af39c",
-  measurementId: "G-4ZC5243E1W"
+  appId:             "1:550906923157:web:b8852e078955760b4af39c",
+  measurementId:     "G-4ZC5243E1W"
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// Initialize Firebase (compat SDK — loaded via CDN script tags)
+firebase.initializeApp(firebaseConfig);
 
-// Export the database and auth so you can use them in main.js and admin.js
-export const db = getFirestore(app);
-export const auth = getAuth(app);
+// Export globals for use in main.js and admin.js
+const db   = firebase.firestore();
+const auth = firebase.auth();
