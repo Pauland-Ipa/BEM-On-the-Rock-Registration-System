@@ -75,7 +75,16 @@
 }
 
 /* ── Admin Page Layout ── */
-.admin-body { background: var(--black-soft); }
+.admin-body {
+  background-color: var(--black-soft);
+  background-image:
+    linear-gradient(rgba(10,10,10,0.78), rgba(10,10,10,0.78)),
+    url('Images/BEM_On_the_Rock_Building_Image.png');
+  background-size: cover;
+  background-position: center top;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+}
 .admin-page { min-height: 100vh; display: flex; flex-direction: column; }
 
 .admin-main {
@@ -137,7 +146,7 @@
 
 /* ── Admin Table ── */
 .admin-table-wrap {
-  overflow-x: auto;
+  overflow: visible;
   border: 1px solid var(--card-border);
   border-radius: var(--radius-lg);
 }
@@ -282,16 +291,13 @@
 
 /* ── Dropdown Menu ── */
 .action-dropdown {
-  position: absolute;
-  right: 50%;
-  transform: translateX(50%);
-  top: calc(100% + 6px);
+  position: fixed;
   background: #242424;
   border: 1px solid rgba(255,140,0,0.25);
   border-radius: var(--radius);
   min-width: 170px;
   box-shadow: 0 8px 24px rgba(0,0,0,0.6);
-  z-index: 100;
+  z-index: 1000;
   overflow: hidden;
   display: none;
 }

@@ -41,13 +41,35 @@ html { scroll-behavior: smooth; }
 body {
   font-family: var(--font-body);
   font-size: 1.05rem;
-  background: var(--black-soft);
   color: var(--text-light);
   min-height: 100vh;
-  background-image:
-    radial-gradient(ellipse at 15% 0%, rgba(255,140,0,0.08) 0%, transparent 45%),
-    radial-gradient(ellipse at 85% 100%, rgba(255,140,0,0.05) 0%, transparent 45%);
   line-height: 1.6;
+  /* Building background image with dark overlay */
+  background-color: var(--black-soft);
+  background-image:
+    linear-gradient(rgba(10,10,10,0.72), rgba(10,10,10,0.72)),
+    url('Images/BEM_On_the_Rock_Building_Image.png');
+  background-size: cover;
+  background-position: center top;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+}
+
+/* ── Form glass card — sits on top of background ── */
+.form-main {
+  max-width: 900px;
+  margin: 2rem auto;
+  padding: 0 1rem 4rem;
+}
+
+.form-section {
+  background: rgba(14, 12, 10, 0.82);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  border: 1px solid rgba(255,140,0,0.12);
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5);
 }
 
 /* ── Header ── */
@@ -216,13 +238,7 @@ body {
   margin-bottom: 1.5rem;
 }
 
-/* ── Main Form Area ── */
-.form-main {
-  max-width: 900px;
-  margin: 2rem auto;
-  padding: 0 1rem 4rem;
-}
-
+/* ── Form Section animation ── */
 .form-section { display: none; animation: fadeSlideIn 0.4s ease forwards; }
 .form-section.active { display: block; }
 

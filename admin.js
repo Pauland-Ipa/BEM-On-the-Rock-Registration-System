@@ -202,19 +202,33 @@ function bindTableEvents() {
     });
   });
 
-  // Three-dot dropdown
+  // Three-dot dropdown — position using fixed coordinates
   document.querySelectorAll(".btn-action-dots").forEach(btn => {
     btn.addEventListener("click", function(e) {
       e.stopPropagation();
+      const id = this.dataset.id;
+      // Close all others
       document.querySelectorAll(".action-dropdown").forEach(d => {
-        if (d.id !== `dropdown-${this.dataset.id}`) d.classList.remove("open");
+        if (d.id !== `dropdown-${id}`) {
+          d.classList.remove("open");
+          d.style.top = "";
+          d.style.left = "";
+        }
       });
-      document.getElementById(`dropdown-${this.dataset.id}`).classList.toggle("open");
+      const dropdown = document.getElementById(`dropdown-${id}`);
+      const rect = this.getBoundingClientRect();
+      dropdown.style.top  = (rect.bottom + 6) + "px";
+      dropdown.style.left = (rect.left + rect.width / 2 - 85) + "px";
+      dropdown.classList.toggle("open");
     });
   });
 
   document.addEventListener("click", () =>
     document.querySelectorAll(".action-dropdown").forEach(d => d.classList.remove("open"))
+  );
+  document.addEventListener("scroll", () =>
+    document.querySelectorAll(".action-dropdown").forEach(d => d.classList.remove("open")),
+    true
   );
 
   document.querySelectorAll(".view-btn").forEach(btn =>
