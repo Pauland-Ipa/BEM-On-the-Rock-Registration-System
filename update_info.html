@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BEM On The Rock — Kemas Kini Maklumat</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet"/>
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="logo-wrap"><img src="Images/logo.jpg" alt="BEM On The Rock" class="logo-img"/></div>
+      <div class="header-text">
+        <h1 class="church-name">BEM On The Rock</h1>
+        <p class="church-subtitle">Kemas Kini Maklumat / Update Your Information</p>
+      </div>
+      <div class="logo-wrap logo-wrap-right"><img src="Images/logo_bem_sib.png" alt="B.E.M" class="logo-img logo-bem"/></div>
+    </div>
+  </header>
+
+  <main class="form-main">
+    <a href="home.html" class="back-home-btn">&#8592; Kembali ke Halaman Rumah / Back to Home Page</a>
+
+    <!-- Step 1: Verify member -->
+    <section class="form-section active" id="step-verify">
+      <div class="section-header">
+        <div class="section-badge">1</div>
+        <div>
+          <h2 class="section-title">Pengesahan Identiti / Identity Verification</h2>
+          <p class="section-subtitle">Masukkan No. KP anda untuk mengakses maklumat anda.</p>
+          <p class="section-subtitle">Enter your IC No. to access your information.</p>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group full-width">
+          <label class="form-label" for="verifyIC">No. KP / IC No. <span class="required">*</span></label>
+          <input type="text" id="verifyIC" class="form-input" placeholder="cth/e.g. 901231-14-5678" maxlength="14"/>
+          <span class="error-msg" id="err-verifyIC"></span>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" id="btnVerifyMember">Semak / Verify &rarr;</button>
+      </div>
+      <div class="draft-notice" id="verifyNotice"></div>
+    </section>
+
+    <!-- Step 2: Edit form -->
+    <section class="form-section" id="step-edit">
+      <div class="section-header">
+        <div class="section-badge">2</div>
+        <div>
+          <h2 class="section-title">Kemas Kini Maklumat / Update Information</h2>
+          <p class="section-subtitle">Ubah maklumat yang perlu dikemas kini sahaja. / Only change the information that needs updating.</p>
+        </div>
+      </div>
+
+      <!-- Member info banner -->
+      <div class="eligibility-notice" id="memberBanner" style="margin-bottom:1.5rem;">
+        <p class="eligibility-bm" id="bannerName"></p>
+        <p class="eligibility-en" id="bannerID"></p>
+      </div>
+
+      <div class="form-grid" id="editGrid">
+        <!-- Fields populated by JS from Firestore data -->
+      </div>
+
+      <p class="required-note" style="margin-top:1.5rem;">
+        Hanya ubah maklumat yang perlu dikemas kini. Maklumat yang tidak diubah akan kekal seperti sedia ada. /
+        Only change information that needs updating. Unchanged information will remain as is.
+      </p>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" id="btnBackEdit">&larr; Kembali / Back</button>
+        <button type="button" class="btn btn-primary" id="btnSaveUpdate">Simpan / Save &rarr;</button>
+      </div>
+      <div class="draft-notice" id="updateNotice"></div>
+    </section>
+
+    <!-- Step 3: Success -->
+    <div id="updateSuccess" style="display:none;">
+      <div class="success-card">
+        <div class="success-icon">✅</div>
+        <h2 class="success-title">Maklumat Dikemas Kini!</h2>
+        <p class="success-title-en">Information Updated!</p>
+        <p class="success-msg">Maklumat anda telah berjaya dikemas kini.</p>
+        <p class="success-msg-en">Your information has been successfully updated.</p>
+        <a href="home.html" class="btn btn-primary success-back-btn">&#8592; Kembali ke Halaman Rumah / Back to Home Page</a>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <p>&copy; <span id="updateFooterYear"></span> BEM On The Rock. Hak Cipta Terpelihara / All Rights Reserved.</p>
+  </footer>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="theme.js"></script>
+  <script>
+    document.getElementById("updateFooterYear").textContent = new Date().getFullYear();
+
+    let memberDocId = null;
+    let memberData  = null;
+
+    function formatIC(v) {
+      const d = v.replace(/\D/g,"");
+      let f = d;
+      if (d.length > 6) f = d.substring(0,6)+"-"+d.substring(6);
+      if (d.length > 8) f = f.substring(0,9)+"-"+d.substring(8);
+      return f.substring(0,14);
+    }
+
+    document.getElementById("verifyIC").addEventListener("input", function() {
+      this.value = formatIC(this.value);
+    });
+
+    document.getElementById("btnVerifyMember").addEventListener("click", async () => {
+      const ic  = document.getElementById("verifyIC").value.replace(/-/g,"");
+      const err = document.getElementById("err-verifyIC");
+      const notice = document.getElementById("verifyNotice");
+      err.textContent = "";
+      if (ic.length !== 12) { err.textContent = "Sila masukkan No. KP yang sah / Enter a valid IC No."; return; }
+
+      notice.textContent = "Menyemak... / Checking...";
+      try {
+        const snap = await db.collection("registrations")
+          .where("icNo","==",ic)
+          .where("approved","==",true)
+          .get();
+
+        if (snap.empty) {
+          err.textContent = "Tiada rekod ahli aktif dengan No. KP ini / No active member record found with this IC No.";
+          notice.textContent = "";
+          return;
+        }
+
+        memberDocId = snap.docs[0].id;
+        memberData  = snap.docs[0].data();
+        notice.textContent = "";
+        populateEditForm();
+        document.getElementById("step-verify").classList.remove("active");
+        document.getElementById("step-edit").classList.add("active");
+
+      } catch(e) {
+        err.textContent = "Ralat sistem / System error. Please try again.";
+        notice.textContent = "";
+      }
+    });
+
+    const MARITAL_MAP = {
+      single:"Bujang / Single", engaged:"Bertunang / Engaged",
+      married:"Berkahwin / Married", divorced:"Bercerai / Divorced",
+      widowed:"Balu/Duda [Pasangan meninggal] / Widowed"
+    };
+
+    function populateEditForm() {
+      const a = memberData.sectionA || {};
+      document.getElementById("bannerName").textContent = `${a.fullName || memberData.name || "—"}`;
+      document.getElementById("bannerID").textContent   = `ID: ${memberData.uniqueID || "—"} | Komsel: ${a.komselCode || "—"}`;
+
+      const grid = document.getElementById("editGrid");
+      grid.innerHTML = `
+        <div class="form-group full-width">
+          <label class="form-label" for="upPhone">Nombor Telefon / Telephone Number</label>
+          <input type="tel" id="upPhone" class="form-input" value="${a.phoneNumber||""}"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="upMarital">Status Perkahwinan / Marital Status</label>
+          <select id="upMarital" class="form-input form-select">
+            <option value="">-- Pilih / Select --</option>
+            ${Object.entries(MARITAL_MAP).map(([v,l]) => `<option value="${v}" ${a.maritalStatus===v?"selected":""}>${l}</option>`).join("")}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="upPartner">Nama Pasangan / Partner's Name</label>
+          <input type="text" id="upPartner" class="form-input" value="${a.partnerName||""}" placeholder="Kosongkan jika tiada perubahan / Leave blank if no change"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="upOccupation">Pekerjaan / Occupation</label>
+          <input type="text" id="upOccupation" class="form-input" value="${a.occupation||""}"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="upKomsel">Kod Komsel / Cell Group Code</label>
+          <input type="text" id="upKomsel" class="form-input" value="${a.komselCode||""}" style="text-transform:uppercase;"/>
+        </div>
+        <div class="form-group full-width">
+          <label class="form-label" for="upAddress">Alamat Terkini / Current Address</label>
+          <textarea id="upAddress" class="form-input form-textarea" rows="3">${a.currentAddress||""}</textarea>
+        </div>
+        <div class="form-group full-width">
+          <label class="form-label">Kanak-kanak Baru / New Child</label>
+          <p class="field-hint">Tambah anak baru berumur 12 tahun ke bawah / Add a new child aged 12 and below</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;margin-top:0.5rem;">
+            <input type="text" id="newChildName" class="form-input" placeholder="Nama penuh / Full name"/>
+            <input type="text" id="newChildMyKid" class="form-input" placeholder="MyKid No."/>
+          </div>
+          <div class="checkbox-group" style="margin-top:0.6rem;">
+            <label class="checkbox-label">
+              <input type="radio" name="newChildGender" value="male"/>
+              <span class="custom-radio"></span>
+              Lelaki <em>/ Boy</em>
+            </label>
+            <label class="checkbox-label">
+              <input type="radio" name="newChildGender" value="female"/>
+              <span class="custom-radio"></span>
+              Perempuan <em>/ Girl</em>
+            </label>
+          </div>
+        </div>`;
+    }
+
+    document.getElementById("btnBackEdit").addEventListener("click", () => {
+      document.getElementById("step-edit").classList.remove("active");
+      document.getElementById("step-verify").classList.add("active");
+    });
+
+    document.getElementById("btnSaveUpdate").addEventListener("click", async () => {
+      if (!memberDocId) return;
+      const btn = document.getElementById("btnSaveUpdate");
+      btn.disabled = true;
+      btn.textContent = "Menyimpan... / Saving...";
+
+      try {
+        const existing = memberData.sectionA || {};
+        const newChildName   = document.getElementById("newChildName")?.value.trim();
+        const newChildMyKid  = document.getElementById("newChildMyKid")?.value.trim();
+        const newChildGender = document.querySelector('input[name="newChildGender"]:checked')?.value || "";
+        let children = [...(memberData.sectionC?.children || [])];
+        if (newChildName) children.push({ name:newChildName, myKid:newChildMyKid, gender:newChildGender });
+
+        const updatedA = {
+          ...existing,
+          phoneNumber:   document.getElementById("upPhone")?.value    || existing.phoneNumber,
+          maritalStatus: document.getElementById("upMarital")?.value  || existing.maritalStatus,
+          partnerName:   document.getElementById("upPartner")?.value  || existing.partnerName,
+          occupation:    document.getElementById("upOccupation")?.value || existing.occupation,
+          komselCode:    (document.getElementById("upKomsel")?.value || existing.komselCode).toUpperCase(),
+          currentAddress:document.getElementById("upAddress")?.value  || existing.currentAddress,
+        };
+
+        await db.collection("registrations").doc(memberDocId).update({
+          sectionA: updatedA,
+          "sectionC.children": children,
+          lastUpdated: firebase.firestore.FieldValue.serverTimestamp(),
+        });
+
+        document.getElementById("step-edit").style.display = "none";
+        document.getElementById("updateSuccess").style.display = "block";
+
+      } catch(e) {
+        document.getElementById("updateNotice").textContent = "Ralat semasa menyimpan. Cuba lagi. / Error saving. Please try again.";
+        btn.disabled = false;
+        btn.textContent = "Simpan / Save →";
+      }
+    });
+  </script>
+</body>
+</html>

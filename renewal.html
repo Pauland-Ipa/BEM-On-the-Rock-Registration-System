@@ -3,34 +3,276 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>BEM On The Rock</title>
+  <title>BEM On The Rock — Pembaharuan Keanggotaan</title>
   <link rel="stylesheet" href="style.css"/>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet"/>
 </head>
 <body>
+
   <header class="site-header">
     <div class="header-inner">
       <div class="logo-wrap"><img src="Images/logo.jpg" alt="BEM On The Rock" class="logo-img"/></div>
       <div class="header-text">
         <h1 class="church-name">BEM On The Rock</h1>
-        <p class="church-subtitle">Akan Datang / Coming Soon</p>
+        <p class="church-subtitle">Pembaharuan Keanggotaan / Membership Renewal</p>
       </div>
       <div class="logo-wrap logo-wrap-right"><img src="Images/logo_bem_sib.png" alt="B.E.M" class="logo-img logo-bem"/></div>
     </div>
   </header>
-  <main class="form-main" style="text-align:center; padding-top:3rem;">
+
+  <main class="form-main">
     <a href="home.html" class="back-home-btn">&#8592; Kembali ke Halaman Rumah / Back to Home Page</a>
-    <div class="success-card">
-      <div class="success-icon">🔧</div>
-      <h2 class="success-title">Akan Datang</h2>
-      <p class="success-title-en">Coming Soon</p>
-      <p class="success-msg">Halaman ini sedang dalam pembangunan.</p>
-      <p class="success-msg-en">This page is currently under development.</p>
+
+    <!-- Step 1: Verify -->
+    <section class="form-section active" id="step-verify">
+      <div class="section-header">
+        <div class="section-badge">1</div>
+        <div>
+          <h2 class="section-title">Pengesahan Identiti / Identity Verification</h2>
+          <p class="section-subtitle">Masukkan No. KP anda untuk menyemak status keanggotaan anda.</p>
+          <p class="section-subtitle">Enter your IC No. to check your membership status.</p>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group full-width">
+          <label class="form-label" for="renewIC">No. KP / IC No. <span class="required">*</span></label>
+          <input type="text" id="renewIC" class="form-input" placeholder="cth/e.g. 901231-14-5678" maxlength="14"/>
+          <span class="error-msg" id="err-renewIC"></span>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" id="btnCheckMember">Semak / Check &rarr;</button>
+      </div>
+      <div class="draft-notice" id="renewNotice"></div>
+    </section>
+
+    <!-- Step 2: Status display + confirm renewal -->
+    <section class="form-section" id="step-status">
+      <div class="section-header">
+        <div class="section-badge">2</div>
+        <div>
+          <h2 class="section-title">Status Keanggotaan / Membership Status</h2>
+          <p class="section-subtitle">Semak maklumat dan status keanggotaan anda di bawah.</p>
+          <p class="section-subtitle">Review your information and membership status below.</p>
+        </div>
+      </div>
+
+      <!-- Member info card -->
+      <div class="pledge-card" id="memberInfoCard" style="margin-bottom:1.5rem;"></div>
+
+      <!-- Status banner -->
+      <div id="statusBanner" class="section-notice" style="margin-bottom:1.5rem;"></div>
+
+      <!-- Confirm renewal button (shown only if eligible) -->
+      <div id="renewalActions" style="display:none;">
+        <p class="required-note" style="margin-bottom:1rem;">
+          Adakah anda ingin memperbaharui keanggotaan anda? /
+          Would you like to renew your membership?
+        </p>
+        <div class="form-actions">
+          <button class="btn btn-secondary" id="btnBackRenew">&larr; Kembali / Back</button>
+          <button class="btn btn-primary" id="btnConfirmRenew">Ya, Perbaharui / Yes, Renew &rarr;</button>
+        </div>
+      </div>
+      <div id="noRenewalActions" style="display:none;">
+        <div class="form-actions">
+          <button class="btn btn-secondary" id="btnBackNoRenew">&larr; Kembali / Back</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Step 3: Success -->
+    <div id="renewSuccess" style="display:none;">
+      <div class="success-card">
+        <div class="success-icon">🔄</div>
+        <h2 class="success-title">Keanggotaan Diperbaharui!</h2>
+        <p class="success-title-en">Membership Renewed!</p>
+        <p class="success-msg">Keanggotaan anda telah berjaya diperbaharui untuk 3 tahun akan datang.</p>
+        <p class="success-msg-en">Your membership has been successfully renewed for the next 3 years.</p>
+        <a href="home.html" class="btn btn-primary success-back-btn">&#8592; Kembali ke Halaman Rumah / Back to Home Page</a>
+      </div>
+    </div>
+
+    <!-- Revoked state -->
+    <div id="revokedState" style="display:none;">
+      <div class="success-card">
+        <div class="success-icon">❌</div>
+        <h2 class="success-title" style="color:var(--error);">Keanggotaan Ditarik Balik</h2>
+        <p class="success-title-en" style="color:var(--error);">Membership Revoked</p>
+        <p class="success-msg">Tempoh keanggotaan anda telah tamat melebihi 5 tahun. Sila hubungi pihak gereja.</p>
+        <p class="success-msg-en">Your membership grace period has exceeded 5 years. Please contact the church office.</p>
+        <a href="home.html" class="btn btn-secondary success-back-btn">&#8592; Kembali ke Halaman Rumah / Back to Home Page</a>
+      </div>
     </div>
   </main>
+
   <footer class="site-footer">
-    <p>&copy; 2026 BEM On The Rock. Hak Cipta Terpelihara / All Rights Reserved.</p>
+    <p>&copy; <span id="renewFooterYear"></span> BEM On The Rock. Hak Cipta Terpelihara / All Rights Reserved.</p>
   </footer>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
   <script src="theme.js"></script>
+  <script>
+    document.getElementById("renewFooterYear").textContent = new Date().getFullYear();
+
+    let memberDocId = null;
+    let memberData  = null;
+
+    const MEMBERSHIP_YEARS  = 3;
+    const GRACE_PERIOD_YEARS = 5;
+
+    function formatIC(v) {
+      const d = v.replace(/\D/g,"");
+      let f = d;
+      if (d.length > 6) f = d.substring(0,6)+"-"+d.substring(6);
+      if (d.length > 8) f = f.substring(0,9)+"-"+d.substring(8);
+      return f.substring(0,14);
+    }
+
+    document.getElementById("renewIC").addEventListener("input", function() {
+      this.value = formatIC(this.value);
+    });
+
+    function getMembershipState(reg) {
+      // Must be approved first
+      if (!reg.approved) return "pending";
+
+      const approvedAt = reg.approvedAt?.toDate ? reg.approvedAt.toDate() : null;
+      if (!approvedAt) return "active"; // fallback if no date
+
+      const now     = new Date();
+      const msPerYr = 365.25 * 24 * 3600 * 1000;
+      const yearsElapsed = (now - approvedAt) / msPerYr;
+
+      if (yearsElapsed <= MEMBERSHIP_YEARS) return "active";
+      if (yearsElapsed <= MEMBERSHIP_YEARS + GRACE_PERIOD_YEARS) return "inactive";
+      return "revoked";
+    }
+
+    function formatDate(d) {
+      if (!d) return "—";
+      const date = d.toDate ? d.toDate() : new Date(d);
+      return date.toLocaleDateString("ms-MY", { day:"2-digit", month:"long", year:"numeric" });
+    }
+
+    document.getElementById("btnCheckMember").addEventListener("click", async () => {
+      const ic  = document.getElementById("renewIC").value.replace(/-/g,"");
+      const err = document.getElementById("err-renewIC");
+      const notice = document.getElementById("renewNotice");
+      err.textContent = "";
+      if (ic.length !== 12) { err.textContent = "Sila masukkan No. KP yang sah / Enter a valid IC No."; return; }
+
+      notice.textContent = "Menyemak... / Checking...";
+      try {
+        const snap = await db.collection("registrations").where("icNo","==",ic).get();
+        if (snap.empty) {
+          err.textContent = "Tiada rekod dijumpai dengan No. KP ini / No record found with this IC No.";
+          notice.textContent = "";
+          return;
+        }
+
+        memberDocId = snap.docs[0].id;
+        memberData  = snap.docs[0].data();
+        notice.textContent = "";
+
+        const state = getMembershipState(memberData);
+
+        // Revoked — show special page
+        if (state === "revoked") {
+          document.getElementById("step-verify").classList.remove("active");
+          document.getElementById("revokedState").style.display = "block";
+          return;
+        }
+
+        showStatusPage(state);
+        document.getElementById("step-verify").classList.remove("active");
+        document.getElementById("step-status").classList.add("active");
+
+      } catch(e) {
+        err.textContent = "Ralat sistem / System error. Please try again.";
+        notice.textContent = "";
+      }
+    });
+
+    function showStatusPage(state) {
+      const a = memberData.sectionA || {};
+      const card = document.getElementById("memberInfoCard");
+      card.innerHTML = `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.6rem 1.2rem;">
+          <div><span style="font-size:0.8rem;color:var(--text-muted);">Nama / Name</span><br/><strong style="text-transform:uppercase;">${a.fullName||"—"}</strong></div>
+          <div><span style="font-size:0.8rem;color:var(--text-muted);">ID Unik / Unique ID</span><br/><strong style="color:var(--marigold);">${memberData.uniqueID||"—"}</strong></div>
+          <div><span style="font-size:0.8rem;color:var(--text-muted);">No. KP / IC No.</span><br/><strong>${memberData.icNo||"—"}</strong></div>
+          <div><span style="font-size:0.8rem;color:var(--text-muted);">Kod Komsel / Cell Group</span><br/><strong>${a.komselCode||"—"}</strong></div>
+          <div><span style="font-size:0.8rem;color:var(--text-muted);">Tarikh Diluluskan / Approved</span><br/><strong>${formatDate(memberData.approvedAt)}</strong></div>
+          <div><span style="font-size:0.8rem;color:var(--text-muted);">Tarikh Tamat / Expires</span><br/><strong>${memberData.approvedAt ? formatExpiryDate(memberData.approvedAt) : "—"}</strong></div>
+        </div>`;
+
+      const banner = document.getElementById("statusBanner");
+
+      if (state === "active") {
+        banner.innerHTML = `
+          <p class="eligibility-bm" style="color:#2E7D52;">✅ Keanggotaan anda masih aktif.</p>
+          <p class="eligibility-en">Your membership is still active. You may choose to renew early.</p>`;
+        document.getElementById("renewalActions").style.display = "block";
+        document.getElementById("noRenewalActions").style.display = "none";
+      } else if (state === "inactive") {
+        banner.innerHTML = `
+          <p class="eligibility-bm" style="color:var(--marigold);">⚠️ Keanggotaan anda tidak aktif. Sila perbaharui dalam tempoh penangguhan 5 tahun.</p>
+          <p class="eligibility-en">Your membership is inactive. Please renew within the 5-year grace period.</p>`;
+        document.getElementById("renewalActions").style.display = "block";
+        document.getElementById("noRenewalActions").style.display = "none";
+      } else if (state === "pending") {
+        banner.innerHTML = `
+          <p class="eligibility-bm" style="color:var(--text-muted);">⏳ Permohonan anda masih dalam semakan. Sila tunggu kelulusan daripada pihak gereja.</p>
+          <p class="eligibility-en">Your application is still under review. Please wait for approval from the church.</p>`;
+        document.getElementById("renewalActions").style.display = "none";
+        document.getElementById("noRenewalActions").style.display = "block";
+      }
+    }
+
+    function formatExpiryDate(approvedAt) {
+      const date = approvedAt?.toDate ? approvedAt.toDate() : new Date(approvedAt);
+      date.setFullYear(date.getFullYear() + MEMBERSHIP_YEARS);
+      return date.toLocaleDateString("ms-MY", { day:"2-digit", month:"long", year:"numeric" });
+    }
+
+    document.getElementById("btnBackRenew")?.addEventListener("click", () => {
+      document.getElementById("step-status").classList.remove("active");
+      document.getElementById("step-verify").classList.add("active");
+    });
+
+    document.getElementById("btnBackNoRenew")?.addEventListener("click", () => {
+      document.getElementById("step-status").classList.remove("active");
+      document.getElementById("step-verify").classList.add("active");
+    });
+
+    document.getElementById("btnConfirmRenew")?.addEventListener("click", async () => {
+      if (!memberDocId) return;
+      const btn = document.getElementById("btnConfirmRenew");
+      btn.disabled = true;
+      btn.textContent = "Memperbaharui... / Renewing...";
+
+      try {
+        const renewedAt = new Date();
+        await db.collection("registrations").doc(memberDocId).update({
+          approved:     true,
+          approvedAt:   firebase.firestore.FieldValue.serverTimestamp(),
+          renewedAt:    firebase.firestore.FieldValue.serverTimestamp(),
+          renewalCount: firebase.firestore.FieldValue.increment(1),
+        });
+
+        document.getElementById("step-status").style.display = "none";
+        document.getElementById("renewSuccess").style.display = "block";
+        window.scrollTo({ top:0, behavior:"smooth" });
+
+      } catch(e) {
+        btn.disabled = false;
+        btn.textContent = "Ya, Perbaharui / Yes, Renew →";
+        document.getElementById("statusBanner").innerHTML += `<p style="color:var(--error);margin-top:0.5rem;">Ralat semasa memperbaharui. Cuba lagi. / Error renewing. Please try again.</p>`;
+      }
+    });
+  </script>
 </body>
 </html>
