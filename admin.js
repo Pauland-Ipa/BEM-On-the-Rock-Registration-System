@@ -7,12 +7,21 @@
 
 document.getElementById("adminFooterYear").textContent = new Date().getFullYear();
 
+function generateAdminUniqueID(fullName, icNo, yearJoining) {
+  const names    = (fullName || "").trim().split(/\s+/).filter(Boolean);
+  const initials = names.map(n => n[0].toUpperCase()).join("");
+  const ic       = (icNo || "").replace(/-/g, "");
+  const last4    = ic.length >= 4 ? ic.slice(-4) : ic.padStart(4, "0");
+  const yr       = String(yearJoining || "").slice(-2);
+  return `${initials}-${last4}-${yr}`;
+}
+
 const SERVICE_NAMES = [
   "","Pastoral","Pekerja Sepenuh Masa (Gereja)","[Rock Wave] Penyanyi","[Rock Wave] Pemain Muzik",
   "[Rock Wave] Penari Kreatif","Multimedia","Pengendali Sistem Bunyi","Pengendali Pencahayaan",
-  "Usher","Keselamatan & Parkir","Krew Pentas","Keramahan untuk Jemaat Baru","Keramahan untuk VIP",
+  "Usher","Keselamatan & Parkir","Krew Pentas","Hospitaliti untuk Jemaat Baru","Hospitaliti untuk VIP",
   "Rock Essence","Rock Resource","Kaunter Maklumat","Pengangkutan","Pendoa Syafaat",
-  "Kebajikan & Sosial","Adiwira","P.A Pastor & Penceramah","Penginjilan","Tim Persembahan"
+  "Kebajikan & Sosial","Adiwira","Pembantu Peribadi Pastor & Penceramah","Penginjilan","Tim Persembahan"
 ];
 
 const genderMap  = { male:"Lelaki / Male", female:"Perempuan / Female" };
@@ -149,9 +158,13 @@ function renderTable() {
 
   data.forEach((reg, i) => {
     const tr = document.createElement("tr");
+    const uniqueID = generateAdminUniqueID(reg.name, reg.icNo, reg.sectionA?.yearJoining);
     tr.innerHTML = `
       <td class="col-num">${i+1}</td>
-      <td>${reg.name||"—"}</td>
+      <td>
+        <div style="font-weight:700;">${(reg.name||"—").toUpperCase()}</div>
+        <div style="font-size:0.78rem;color:var(--marigold);font-family:var(--font-display);letter-spacing:0.05em;">${uniqueID}</div>
+      </td>
       <td>${formatDate(reg.submittedAt || reg.dateApplied)}</td>
       <td>${reg.icNo||"—"}</td>
       <td class="status-cell">
@@ -262,22 +275,28 @@ function buildViewHTML(reg) {
     ? children.map((c,i) => `<div class="view-field"><span class="view-field-label">Anak ${i+1} / Child ${i+1}</span><span class="view-field-value">${c.name||"—"} (${genderMap[c.gender]||"—"}) — MyKid: ${c.myKid||"—"}</span></div>`).join("")
     : `<div class="view-field"><span class="view-field-value">Tiada Anak / No Children aged 12 and below</span></div>`;
   const e = reg.sectionE || {};
+  const photoHTML = reg.photoURL
+    ? `<div class="view-field" style="grid-column:1/-1;display:flex;justify-content:center;margin-bottom:0.5rem;">
+        <img src="${reg.photoURL}" alt="Gambar Pasport" style="width:90px;height:115px;object-fit:cover;border-radius:6px;border:2px solid var(--marigold-dim);"/>
+       </div>`
+    : "";
   return `
     <div class="view-section"><div class="view-section-title">A. Maklumat Peribadi / Personal Information</div>
     <div class="view-grid">
-      <div class="view-field"><span class="view-field-label">Nama Penuh / Full Name</span><span class="view-field-value">${a.fullName||"—"}</span></div>
+      ${photoHTML}
+      <div class="view-field"><span class="view-field-label">Nama Penuh / Full Name</span><span class="view-field-value" style="text-transform:uppercase;">${a.fullName||"—"}</span></div>
       <div class="view-field"><span class="view-field-label">No. KP / IC No.</span><span class="view-field-value">${reg.icNo||"—"}</span></div>
       <div class="view-field"><span class="view-field-label">Jantina / Gender</span><span class="view-field-value">${genderMap[a.gender]||"—"}</span></div>
       <div class="view-field"><span class="view-field-label">Tarikh Lahir / DOB</span><span class="view-field-value">${a.dob||"—"}</span></div>
       <div class="view-field"><span class="view-field-label">Bangsa / Race</span><span class="view-field-value">${a.race||"—"}</span></div>
-      <div class="view-field"><span class="view-field-label">Status Perkahwinan / Marital Status</span><span class="view-field-value">${maritalMap[a.maritalStatus]||"—"}</span></div>
-      <div class="view-field"><span class="view-field-label">Status Pembaptisan / Baptism</span><span class="view-field-value">${baptismMap[a.baptismStatus]||"—"}${a.baptismDate?" ("+a.baptismDate+")":""}</span></div>
+      <div class="view-field"><span class="view-field-label">Status Perkahwinan / Marital Status</span><span class="view-field-value">${maritalMap[a.maritalStatus]||"—"}${a.partnerName?" — "+a.partnerName:""}${a.latePartnerName?" — "+a.latePartnerName:""}</span></div>
+      <div class="view-field"><span class="view-field-label">Status Pembaptisan / Baptism</span><span class="view-field-value">${baptismMap[a.baptismStatus]||"—"}${a.baptismYear?" ("+a.baptismYear+")":""}</span></div>
       <div class="view-field"><span class="view-field-label">Warganegara / Citizenship</span><span class="view-field-value">${a.citizenship==="citizen"?"Warganegara Malaysia":(a.countryOfOrigin||"—")}</span></div>
       <div class="view-field"><span class="view-field-label">Nombor Telefon / Phone</span><span class="view-field-value">${a.phoneNumber||"—"}</span></div>
       <div class="view-field"><span class="view-field-label">Pekerjaan / Occupation</span><span class="view-field-value">${a.occupation||"Tiada Maklumat / No Information"}</span></div>
       <div class="view-field"><span class="view-field-label">Gereja Asal / Original Church</span><span class="view-field-value">${a.originalChurch||"Tiada Maklumat / No Information"}</span></div>
       <div class="view-field"><span class="view-field-label">Tahun Menyertai / Year Joined</span><span class="view-field-value">${a.yearJoining||"—"}</span></div>
-      <div class="view-field"><span class="view-field-label">Kod Komsel / Komsel Code</span><span class="view-field-value">${a.komselCode||"—"}</span></div>
+      <div class="view-field"><span class="view-field-label">Kod Komsel / Cell Group Code</span><span class="view-field-value">${a.komselCode||"—"}</span></div>
       <div class="view-field" style="grid-column:1/-1"><span class="view-field-label">Alamat / Address</span><span class="view-field-value">${a.currentAddress||"—"}</span></div>
     </div></div>
     <div class="view-section"><div class="view-section-title">B. Bidang Pelayanan / Field of Service</div>
@@ -290,7 +309,7 @@ function buildViewHTML(reg) {
     <div class="view-grid"><div class="view-field"><span class="view-field-label">Bersetuju / Agreed</span><span class="view-field-value">${reg.sectionD?.pledgeAgreed?"✅ Ya / Yes":"❌ Tidak / No"}</span></div></div></div>
     <div class="view-section"><div class="view-section-title">E. Pengakuan Jemaat / Confession</div>
     <div class="view-grid">
-      <div class="view-field"><span class="view-field-label">Komsel</span><span class="view-field-value">${e.komsel||"—"}</span></div>
+      <div class="view-field"><span class="view-field-label">Kod Komsel / Cell Group Code</span><span class="view-field-value">${e.komsel||"—"}</span></div>
       <div class="view-field"><span class="view-field-label">Sejak / Since</span><span class="view-field-value">${e.since||"—"}</span></div>
       <div class="view-field"><span class="view-field-label">Pemimpin / Leader</span><span class="view-field-value">${e.leader||"—"}</span></div>
       <div class="view-field"><span class="view-field-label">Tarikh / Date</span><span class="view-field-value">${formatDate(e.date)}</span></div>
@@ -337,8 +356,13 @@ function printRecord(id) {
     : "<p>Tiada Anak berumur 12 tahun dan ke bawah / No Children aged 12 and below</p>";
 
   const e = reg.sectionE || {};
+  const uniqueID = generateAdminUniqueID(reg.name, reg.icNo, a.yearJoining);
+  const photoSection = reg.photoURL
+    ? `<img src="${reg.photoURL}" style="float:right;width:90px;height:115px;object-fit:cover;border:1px solid #000;margin-left:12px;" alt="Photo"/>`
+    : "";
   const pledgeItems = [
-    "Saya mengokong penuh Visi, Misi, Nilai dan Struktur gereja ini memperluaskan kerajaan Syurga di Bumi. / I fully support the Vision, Mission, Values and Structure of this church to expand the kingdom of Heaven on Earth.",
+    "Saya menyokong penuh Visi, Misi, Nilai dan Struktur gereja ini memperluaskan kerajaan Syurga di Bumi. / I fully support the Vision, Mission, Values and Structure of this church to expand the kingdom of Heaven on Earth.",
+    "Saya siap untuk mendokong & terlibat dalam pelayanan yang dipercayakan. / I am ready to support & get involved in the entrusted ministry.",
     "Saya siap untuk setia mendokong & terlibat dalam pelayanan gereja melalui Pemberian Persepuluhan & Sumbangan Kewangan. / I am ready to faithfully support & be involved in church ministry through Tithing & Financial Contributions.",
     "Saya komited untuk setia mendokong pelayanan gereja seperti Ibadah Raya, Komsel & Doa Korporat / Syafaat. / I am committed to faithfully supporting church services such as Raya Worship, Komsel & Corporate Prayer / Intercession.",
     "Saya akan selalu menjaga kesaksian hidup saya baik didalam mahupun diluar gereja. / I will always guard my life's testimony both inside and outside the church.",
@@ -346,13 +370,16 @@ function printRecord(id) {
     "Saya akan taat berdoa bagi pertumbuhan & perkembangan gereja. / I will devoutly pray for the growth & development of the church.",
     "Saya siap untuk dibimbing, dinasihati & ditegur bila keadaan memerlukan demi kebaikan saya. / I am ready to be guided, advised & reprimanded when the situation requires it for my good."
   ];
+    "Saya siap untuk dibimbing, dinasihati & ditegur bila keadaan memerlukan demi kebaikan saya. / I am ready to be guided, advised & reprimanded when the situation requires it for my good."
+  ];
 
-  const printHTML = `<html><head><title>BEM On The Rock — ${a.fullName||"Pendaftar"}</title>
+  const printHTML = `<html><head><title>BEM On The Rock — ${(a.fullName||"Pendaftar").toUpperCase()}</title>
   <style>
     body{font-family:Arial,sans-serif;font-size:11pt;color:#000;margin:2cm}
     h1{text-align:center;font-size:14pt;margin-bottom:2px}
-    h2{text-align:center;font-size:11pt;font-weight:normal;margin-bottom:20px}
-    h3{font-size:11pt;border-bottom:1px solid #000;padding-bottom:3px;margin:18px 0 8px;text-transform:uppercase;letter-spacing:.05em}
+    h2{text-align:center;font-size:11pt;font-weight:normal;margin-bottom:4px}
+    h2.uid{text-align:center;font-size:10pt;color:#888;margin-bottom:16px}
+    h3{font-size:11pt;border-bottom:1px solid #000;padding-bottom:3px;margin:18px 0 8px;text-transform:uppercase;letter-spacing:.05em;clear:both}
     p{margin:3px 0;line-height:1.6}
     table{width:100%;border-collapse:collapse;margin:8px 0}
     th,td{border:1px solid #000;padding:5px 8px;font-size:10pt;text-align:left}
@@ -370,20 +397,22 @@ function printRecord(id) {
   </style></head><body>
   <h1>BEM On The Rock</h1>
   <h2>Borang Pendaftaran Keanggotaan Gereja / Church Membership Registration Form</h2>
+  <h2 class="uid">ID Unik / Unique ID: ${uniqueID}</h2>
   <h3>A. Maklumat Peribadi / Personal Information</h3>
-  <div class="row"><span class="lbl">Nama Penuh / Full Name:</span><span>${a.fullName||"—"}</span></div>
+  ${photoSection}
+  <div class="row"><span class="lbl">Nama Penuh / Full Name:</span><span style="text-transform:uppercase;font-weight:bold">${a.fullName||"—"}</span></div>
   <div class="row"><span class="lbl">No. KP / IC No.:</span><span>${reg.icNo||"—"}</span></div>
   <div class="row"><span class="lbl">Jantina / Gender:</span><span>${genderMap[a.gender]||"—"}</span></div>
   <div class="row"><span class="lbl">Tarikh Lahir / Date of Birth:</span><span>${a.dob||"—"}</span></div>
   <div class="row"><span class="lbl">Bangsa / Race:</span><span>${a.race||"—"}</span></div>
-  <div class="row"><span class="lbl">Status Perkahwinan / Marital Status:</span><span>${maritalMap[a.maritalStatus]||"—"}</span></div>
-  <div class="row"><span class="lbl">Status Pembaptisan / Baptism:</span><span>${baptismMap[a.baptismStatus]||"—"}${a.baptismDate?" ("+a.baptismDate+")":""}</span></div>
+  <div class="row"><span class="lbl">Status Perkahwinan / Marital Status:</span><span>${maritalMap[a.maritalStatus]||"—"}${a.partnerName?" — "+a.partnerName:""}${a.latePartnerName?" — "+a.latePartnerName:""}</span></div>
+  <div class="row"><span class="lbl">Status Pembaptisan / Baptism:</span><span>${baptismMap[a.baptismStatus]||"—"}${a.baptismYear?" ("+a.baptismYear+")":""}</span></div>
   <div class="row"><span class="lbl">Warganegara / Citizenship:</span><span>${a.citizenship==="citizen"?"Warganegara Malaysia":(a.countryOfOrigin||"—")}</span></div>
   <div class="row"><span class="lbl">Nombor Telefon / Phone:</span><span>${a.phoneNumber||"—"}</span></div>
   <div class="row"><span class="lbl">Pekerjaan / Occupation:</span><span>${a.occupation||"Tiada Maklumat / No Information"}</span></div>
   <div class="row"><span class="lbl">Gereja Asal / Original Church:</span><span>${a.originalChurch||"Tiada Maklumat / No Information"}</span></div>
   <div class="row"><span class="lbl">Tahun Menyertai / Year Joined:</span><span>${a.yearJoining||"—"}</span></div>
-  <div class="row"><span class="lbl">Kod Komsel / Komsel Code:</span><span>${a.komselCode||"—"}</span></div>
+  <div class="row"><span class="lbl">Kod Komsel / Cell Group Code:</span><span>${a.komselCode||"—"}</span></div>
   <div class="row"><span class="lbl">Alamat Terkini / Current Address:</span><span>${a.currentAddress||"—"}</span></div>
   <h3>B. Bidang Pelayanan / Field of Service</h3>
   <table><thead><tr><th>Bil.</th><th>Pelayanan / Service</th><th>Pernah Terlibat / Have Been Involved</th><th>Ingin Terlibat / Would Like to Be Involved</th></tr></thead>

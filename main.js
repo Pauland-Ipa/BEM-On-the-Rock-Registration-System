@@ -1,11 +1,5 @@
 /* ═══════════════════════════════════════════════
    BEM On The Rock — main.js
-   Section A Logic:
-   - IC → DOB auto-fill
-   - Conditional fields (baptism date, country)
-   - Year dropdown generation
-   - localStorage draft saving
-   - Form validation
 ═══════════════════════════════════════════════ */
 
 "use strict";
@@ -13,9 +7,13 @@
 // ── DOM Ready ──────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
   buildYearDropdown();
+  buildBaptismYearPicker();
   setFooterYear();
   loadDraft();
   bindEvents();
+  bindPhotoUpload();
+  bindMaritalStatus();
+  bindKomselValidation();
 });
 
 // ═══════════════════════════════════════════════
@@ -23,8 +21,8 @@ document.addEventListener("DOMContentLoaded", () => {
 // ═══════════════════════════════════════════════
 function buildYearDropdown() {
   const select = document.getElementById("yearJoining");
+  if (!select) return;
   const currentYear = new Date().getFullYear();
-
   for (let y = currentYear; y >= 2001; y--) {
     const opt = document.createElement("option");
     opt.value = y;
@@ -34,15 +32,203 @@ function buildYearDropdown() {
 }
 
 // ═══════════════════════════════════════════════
-// 1b. DYNAMIC FOOTER YEAR
+// 1b. BAPTISM YEAR GRID PICKER (1920 → current year)
+// ═══════════════════════════════════════════════
+let baptismPickerPage = 0; // page of 12 years
+const BAPTISM_START = 1920;
+
+function buildBaptismYearPicker() {
+  const currentYear = new Date().getFullYear();
+  const totalYears  = currentYear - BAPTISM_START + 1;
+  const totalPages  = Math.ceil(totalYears / 12);
+  baptismPickerPage = totalPages - 1; // start at most recent page
+
+  const display  = document.getElementById("baptismYearDisplay");
+  const dropdown = document.getElementById("baptismYearDropdown");
+  if (!display || !dropdown) return;
+
+  display.addEventListener("click", (e) => {
+    e.stopPropagation();
+    dropdown.classList.toggle("open");
+    display.classList.toggle("open");
+    renderBaptismYearGrid();
+  });
+
+  document.getElementById("baptismYearPrev")?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (baptismPickerPage > 0) { baptismPickerPage--; renderBaptismYearGrid(); }
+  });
+
+  document.getElementById("baptismYearNext")?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const total = Math.ceil((new Date().getFullYear() - BAPTISM_START + 1) / 12);
+    if (baptismPickerPage < total - 1) { baptismPickerPage++; renderBaptismYearGrid(); }
+  });
+
+  document.addEventListener("click", () => {
+    dropdown.classList.remove("open");
+    display.classList.remove("open");
+  });
+}
+
+function renderBaptismYearGrid() {
+  const grid    = document.getElementById("baptismYearGrid");
+  const navLabel= document.getElementById("baptismYearNavLabel");
+  const currentYear = new Date().getFullYear();
+  if (!grid) return;
+
+  const start = BAPTISM_START + baptismPickerPage * 12;
+  const end   = Math.min(start + 11, currentYear);
+  navLabel.textContent = `${start} – ${end}`;
+
+  grid.innerHTML = "";
+  for (let y = start; y <= start + 11; y++) {
+    const div = document.createElement("div");
+    div.className = "year-grid-item" + (y > currentYear ? " future" : "");
+    div.textContent = y;
+    const saved = document.getElementById("baptismYear")?.value;
+    if (saved && parseInt(saved) === y) div.classList.add("selected");
+    div.addEventListener("click", (e) => {
+      e.stopPropagation();
+      document.getElementById("baptismYear").value = y;
+      document.getElementById("baptismYearLabel").textContent = y;
+      document.getElementById("baptismYearDropdown").classList.remove("open");
+      document.getElementById("baptismYearDisplay").classList.remove("open");
+      grid.querySelectorAll(".year-grid-item").forEach(el => el.classList.remove("selected"));
+      div.classList.add("selected");
+      saveDraft();
+      checkNextButton();
+    });
+    grid.appendChild(div);
+  }
+}
+
+// ═══════════════════════════════════════════════
+// 1c. FOOTER YEAR
 // ═══════════════════════════════════════════════
 function setFooterYear() {
   const el = document.getElementById("footerYear");
   if (el) el.textContent = new Date().getFullYear();
 }
 
+// ═══════════════════════════════════════════════
+// 1d. PHOTO UPLOAD
+// ═══════════════════════════════════════════════
+let photoDataURL = null;
+
+function bindPhotoUpload() {
+  const input   = document.getElementById("photoUpload");
+  const preview = document.getElementById("photoPreviewImg");
+  const previewWrap = document.getElementById("photoPreviewWrap");
+  const label   = document.getElementById("photoUploadLabel");
+  const changeBtn = document.getElementById("photoChangeBtn");
+  const errEl   = document.getElementById("err-photo");
+  if (!input) return;
+
+  input.addEventListener("change", function() {
+    const file = this.files[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      errEl.textContent = "Saiz fail melebihi 2MB / File size exceeds 2MB";
+      return;
+    }
+    errEl.textContent = "";
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      photoDataURL = e.target.result;
+      preview.src  = photoDataURL;
+      previewWrap.classList.add("visible");
+      label.style.display = "none";
+      saveDraft();
+    };
+    reader.readAsDataURL(file);
+  });
+
+  changeBtn?.addEventListener("click", () => {
+    photoDataURL = null;
+    preview.src  = "";
+    previewWrap.classList.remove("visible");
+    label.style.display = "";
+    input.value = "";
+  });
+}
 
 // ═══════════════════════════════════════════════
+// 1e. MARITAL STATUS CONDITIONALS
+// ═══════════════════════════════════════════════
+function bindMaritalStatus() {
+  const select = document.getElementById("maritalStatus");
+  if (!select) return;
+  select.addEventListener("change", function() {
+    const partnerField     = document.getElementById("partnerNameField");
+    const latePartnerField = document.getElementById("latePartnerNameField");
+    const v = this.value;
+    partnerField?.classList.toggle("visible",     v === "engaged" || v === "married");
+    latePartnerField?.classList.toggle("visible", v === "widowed");
+    if (v !== "engaged" && v !== "married") document.getElementById("partnerName").value = "";
+    if (v !== "widowed") document.getElementById("latePartnerName").value = "";
+    saveDraft();
+    checkNextButton();
+  });
+}
+
+// ═══════════════════════════════════════════════
+// 1f. VALID CELL GROUP CODES
+// ═══════════════════════════════════════════════
+const VALID_CELL_CODES = (() => {
+  const codes = [];
+  const add = (prefix, max) => {
+    for (let i = 1; i <= max; i++) codes.push(prefix + i);
+  };
+  add("SN", 15); add("ZV", 13); add("ZPA", 7); add("ZPB", 8);
+  add("ZPC", 5); add("ZPD", 9); add("ZT", 15); add("SA", 10);
+  add("SB", 9);  add("ZC", 5);
+  return codes;
+})();
+
+function normaliseKomsel(val) {
+  return val.toUpperCase().replace(/\s+/g, "");
+}
+
+function isValidKomsel(val) {
+  const norm = normaliseKomsel(val);
+  return VALID_CELL_CODES.some(c => normaliseKomsel(c) === norm);
+}
+
+function bindKomselValidation() {
+  const input = document.getElementById("komselCode");
+  const badge = document.getElementById("komselValidBadge");
+  if (!input || !badge) return;
+  input.addEventListener("input", function() {
+    this.value = this.value.toUpperCase();
+    const val  = this.value.trim();
+    if (!val) { badge.className = "komsel-valid-badge"; return; }
+    if (isValidKomsel(val)) {
+      badge.className = "komsel-valid-badge valid";
+      badge.textContent = "✓ Kod sah / Valid code";
+    } else {
+      badge.className = "komsel-valid-badge invalid";
+      badge.textContent = "✗ Kod tidak sah / Invalid code";
+    }
+    saveDraft();
+    checkNextButton();
+  });
+}
+
+// ═══════════════════════════════════════════════
+// 1g. UNIQUE ID GENERATION
+// Format: Initials-Last4IC-YearJoinedShort
+// ═══════════════════════════════════════════════
+function generateUniqueID(fullName, icNo, yearJoining) {
+  const names    = (fullName || "").trim().split(/\s+/).filter(Boolean);
+  const initials = names.map(n => n[0].toUpperCase()).join("");
+  const ic       = (icNo || "").replace(/-/g, "");
+  const last4    = ic.length >= 4 ? ic.slice(-4) : ic.padStart(4, "0");
+  const yr       = String(yearJoining || "").slice(-2);
+  return `${initials}-${last4}-${yr}`;
+}
+
+
 function parseICToDOB(ic) {
   // Remove dashes
   const clean = ic.replace(/-/g, "");
@@ -80,35 +266,59 @@ function formatIC(value) {
 // ═══════════════════════════════════════════════
 function bindEvents() {
 
-  // ── IC Input: auto-format + auto-fill DOB ──
+  // ── IC Input: auto-format + DOB + gender auto-detect ──
   const icInput = document.getElementById("icNo");
-  icInput.addEventListener("input", function () {
-    const raw = this.value;
-    const formatted = formatIC(raw);
-    this.value = formatted;
+  if (icInput) {
+    icInput.addEventListener("input", function () {
+      const formatted = formatIC(this.value);
+      this.value = formatted;
 
-    const dob = parseICToDOB(formatted);
-    const dobField = document.getElementById("dob");
-    if (dob) {
-      dobField.value = dob;
-      dobField.style.borderColor = "var(--gold-dim)";
-    }
-    saveDraft();
-    checkNextButton();
-  });
+      // Auto-fill DOB
+      const dob = parseICToDOB(formatted);
+      const dobField = document.getElementById("dob");
+      if (dob && dobField) dobField.value = dob;
 
-  // ── Baptism Status: show/hide date field ──
+      // Auto-detect gender from last digit (odd = male, even = female)
+      const clean = formatted.replace(/-/g, "");
+      if (clean.length === 12) {
+        const lastDigit = parseInt(clean[11]);
+        const genderMale   = document.getElementById("genderMale");
+        const genderFemale = document.getElementById("genderFemale");
+        if (genderMale && genderFemale && !genderMale.checked && !genderFemale.checked) {
+          if (lastDigit % 2 !== 0) genderMale.checked   = true;
+          else                      genderFemale.checked = true;
+        }
+      }
+      saveDraft();
+      checkNextButton();
+    });
+  }
+
+  // ── Phone: auto-insert dash after first 3 digits ──
+  const phoneInput = document.getElementById("phoneNumber");
+  if (phoneInput) {
+    phoneInput.addEventListener("input", function () {
+      let digits = this.value.replace(/\D/g, "");
+      if (digits.length > 3) digits = digits.substring(0, 3) + "-" + digits.substring(3);
+      this.value = digits.substring(0, 12);
+      saveDraft();
+      checkNextButton();
+    });
+  }
+
+  // ── Baptism Status: show/hide year picker ──
   const baptismRadios = document.querySelectorAll('input[name="baptismStatus"]');
   baptismRadios.forEach(radio => {
     radio.addEventListener("change", function () {
       const dateField = document.getElementById("baptismDateField");
       if (this.value === "baptised") {
         dateField.classList.add("visible");
-        document.getElementById("baptismDate").required = true;
       } else {
         dateField.classList.remove("visible");
-        document.getElementById("baptismDate").required = false;
-        document.getElementById("baptismDate").value = "";
+        const hid = document.getElementById("baptismYear");
+        if (hid) hid.value = "";
+        const lbl = document.getElementById("baptismYearLabel");
+        if (lbl) lbl.textContent = "-- Pilih Tahun / Select Year --";
         clearError("baptismDate");
       }
       saveDraft();
@@ -123,11 +333,10 @@ function bindEvents() {
       const countryField = document.getElementById("countryField");
       if (this.value === "nonCitizen") {
         countryField.classList.add("visible");
-        document.getElementById("countryOfOrigin").required = true;
       } else {
         countryField.classList.remove("visible");
-        document.getElementById("countryOfOrigin").required = false;
-        document.getElementById("countryOfOrigin").value = "";
+        const co = document.getElementById("countryOfOrigin");
+        if (co) co.value = "";
         clearError("countryOfOrigin");
       }
       saveDraft();
@@ -135,32 +344,27 @@ function bindEvents() {
     });
   });
 
-  // ── Auto-save draft on any input change ──
+  // ── Auto-save on any section-a input ──
   const allInputs = document.querySelectorAll("#section-a input, #section-a select, #section-a textarea");
   allInputs.forEach(input => {
     input.addEventListener("change", () => { saveDraft(); checkNextButton(); });
-    input.addEventListener("input", () => checkNextButton());
+    input.addEventListener("input",  () => checkNextButton());
   });
 
-  // ── Save Draft Button ──
-  document.getElementById("btnSaveDraft").addEventListener("click", () => {
-    saveDraft();
-    showDraftNotice("✅ Draf disimpan! / Draft saved!");
-  });
-
-  // ── Next Button — TEMPORARILY UNRESTRICTED FOR TESTING ──
-  // TODO: Re-enable validation once all sections A–E are complete
-  document.getElementById("btnNext").disabled = false;
-  document.getElementById("btnNext").addEventListener("click", () => {
-    saveDraft();
-    navigateTo("b");
-  });
+  // ── Next Button — unrestricted for testing ──
+  const btnNext = document.getElementById("btnNext");
+  if (btnNext) {
+    btnNext.disabled = false;
+    btnNext.addEventListener("click", () => {
+      saveDraft();
+      navigateTo("b");
+    });
+  }
 
   // ── Step Navigator clicks ──
   document.querySelectorAll(".step").forEach(step => {
     step.addEventListener("click", function () {
-      const target = this.dataset.section;
-      navigateTo(target);
+      navigateTo(this.dataset.section);
     });
   });
 
@@ -185,24 +389,26 @@ const DRAFT_KEY = "bem_otr_draft_sectionA";
 
 function collectSectionAData() {
   return {
-    fullName:       document.getElementById("fullName").value,
-    icNo:           document.getElementById("icNo").value,
-    gender:         document.querySelector('input[name="gender"]:checked')?.value || "",
-    dob:            document.getElementById("dob").value,
-    race:           document.getElementById("race").value,
-    maritalStatus:  document.getElementById("maritalStatus").value,
-    baptismStatus:  document.querySelector('input[name="baptismStatus"]:checked')?.value || "",
-    baptismDate:    document.getElementById("baptismDate").value,
-    citizenship:    document.querySelector('input[name="citizenship"]:checked')?.value || "",
-    countryOfOrigin:document.getElementById("countryOfOrigin").value,
-    originalChurch: document.getElementById("originalChurch").value,
-    yearJoining:    document.getElementById("yearJoining").value,
-    komselCode:     document.getElementById("komselCode").value,
-    occupation:     document.getElementById("occupation").value,
-    phoneNumber:    document.getElementById("phoneNumber").value,
-    currentAddress: document.getElementById("currentAddress").value,
-    memberRole:     document.querySelector('input[name="memberRole"]:checked')?.value || "",
-    savedAt:        new Date().toISOString(),
+    fullName:        document.getElementById("fullName")?.value || "",
+    icNo:            document.getElementById("icNo")?.value || "",
+    gender:          document.querySelector('input[name="gender"]:checked')?.value || "",
+    dob:             document.getElementById("dob")?.value || "",
+    race:            document.getElementById("race")?.value || "",
+    maritalStatus:   document.getElementById("maritalStatus")?.value || "",
+    partnerName:     document.getElementById("partnerName")?.value || "",
+    latePartnerName: document.getElementById("latePartnerName")?.value || "",
+    baptismStatus:   document.querySelector('input[name="baptismStatus"]:checked')?.value || "",
+    baptismYear:     document.getElementById("baptismYear")?.value || "",
+    citizenship:     document.querySelector('input[name="citizenship"]:checked')?.value || "",
+    countryOfOrigin: document.getElementById("countryOfOrigin")?.value || "",
+    originalChurch:  document.getElementById("originalChurch")?.value || "",
+    yearJoining:     document.getElementById("yearJoining")?.value || "",
+    komselCode:      document.getElementById("komselCode")?.value || "",
+    occupation:      document.getElementById("occupation")?.value || "",
+    phoneNumber:     document.getElementById("phoneNumber")?.value || "",
+    currentAddress:  document.getElementById("currentAddress")?.value || "",
+    memberRole:      document.querySelector('input[name="memberRole"]:checked')?.value || "",
+    savedAt:         new Date().toISOString(),
   };
 }
 
@@ -454,8 +660,8 @@ const SERVICES = [
   "Usher / Usher",
   "Keselamatan & Parkir / Security & Parking",
   "Krew Pentas / Stage Crew",
-  "Keramahan untuk Jemaat Baru / Hospitality for Newcomers",
-  "Keramahan untuk VIP / Hospitality for VIP",
+  "Hospitaliti untuk Jemaat Baru / Hospitality for Newcomers",
+  "Hospitaliti untuk VIP / Hospitality for VIP",
   "Rock Essence / Rock Essence",
   "Rock Resource / Rock Resource",
   "Kaunter Maklumat / Information Counter",
@@ -463,7 +669,7 @@ const SERVICES = [
   "Pendoa Syafaat / Intercessor",
   "Kebajikan & Sosial / Welfare & Social",
   "Adiwira / Adiwira",
-  "P.A Pastor & Penceramah / P.A Pastor & Speakers",
+  "Pembantu Peribadi Pastor & Penceramah / Pastoral Personal Assistant & Speaker",
   "Penginjilan / Evangelism",
   "Tim Persembahan / Offering Team",
 ];
@@ -940,33 +1146,33 @@ function initSectionE() {
       const sectionEDraft = JSON.parse(localStorage.getItem("bem_otr_draft_sectionE") || "{}");
 
       const registrationData = {
-        // Top-level fields for admin table display
-        name:        sectionADraft.fullName  || "",
+        name:        (sectionADraft.fullName || "").toUpperCase(),
         icNo:        icVal,
         dateApplied: new Date().toISOString().split("T")[0],
         approved:    false,
+        uniqueID:    generateUniqueID(sectionADraft.fullName, icVal, sectionADraft.yearJoining),
+        memberRole:  sectionADraft.memberRole || "",
+        photoURL:    photoDataURL || "",
 
-        // Member role (from above Section A)
-        memberRole: sectionADraft.memberRole || "",
-
-        // Section data
         sectionA: {
-          fullName:       sectionADraft.fullName       || "",
-          icNo:           icVal,
-          gender:         sectionADraft.gender         || "",
-          dob:            sectionADraft.dob            || "",
-          race:           sectionADraft.race           || "",
-          maritalStatus:  sectionADraft.maritalStatus  || "",
-          baptismStatus:  sectionADraft.baptismStatus  || "",
-          baptismDate:    sectionADraft.baptismDate     || "",
-          citizenship:    sectionADraft.citizenship     || "",
-          countryOfOrigin:sectionADraft.countryOfOrigin|| "",
-          phoneNumber:    sectionADraft.phoneNumber    || "",
-          occupation:     sectionADraft.occupation     || "",
-          originalChurch: sectionADraft.originalChurch || "",
-          yearJoining:    sectionADraft.yearJoining    || "",
-          komselCode:     sectionADraft.komselCode     || "",
-          currentAddress: sectionADraft.currentAddress || "",
+          fullName:        (sectionADraft.fullName || "").toUpperCase(),
+          icNo:            icVal,
+          gender:          sectionADraft.gender          || "",
+          dob:             sectionADraft.dob             || "",
+          race:            sectionADraft.race            || "",
+          maritalStatus:   sectionADraft.maritalStatus   || "",
+          partnerName:     sectionADraft.partnerName     || "",
+          latePartnerName: sectionADraft.latePartnerName || "",
+          baptismStatus:   sectionADraft.baptismStatus   || "",
+          baptismYear:     sectionADraft.baptismYear     || "",
+          citizenship:     sectionADraft.citizenship     || "",
+          countryOfOrigin: sectionADraft.countryOfOrigin || "",
+          phoneNumber:     sectionADraft.phoneNumber     || "",
+          occupation:      sectionADraft.occupation      || "",
+          originalChurch:  sectionADraft.originalChurch  || "",
+          yearJoining:     sectionADraft.yearJoining     || "",
+          komselCode:      sectionADraft.komselCode      || "",
+          currentAddress:  sectionADraft.currentAddress  || "",
         },
         sectionB: {
           services:         sectionBDraft.services         || {},
@@ -974,12 +1180,8 @@ function initSectionE() {
           othersServiceName:sectionBDraft.othersServiceName || "",
           othersInvolvement:sectionBDraft.othersInvolvement || "",
         },
-        sectionC: {
-          children: sectionCDraft.children || [],
-        },
-        sectionD: {
-          pledgeAgreed: sectionDDraft.pledgeAgreed || false,
-        },
+        sectionC: { children: sectionCDraft.children || [] },
+        sectionD: { pledgeAgreed: sectionDDraft.pledgeAgreed || false },
         sectionE: {
           komsel: document.getElementById("confessionKomsel")?.value || "",
           since:  document.getElementById("confessionSince")?.value  || "",
@@ -987,7 +1189,6 @@ function initSectionE() {
           name:   document.getElementById("confessionName")?.value   || "",
           date:   document.getElementById("confessionDate")?.value   || "",
         },
-
         submittedAt: firebase.firestore.FieldValue.serverTimestamp(),
       };
 

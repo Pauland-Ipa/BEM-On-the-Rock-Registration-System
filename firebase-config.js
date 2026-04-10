@@ -18,5 +18,6 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 
 // Export globals for use in main.js and admin.js
-const db   = firebase.firestore();
-const auth = firebase.auth();
+const db      = firebase.firestore();
+const auth    = firebase.auth();
+const storage = firebase.storage();
