@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BEM On The Rock — Maklumat Anggota Meninggal</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet"/>
+</head>
+<body>
+  <div class="theme-toggle-wrap" id="themeToggleWrap">
+    <span class="theme-icon">☀️</span>
+    <label class="theme-switch">
+      <input type="checkbox" id="themeToggle"/>
+      <span class="theme-slider"></span>
+    </label>
+    <span class="theme-icon">🌙</span>
+  </div>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="logo-wrap"><img src="Images/logo.jpg" alt="BEM On The Rock" class="logo-img"/></div>
+      <div class="header-text">
+        <h1 class="church-name">BEM On The Rock</h1>
+        <p class="church-subtitle">Kemas Kini Maklumat Anggota yang Telah Meninggal Dunia / Update Information of the Deceased</p>
+      </div>
+      <div class="logo-wrap logo-wrap-right"><img src="Images/logo_bem_sib.png" alt="B.E.M" class="logo-img logo-bem"/></div>
+    </div>
+  </header>
+
+  <main class="form-main">
+    <a href="home.html" class="back-home-btn">&#8592; Kembali ke Halaman Rumah / Back to Home Page</a>
+
+    <!-- Step 1: Verify reporter -->
+    <section class="form-section active" id="step-verify">
+      <div class="section-header">
+        <div class="section-badge">1</div>
+        <div>
+          <h2 class="section-title">Pengesahan Anggota / Member Verification</h2>
+          <p class="section-subtitle">Sila masukkan No. KP anda untuk mengesahkan status keanggotaan anda.</p>
+          <p class="section-subtitle">Please enter your IC No. to verify your membership status.</p>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group full-width">
+          <label class="form-label" for="reporterIC">No. KP Anda / Your IC No. <span class="required">*</span></label>
+          <input type="text" id="reporterIC" class="form-input" placeholder="cth/e.g. 901231-14-5678" maxlength="14"/>
+          <span class="error-msg" id="err-reporterIC"></span>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" id="btnVerifyReporter">Seterusnya / Next &rarr;</button>
+      </div>
+      <div class="draft-notice" id="verifyNotice"></div>
+    </section>
+
+    <!-- Step 2: Deceased info -->
+    <section class="form-section" id="step-deceased">
+      <div class="section-header">
+        <div class="section-badge">2</div>
+        <div>
+          <h2 class="section-title">Maklumat Anggota Meninggal / Deceased Member Information</h2>
+          <p class="section-subtitle">Sila isi maklumat anggota yang telah meninggal dunia.</p>
+          <p class="section-subtitle">Please fill in the information of the deceased member.</p>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label" for="deceasedIC">No. KP si Mati / Deceased IC No. <span class="required">*</span></label>
+          <input type="text" id="deceasedIC" class="form-input" placeholder="cth/e.g. 901231-14-5678" maxlength="14"/>
+          <span class="error-msg" id="err-deceasedIC"></span>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="graveLot">Nombor Lot Kubur / Grave Lot Number <span class="required">*</span></label>
+          <input type="text" id="graveLot" class="form-input" placeholder="cth/e.g. A-123"/>
+          <span class="error-msg" id="err-graveLot"></span>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="dateOfPassing">Tarikh Kematian / Date of Passing <span class="required">*</span></label>
+          <input type="date" id="dateOfPassing" class="form-input"/>
+          <span class="error-msg" id="err-dateOfPassing"></span>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-secondary" id="btnBackDeceased">&larr; Kembali / Back</button>
+        <button class="btn btn-primary" id="btnSubmitDeceased">Hantar / Submit &rarr;</button>
+      </div>
+    </section>
+
+    <!-- Step 3: Success -->
+    <div id="deceasedSuccess" style="display:none;">
+      <div class="success-card">
+        <div class="success-icon">🕊️</div>
+        <h2 class="success-title">Maklumat Telah Dihantar</h2>
+        <p class="success-title-en">Information Submitted</p>
+        <p class="success-msg">Semoga rohnya tenang. Terima kasih kerana memaklumkan pihak gereja.</p>
+        <p class="success-msg-en">May their soul rest in peace. Thank you for notifying the church.</p>
+        <a href="home.html" class="btn btn-primary success-back-btn">&#8592; Kembali ke Halaman Rumah / Back to Home Page</a>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <p>&copy; <span id="deceasedFooterYear"></span> BEM On The Rock. Hak Cipta Terpelihara / All Rights Reserved.</p>
+  </footer>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="theme.js"></script>
+  <script>
+    document.getElementById("deceasedFooterYear").textContent = new Date().getFullYear();
+
+    function formatIC(value) {
+      const digits = value.replace(/\D/g,"");
+      let f = digits;
+      if (digits.length > 6) f = digits.substring(0,6)+"-"+digits.substring(6);
+      if (digits.length > 8) f = f.substring(0,9)+"-"+digits.substring(8);
+      return f.substring(0,14);
+    }
+
+    document.getElementById("reporterIC").addEventListener("input", function() {
+      this.value = formatIC(this.value);
+    });
+    document.getElementById("deceasedIC").addEventListener("input", function() {
+      this.value = formatIC(this.value);
+    });
+
+    document.getElementById("btnVerifyReporter").addEventListener("click", async () => {
+      const ic = document.getElementById("reporterIC").value.replace(/-/g,"");
+      const errEl = document.getElementById("err-reporterIC");
+      const notice = document.getElementById("verifyNotice");
+      errEl.textContent = "";
+      if (ic.length !== 12) { errEl.textContent = "Sila masukkan No. KP yang sah / Please enter a valid IC No."; return; }
+
+      notice.textContent = "Menyemak... / Checking...";
+      try {
+        const snap = await db.collection("registrations").where("icNo","==",ic).where("approved","==",true).get();
+        if (snap.empty) {
+          errEl.textContent = "No. KP ini bukan anggota aktif / This IC No. is not an active member.";
+          notice.textContent = "";
+        } else {
+          notice.textContent = "";
+          document.getElementById("step-verify").classList.remove("active");
+          document.getElementById("step-deceased").classList.add("active");
+        }
+      } catch(e) {
+        errEl.textContent = "Ralat sistem / System error. Please try again.";
+        notice.textContent = "";
+      }
+    });
+
+    document.getElementById("btnBackDeceased").addEventListener("click", () => {
+      document.getElementById("step-deceased").classList.remove("active");
+      document.getElementById("step-verify").classList.add("active");
+    });
+
+    document.getElementById("btnSubmitDeceased").addEventListener("click", async () => {
+      const reporterIC = document.getElementById("reporterIC").value.replace(/-/g,"");
+      const deceasedIC = document.getElementById("deceasedIC").value.replace(/-/g,"");
+      const graveLot   = document.getElementById("graveLot").value.trim();
+      const dateOfPassing = document.getElementById("dateOfPassing").value;
+      let valid = true;
+
+      ["deceasedIC","graveLot","dateOfPassing"].forEach(id => {
+        document.getElementById("err-"+id).textContent = "";
+      });
+      if (deceasedIC.length !== 12) { document.getElementById("err-deceasedIC").textContent = "No. KP tidak sah / Invalid IC No."; valid = false; }
+      if (!graveLot) { document.getElementById("err-graveLot").textContent = "Sila isi nombor lot kubur / Please enter grave lot number"; valid = false; }
+      if (!dateOfPassing) { document.getElementById("err-dateOfPassing").textContent = "Sila pilih tarikh / Please select date"; valid = false; }
+      if (!valid) return;
+
+      try {
+        // Mark deceased in Firestore
+        const snap = await db.collection("registrations").where("icNo","==",deceasedIC).get();
+        if (snap.empty) { document.getElementById("err-deceasedIC").textContent = "Tiada rekod dengan No. KP ini / No record found with this IC No."; return; }
+        const docId = snap.docs[0].id;
+        await db.collection("registrations").doc(docId).update({
+          deceased: true,
+          deceasedDeclaredBy: reporterIC,
+          deceasedGraveLot: graveLot,
+          deceasedDate: dateOfPassing,
+          deceasedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        document.getElementById("step-deceased").style.display = "none";
+        document.getElementById("deceasedSuccess").style.display = "block";
+      } catch(e) {
+        alert("Ralat semasa menghantar / Error submitting. Please try again.");
+      }
+    });
+  </script>
+</body>
+</html>

@@ -63,6 +63,7 @@
 
   <!-- ═══ MAIN FORM ═══ -->
   <main class="form-main">
+    <a href="home.html" class="back-home-btn">&#8592; Kembali ke Halaman Rumah / Back to Home Page</a>
     <form id="registrationForm" novalidate>
 
       <!-- ── SECTION A ── -->
@@ -125,6 +126,27 @@
         </div>
 
         <div class="form-grid">
+
+          <!-- 0. Photo Upload -->
+          <div class="form-group full-width">
+            <label class="form-label">
+              Gambar Pasport <span class="label-en">/ Passport Photo</span>
+            </label>
+            <div class="photo-upload-wrap">
+              <label class="photo-upload-label" id="photoUploadLabel">
+                <input type="file" id="photoUpload" name="photoUpload" accept=".jpg,.jpeg,.png,.webp" />
+                <span class="photo-upload-icon">📷</span>
+                <span class="photo-upload-text-bm">Sila muat naik gambar terkini berukuran pasport rasmi.</span>
+                <span class="photo-upload-text-en">Please upload a recent, formal passport-sized photo. Maximum file size is 2MB.</span>
+                <span class="photo-upload-text-en">Format: JPG, JPEG, PNG, WEBP</span>
+              </label>
+              <div class="photo-preview-wrap" id="photoPreviewWrap">
+                <img src="" alt="Preview" class="photo-preview-img" id="photoPreviewImg"/>
+                <button type="button" class="photo-change-btn" id="photoChangeBtn">✎ Tukar / Change</button>
+              </div>
+              <span class="error-msg" id="err-photo"></span>
+            </div>
+          </div>
 
           <!-- 1. Full Name -->
           <div class="form-group full-width">
@@ -225,9 +247,31 @@
               <option value="engaged">Bertunang / Engaged</option>
               <option value="married">Berkahwin / Married</option>
               <option value="divorced">Bercerai / Divorced</option>
-              <option value="widowed">Janda/Duda / Widowed</option>
+              <option value="widowed">Balu/Duda [Pasangan meninggal] / Widowed</option>
             </select>
             <span class="error-msg" id="err-maritalStatus"></span>
+
+            <!-- Conditional: Partner's Name (Engaged or Married) -->
+            <div class="conditional-field" id="partnerNameField">
+              <label class="form-label" for="partnerName">
+                Nama Pasangan <span class="label-en">/ Partner's Name</span>
+                <span class="required">*</span>
+              </label>
+              <input type="text" id="partnerName" name="partnerName"
+                class="form-input" placeholder="Masukkan nama pasangan / Enter partner's name"/>
+              <span class="error-msg" id="err-partnerName"></span>
+            </div>
+
+            <!-- Conditional: Late Partner's Name (Widowed) -->
+            <div class="conditional-field" id="latePartnerNameField">
+              <label class="form-label" for="latePartnerName">
+                Nama Pasangan yang Sudah Meninggal <span class="label-en">/ Late Partner's Name</span>
+                <span class="required">*</span>
+              </label>
+              <input type="text" id="latePartnerName" name="latePartnerName"
+                class="form-input" placeholder="Masukkan nama / Enter name"/>
+              <span class="error-msg" id="err-latePartnerName"></span>
+            </div>
           </div>
 
           <!-- 7. Baptism Status -->
@@ -250,13 +294,27 @@
             </div>
             <span class="error-msg" id="err-baptismStatus"></span>
 
-            <!-- Conditional: Baptism Date -->
+            <!-- Conditional: Year of Baptism (grid picker) -->
             <div class="conditional-field" id="baptismDateField">
-              <label class="form-label" for="baptismDate">
-                Tarikh Pembaptisan <span class="label-en">/ Date of Baptism</span>
+              <label class="form-label">
+                Tahun Pembaptisan <span class="label-en">/ Year of Baptism</span>
                 <span class="required">*</span>
               </label>
-              <input type="date" id="baptismDate" name="baptismDate" class="form-input" />
+              <div class="year-picker-wrap">
+                <button type="button" class="year-picker-display" id="baptismYearDisplay">
+                  <span id="baptismYearLabel">-- Pilih Tahun / Select Year --</span>
+                  <span class="year-picker-arrow">▼</span>
+                </button>
+                <div class="year-picker-dropdown" id="baptismYearDropdown">
+                  <div class="year-picker-nav">
+                    <button type="button" class="year-nav-btn" id="baptismYearPrev">&#8249;</button>
+                    <span class="year-nav-label" id="baptismYearNavLabel"></span>
+                    <button type="button" class="year-nav-btn" id="baptismYearNext">&#8250;</button>
+                  </div>
+                  <div class="year-grid" id="baptismYearGrid"></div>
+                </div>
+              </div>
+              <input type="hidden" id="baptismYear" name="baptismYear"/>
               <span class="error-msg" id="err-baptismDate"></span>
             </div>
           </div>
@@ -315,14 +373,16 @@
             <span class="error-msg" id="err-yearJoining"></span>
           </div>
 
-          <!-- 11. Komsel Code -->
+          <!-- 11. Cell Group Code -->
           <div class="form-group">
             <label class="form-label" for="komselCode">
-              Kod Komsel <span class="label-en">/ Komsel Code</span>
+              Kod Komsel <span class="label-en">/ Cell Group Code</span>
               <span class="required">*</span>
             </label>
             <input type="text" id="komselCode" name="komselCode"
-              class="form-input" placeholder="Masukkan Kod / Enter Code" />
+              class="form-input" placeholder="cth/e.g. SN 1, ZV 3, ZPA 2..."
+              style="text-transform:uppercase;" />
+            <span class="komsel-valid-badge" id="komselValidBadge"></span>
             <span class="error-msg" id="err-komselCode"></span>
           </div>
 
@@ -346,11 +406,8 @@
           <span class="required">*</span> Ruangan bertanda asterisk wajib diisi sebelum meneruskan ke seksyen berikutnya. / Fields marked with an asterisk must be filled in before proceeding to the next section.
         </p>
 
-        <!-- Action Buttons -->
+        <!-- Action Buttons — Save Draft removed (auto-save) -->
         <div class="form-actions">
-          <button type="button" class="btn btn-secondary" id="btnSaveDraft">
-            💾 Simpan Draf / Save Draft
-          </button>
           <button type="button" class="btn btn-primary" id="btnNext" disabled>
             Seterusnya / Next &rarr;
           </button>
@@ -512,8 +569,13 @@
           <ol class="pledge-list">
 
             <li class="pledge-item">
-              <p class="pledge-bm">Saya mengokong penuh Visi, Misi, Nilai dan Struktur gereja ini memperluaskan kerajaan Syurga di Bumi.</p>
+              <p class="pledge-bm">Saya menyokong penuh Visi, Misi, Nilai dan Struktur gereja ini memperluaskan kerajaan Syurga di Bumi.</p>
               <p class="pledge-en">I fully support the Vision, Mission, Values and Structure of this church to expand the kingdom of Heaven on Earth.</p>
+            </li>
+
+            <li class="pledge-item">
+              <p class="pledge-bm">Saya siap untuk mendokong &amp; terlibat dalam pelayanan yang dipercayakan.</p>
+              <p class="pledge-en">I am ready to support &amp; get involved in the entrusted ministry.</p>
             </li>
 
             <li class="pledge-item">
@@ -720,15 +782,16 @@
 
   <footer class="site-footer">
     <p>&copy; <span id="footerYear"></span> BEM On The Rock. Hak Cipta Terpelihara / All Rights Reserved.</p>
-    <a href="admin.html" class="admin-footer-link">Admin</a>
   </footer>
 
-  <!-- Firebase CDN (compat version — must load before firebase-config.js) -->
+  <!-- Firebase CDN -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 
   <script src="firebase-config.js"></script>
+  <script src="theme.js"></script>
   <script src="language_strings.js"></script>
   <script src="main.js"></script>
 </body>
