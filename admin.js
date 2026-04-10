@@ -370,8 +370,6 @@ function printRecord(id) {
     "Saya akan taat berdoa bagi pertumbuhan & perkembangan gereja. / I will devoutly pray for the growth & development of the church.",
     "Saya siap untuk dibimbing, dinasihati & ditegur bila keadaan memerlukan demi kebaikan saya. / I am ready to be guided, advised & reprimanded when the situation requires it for my good."
   ];
-    "Saya siap untuk dibimbing, dinasihati & ditegur bila keadaan memerlukan demi kebaikan saya. / I am ready to be guided, advised & reprimanded when the situation requires it for my good."
-  ];
 
   const printHTML = `<html><head><title>BEM On The Rock — ${(a.fullName||"Pendaftar").toUpperCase()}</title>
   <style>
