@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BEM On The Rock</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="home.css"/>
+</head>
+<body class="home-body">
+
+  <!-- Dark/Light mode toggle -->
+  <div class="theme-toggle-wrap" id="themeToggleWrap">
+    <span class="theme-icon">☀️</span>
+    <label class="theme-switch">
+      <input type="checkbox" id="themeToggle"/>
+      <span class="theme-slider"></span>
+    </label>
+    <span class="theme-icon">🌙</span>
+  </div>
+
+  <div class="home-page">
+
+    <!-- Header -->
+    <header class="site-header home-header">
+      <div class="header-inner">
+        <div class="logo-wrap">
+          <img src="Images/logo.jpg" alt="BEM On The Rock" class="logo-img"/>
+        </div>
+        <div class="header-text">
+          <h1 class="church-name">BEM On The Rock</h1>
+          <p class="church-subtitle">Gereja Evangelikal Borneo Malaysia</p>
+        </div>
+        <div class="logo-wrap logo-wrap-right">
+          <img src="Images/logo_bem_sib.png" alt="B.E.M" class="logo-img logo-bem"/>
+        </div>
+      </div>
+    </header>
+
+    <!-- Hero Welcome Section -->
+    <main class="home-main">
+      <div class="home-welcome-card">
+        <p class="home-welcome-bm">Selamat Datang</p>
+        <p class="home-welcome-en">Welcome</p>
+
+        <div class="home-btn-grid">
+
+          <a href="index.html" class="home-nav-btn">
+            <span class="home-btn-icon">📋</span>
+            <span class="home-btn-bm">Mendaftar sebagai Anggota Gereja</span>
+            <span class="home-btn-en">Register as a Church Member</span>
+          </a>
+
+          <a href="renewal.html" class="home-nav-btn">
+            <span class="home-btn-icon">🔄</span>
+            <span class="home-btn-bm">Pembaharuan Keanggotaan</span>
+            <span class="home-btn-en">Membership Renewal</span>
+          </a>
+
+          <a href="update-info.html" class="home-nav-btn">
+            <span class="home-btn-icon">✏️</span>
+            <span class="home-btn-bm">Kemas Kini Maklumat Anda</span>
+            <span class="home-btn-en">Update Your Information</span>
+          </a>
+
+          <a href="#" class="home-nav-btn home-nav-btn--disabled">
+            <span class="home-btn-icon">🏛️</span>
+            <span class="home-btn-bm">Pindah Gereja</span>
+            <span class="home-btn-en">Transfer Church</span>
+            <span class="home-btn-soon">Akan Datang / Coming Soon</span>
+          </a>
+
+          <a href="deceased.html" class="home-nav-btn">
+            <span class="home-btn-icon">🕊️</span>
+            <span class="home-btn-bm">Kemas Kini Maklumat Anggota yang Telah Meninggal Dunia</span>
+            <span class="home-btn-en">Update Information of the Deceased</span>
+          </a>
+
+          <a href="admin.html" class="home-nav-btn home-nav-btn--admin">
+            <span class="home-btn-icon">🔒</span>
+            <span class="home-btn-bm">Log In Admin</span>
+            <span class="home-btn-en">Admin Login</span>
+          </a>
+
+        </div>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <p>&copy; <span id="homeFooterYear"></span> BEM On The Rock. Hak Cipta Terpelihara / All Rights Reserved.</p>
+    </footer>
+
+  </div>
+
+  <script>
+    document.getElementById("homeFooterYear").textContent = new Date().getFullYear();
+
+    // Theme toggle
+    const toggle = document.getElementById("themeToggle");
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const saved = localStorage.getItem("bem_theme");
+    const isDark = saved ? saved === "dark" : prefersDark;
+    document.documentElement.setAttribute("data-theme", isDark ? "dark" : "light");
+    toggle.checked = isDark;
+    toggle.addEventListener("change", () => {
+      const dark = toggle.checked;
+      document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+      localStorage.setItem("bem_theme", dark ? "dark" : "light");
+    });
+  </script>
+</body>
+</html>
