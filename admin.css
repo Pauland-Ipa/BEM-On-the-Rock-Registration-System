@@ -502,3 +502,123 @@
   .view-grid { grid-template-columns: 1fr; }
   .admin-table td, .admin-table thead th { padding: 0.6rem 0.5rem; font-size: 0.82rem; }
 }
+
+/* ══════════════════════════════════════
+   ADMIN CONTENT CARD (glass background)
+══════════════════════════════════════ */
+.admin-content-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  padding: 1.8rem;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.35);
+  margin-bottom: 2rem;
+}
+
+/* ── Stats button ── */
+.admin-stats-btn { font-size: 0.82rem; padding: 0.5rem 1.1rem; text-decoration: none; }
+
+/* ── Photo column ── */
+.col-photo { width: 60px; text-align: center; }
+.admin-photo-thumb {
+  width: 44px; height: 55px; object-fit: cover;
+  border-radius: 4px; border: 1px solid var(--marigold-dim);
+}
+.admin-photo-placeholder {
+  width: 44px; height: 55px; line-height: 55px; text-align: center;
+  background: var(--bg-input); border-radius: 4px;
+  border: 1px solid var(--border-input); font-size: 1.4rem;
+  margin: 0 auto;
+}
+
+/* ── Name & ID column ── */
+.col-nameID { min-width: 160px; }
+.admin-name-bold { font-weight: 700; color: var(--text-primary); font-size: 0.97rem; text-transform: uppercase; }
+.admin-uid-tag { font-family: var(--font-display); font-size: 0.72rem; color: var(--marigold); letter-spacing: 0.05em; margin-top: 2px; }
+
+/* ── Membership status badges ── */
+.membership-badge {
+  display: inline-block; padding: 0.28rem 0.7rem; border-radius: 999px;
+  font-family: var(--font-display); font-size: 0.72rem; font-weight: 700;
+  letter-spacing: 0.05em; white-space: nowrap;
+}
+.membership-badge--active   { background: rgba(46,125,82,0.2);  color: #4CAF7D; border: 1px solid #2E7D52; }
+.membership-badge--inactive { background: rgba(209,50,50,0.15); color: #E05555; border: 1px solid #C0392B; }
+
+/* ── Modal size ── */
+.modal-card--lg { max-width: 780px; max-height: 88vh; }
+
+/* ── View Field formatting (vf) ── */
+.vf-section-title {
+  font-family: var(--font-display); font-size: 0.78rem; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--marigold); padding: 0.5rem 0 0.4rem;
+  border-bottom: 1px solid var(--border-card); margin: 1rem 0 0.7rem;
+}
+
+.vf-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.55rem 1.5rem; }
+
+.vf-row { display: flex; flex-direction: column; gap: 0.1rem; }
+
+.vf-label {
+  font-size: 0.78rem; color: var(--text-muted); font-style: italic;
+  font-weight: 600; white-space: nowrap;
+}
+
+.vf-value {
+  font-size: 0.97rem; color: var(--text-primary); font-weight: 600; line-height: 1.4;
+}
+
+/* ── Statistics page ── */
+.stats-filter-bar {
+  display: flex; align-items: center; gap: 1rem;
+  margin-bottom: 1.5rem; flex-wrap: wrap;
+}
+
+.stats-loading { color: var(--marigold); font-style: italic; font-size: 0.9rem; }
+
+.stats-summary-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem; margin-bottom: 2rem;
+}
+
+.stats-summary-card {
+  background: rgba(255,140,0,0.08); border: 1px solid var(--border-card);
+  border-radius: var(--radius); padding: 1.1rem; text-align: center;
+}
+.stats-summary-card--green  { background: rgba(76,175,125,0.1);  border-color: rgba(76,175,125,0.3); }
+.stats-summary-card--red    { background: rgba(224,85,85,0.1);   border-color: rgba(224,85,85,0.3); }
+.stats-summary-card--blue   { background: rgba(41,128,185,0.1);  border-color: rgba(41,128,185,0.3); }
+.stats-summary-card--orange { background: rgba(255,140,0,0.1);   border-color: rgba(255,140,0,0.3); }
+
+.stats-summary-num {
+  font-family: var(--font-display); font-size: 2.2rem; color: var(--marigold-bright);
+  font-weight: 700; line-height: 1;
+}
+.stats-summary-label { font-size: 0.82rem; color: var(--text-muted); margin-top: 0.35rem; line-height: 1.4; }
+.stats-summary-label em { display: block; font-size: 0.75rem; }
+
+.stats-charts-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;
+}
+
+.stats-chart-card {
+  background: rgba(255,255,255,0.03); border: 1px solid var(--border-card);
+  border-radius: var(--radius); padding: 1.2rem;
+}
+
+.stats-chart-card--wide { grid-column: 1 / -1; }
+
+.stats-chart-title {
+  font-family: var(--font-display); font-size: 0.82rem; letter-spacing: 0.05em;
+  color: var(--marigold-bright); margin-bottom: 0.9rem; text-align: center;
+}
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .stats-charts-grid { grid-template-columns: 1fr; }
+  .stats-chart-card--wide { grid-column: 1; }
+  .vf-grid { grid-template-columns: 1fr; }
+  .admin-content-card { padding: 1rem; }
+}

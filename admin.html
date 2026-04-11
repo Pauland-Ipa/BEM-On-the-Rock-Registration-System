@@ -19,27 +19,18 @@
       </div>
       <h2 class="login-title">BEM On The Rock</h2>
       <p class="login-subtitle">Laman Admin / Admin Page</p>
-
       <div class="login-form">
         <div class="form-group">
-          <label class="form-label" for="adminUsername">
-            Emel / E-mail
-          </label>
-          <input type="email" id="adminUsername" class="form-input"
-            placeholder="Masukkan emel / Enter email"/>
+          <label class="form-label" for="adminUsername">Emel / E-mail</label>
+          <input type="email" id="adminUsername" class="form-input" placeholder="Masukkan emel / Enter email"/>
         </div>
         <div class="form-group">
-          <label class="form-label" for="adminPassword">
-            Kata Laluan / Password
-          </label>
-          <input type="password" id="adminPassword" class="form-input"
-            placeholder="Masukkan kata laluan / Enter password"/>
+          <label class="form-label" for="adminPassword">Kata Laluan / Password</label>
+          <input type="password" id="adminPassword" class="form-input" placeholder="Masukkan kata laluan / Enter password"/>
         </div>
         <span class="error-msg" id="loginError"></span>
-        <button class="btn btn-primary login-btn" id="btnLogin">
-          Log Masuk / Login
-        </button>
-        <a href="home.html" class="btn btn-secondary login-btn" style="text-align:center; text-decoration:none; margin-top:0.5rem;">
+        <button class="btn btn-primary login-btn" id="btnLogin">Log Masuk / Login</button>
+        <a href="home.html" class="btn btn-secondary login-btn" style="text-align:center;text-decoration:none;margin-top:0.5rem;">
           &larr; Kembali ke Halaman Rumah / Back to Home Page
         </a>
       </div>
@@ -49,85 +40,87 @@
   <!-- ═══ ADMIN PAGE ═══ -->
   <div class="admin-page" id="adminPage" style="display:none;">
 
-    <!-- Header -->
     <header class="site-header">
       <div class="header-inner">
-        <div class="logo-wrap">
-          <img src="Images/logo.jpg" alt="BEM On The Rock Logo" class="logo-img"/>
-        </div>
+        <div class="logo-wrap"><img src="Images/logo.jpg" alt="BEM On The Rock Logo" class="logo-img"/></div>
         <div class="header-text">
           <h1 class="church-name">BEM On The Rock</h1>
           <p class="church-subtitle">Laman Admin &nbsp;/&nbsp; Admin Page</p>
         </div>
-        <div class="logo-wrap logo-wrap-right">
-          <img src="Images/logo_bem_sib.png" alt="B.E.M Logo" class="logo-img logo-bem"/>
-        </div>
+        <div class="logo-wrap logo-wrap-right"><img src="Images/logo_bem_sib.png" alt="B.E.M Logo" class="logo-img logo-bem"/></div>
       </div>
     </header>
 
-    <!-- Main Content -->
     <main class="admin-main">
 
       <!-- Top Bar -->
-      <div class="admin-topbar">
-        <div class="admin-topbar-left">
-          <h2 class="admin-section-title">Senarai Pendaftaran <span>/ Registration List</span></h2>
-        </div>
-        <div class="admin-topbar-right">
-          <button class="btn btn-secondary admin-logout-btn" id="btnLogout">
-            Log Keluar / Logout
-          </button>
-        </div>
-      </div>
+      <div class="admin-content-card">
 
-      <!-- Search Bar -->
-      <div class="admin-search-bar">
-        <input type="text" id="adminSearch" class="form-input admin-search-input"
-          placeholder="🔍 Cari nama atau No. KP / Search by name or IC No." />
-      </div>
-
-      <!-- Controls: Sort & Filter -->
-      <div class="admin-controls">
-        <div class="admin-sort-group">
-          <label class="admin-control-label">Susun / Sort:</label>
-          <select id="sortBy" class="form-input form-select admin-select">
-            <option value="date">Mengikut Tarikh Dipohon / By Date Applied</option>
-            <option value="name">Susunan Abjad / Alphabetical Order</option>
-          </select>
+        <div class="admin-topbar">
+          <div class="admin-topbar-left">
+            <h2 class="admin-section-title">Senarai Pendaftaran <span>/ Registration List</span></h2>
+          </div>
+          <div class="admin-topbar-right">
+            <a href="stats.html" class="btn btn-secondary admin-stats-btn">
+              📊 Statistik / Statistics
+            </a>
+            <button class="btn btn-secondary admin-logout-btn" id="btnLogout">
+              Log Keluar / Logout
+            </button>
+          </div>
         </div>
-        <div class="admin-sort-group">
-          <label class="admin-control-label">Tertib / Order:</label>
-          <select id="sortOrder" class="form-input form-select admin-select">
-            <option value="asc">Menaik / Ascending</option>
-            <option value="desc">Menurun / Descending</option>
-          </select>
-        </div>
-      </div>
 
-      <!-- Registrations Table -->
-      <div class="admin-table-wrap">
-        <table class="admin-table" id="adminTable">
-          <thead>
-            <tr>
-              <th class="col-num">Bil.<br/><em class="th-en">Num.</em></th>
-              <th>Nama Pendaftar<br/><em class="th-en">Applicant Name</em></th>
-              <th>Tarikh Mendaftar<br/><em class="th-en">Date Applied</em></th>
-              <th>No. KP<br/><em class="th-en">IC No.</em></th>
-              <th class="col-status">Status<br/><em class="th-en">Status</em></th>
-              <th class="col-action">Tindakan<br/><em class="th-en">Action</em></th>
-            </tr>
-          </thead>
-          <tbody id="adminTableBody">
-          </tbody>
-        </table>
-        <div class="admin-empty" id="adminEmpty" style="display:none;">
-          <p>Tiada rekod pendaftaran. / No registration records found.</p>
+        <!-- Search Bar -->
+        <div class="admin-search-bar">
+          <input type="text" id="adminSearch" class="form-input admin-search-input"
+            placeholder="🔍 Cari nama, No. KP, atau ID / Search by name, IC No., or ID" />
         </div>
-      </div>
 
+        <!-- Sort Controls -->
+        <div class="admin-controls">
+          <div class="admin-sort-group">
+            <label class="admin-control-label">Susun / Sort:</label>
+            <select id="sortBy" class="form-input form-select admin-select">
+              <option value="date">Mengikut Tarikh Mengisi Borang / By Date Form Filled</option>
+              <option value="name">Susunan Abjad / Alphabetical Order</option>
+              <option value="id">Mengikut ID / By ID</option>
+              <option value="ic">Mengikut No. KP / By IC Num.</option>
+              <option value="komsel">Mengikut Komsel / By Cell Group</option>
+            </select>
+          </div>
+          <div class="admin-sort-group">
+            <label class="admin-control-label">Tertib / Order:</label>
+            <select id="sortOrder" class="form-input form-select admin-select">
+              <option value="asc">Menaik / Ascending</option>
+              <option value="desc">Menurun / Descending</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Registrations Table -->
+        <div class="admin-table-wrap">
+          <table class="admin-table" id="adminTable">
+            <thead>
+              <tr>
+                <th class="col-photo">Gambar<br/><em class="th-en">Photo</em></th>
+                <th class="col-nameID">Nama &amp; ID<br/><em class="th-en">Name &amp; ID</em></th>
+                <th>No. KP<br/><em class="th-en">IC Num.</em></th>
+                <th>Komsel<br/><em class="th-en">Cell Group</em></th>
+                <th>Tarikh Mengisi Borang<br/><em class="th-en">Date Form Filled</em></th>
+                <th class="col-memberstatus">Status Keanggotaan<br/><em class="th-en">Membership Status</em></th>
+                <th class="col-action">Tindakan<br/><em class="th-en">Action</em></th>
+              </tr>
+            </thead>
+            <tbody id="adminTableBody"></tbody>
+          </table>
+          <div class="admin-empty" id="adminEmpty" style="display:none;">
+            <p>Tiada rekod pendaftaran. / No registration records found.</p>
+          </div>
+        </div>
+
+      </div><!-- /admin-content-card -->
     </main>
 
-    <!-- Footer -->
     <footer class="site-footer">
       <p>&copy; <span id="adminFooterYear"></span> BEM On The Rock. Hak Cipta Terpelihara / All Rights Reserved.</p>
     </footer>
@@ -136,7 +129,7 @@
 
   <!-- ═══ VIEW MODAL ═══ -->
   <div class="modal-overlay" id="viewModal" style="display:none;">
-    <div class="modal-card">
+    <div class="modal-card modal-card--lg">
       <div class="modal-header">
         <h3 class="modal-title">Maklumat Pendaftar / Applicant Information</h3>
         <button class="modal-close" id="closeViewModal">&times;</button>
@@ -169,12 +162,47 @@
     </div>
   </div>
 
-  <!-- Firebase CDN (compat version) -->
+  <!-- ═══ ACTIVATE MODAL ═══ -->
+  <div class="modal-overlay" id="activateModal" style="display:none;">
+    <div class="modal-card modal-card--sm">
+      <div class="modal-header">
+        <h3 class="modal-title" id="activateModalTitle">Aktifkan Keanggotaan / Activate Membership</h3>
+        <button class="modal-close" id="closeActivateModal">&times;</button>
+      </div>
+      <div class="modal-body" style="text-align:center;">
+        <p id="activateModalText" style="font-size:1.05rem;line-height:1.7;"></p>
+      </div>
+      <div class="modal-footer" style="justify-content:center;gap:1rem;">
+        <button class="btn btn-secondary" id="cancelActivateBtn">Batal / Cancel</button>
+        <button class="btn btn-primary" id="confirmActivateBtn">Aktifkan / Activate</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ DEACTIVATE MODAL ═══ -->
+  <div class="modal-overlay" id="deactivateModal" style="display:none;">
+    <div class="modal-card modal-card--sm">
+      <div class="modal-header">
+        <h3 class="modal-title" style="color:var(--error);">⚠️ Nyahaktifkan Keanggotaan / Deactivate Membership</h3>
+        <button class="modal-close" id="closeDeactivateModal">&times;</button>
+      </div>
+      <div class="modal-body" style="text-align:center;">
+        <p id="deactivateModalText" style="font-size:1.05rem;line-height:1.7;"></p>
+      </div>
+      <div class="modal-footer" style="justify-content:center;gap:1rem;">
+        <button class="btn btn-secondary" id="cancelDeactivateBtn">Batal / Cancel</button>
+        <button class="btn btn-danger" id="confirmDeactivateBtn" disabled>
+          Nyahaktifkan / Deactivate <span id="deactivateCountdown" style="font-size:0.85rem;opacity:0.8;">(10)</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase CDN -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
-
   <script src="firebase-config.js"></script>
   <script src="theme.js"></script>
   <script src="language_strings.js"></script>

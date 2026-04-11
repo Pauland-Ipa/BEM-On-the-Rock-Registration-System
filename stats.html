@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BEM On The Rock — Statistik Admin</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="admin.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body class="admin-body">
+
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="logo-wrap"><img src="Images/logo.jpg" alt="BEM On The Rock" class="logo-img"/></div>
+      <div class="header-text">
+        <h1 class="church-name">BEM On The Rock</h1>
+        <p class="church-subtitle">Statistik Keanggotaan / Membership Statistics</p>
+      </div>
+      <div class="logo-wrap logo-wrap-right"><img src="Images/logo_bem_sib.png" alt="B.E.M" class="logo-img logo-bem"/></div>
+    </div>
+  </header>
+
+  <main class="admin-main">
+    <div class="admin-content-card">
+
+      <div class="admin-topbar" style="margin-bottom:1.5rem;">
+        <div class="admin-topbar-left">
+          <h2 class="admin-section-title">📊 Statistik <span>/ Statistics</span></h2>
+        </div>
+        <div class="admin-topbar-right">
+          <a href="admin.html" class="btn btn-secondary" style="text-decoration:none;">
+            &larr; Kembali ke Laman Admin / Back to Admin
+          </a>
+        </div>
+      </div>
+
+      <!-- Date Filter -->
+      <div class="stats-filter-bar">
+        <div class="admin-sort-group">
+          <label class="admin-control-label">Tapis Tarikh / Filter Date:</label>
+          <select id="statsDateFilter" class="form-input form-select admin-select">
+            <option value="all">Semua / All Time</option>
+            <option value="day">Hari Ini / Today</option>
+            <option value="month">Bulan Ini / This Month</option>
+            <option value="year">Tahun Ini / This Year</option>
+          </select>
+        </div>
+        <div id="statsLoading" class="stats-loading" style="display:none;">
+          <span>Memuatkan... / Loading...</span>
+        </div>
+      </div>
+
+      <!-- Summary Cards -->
+      <div class="stats-summary-grid" id="statsSummaryGrid">
+        <div class="stats-summary-card">
+          <div class="stats-summary-num" id="totalMembers">—</div>
+          <div class="stats-summary-label">Jumlah Ahli<br/><em>Total Members</em></div>
+        </div>
+        <div class="stats-summary-card stats-summary-card--green">
+          <div class="stats-summary-num" id="activeMembers">—</div>
+          <div class="stats-summary-label">Ahli Aktif<br/><em>Active Members</em></div>
+        </div>
+        <div class="stats-summary-card stats-summary-card--red">
+          <div class="stats-summary-num" id="inactiveMembers">—</div>
+          <div class="stats-summary-label">Ahli Tidak Aktif<br/><em>Inactive Members</em></div>
+        </div>
+        <div class="stats-summary-card stats-summary-card--blue">
+          <div class="stats-summary-num" id="baptisedMembers">—</div>
+          <div class="stats-summary-label">Sudah Dibaptis<br/><em>Baptised</em></div>
+        </div>
+        <div class="stats-summary-card stats-summary-card--orange">
+          <div class="stats-summary-num" id="withChildren">—</div>
+          <div class="stats-summary-label">Mempunyai Anak<br/><em>Have Children</em></div>
+        </div>
+      </div>
+
+      <!-- Charts Grid -->
+      <div class="stats-charts-grid">
+
+        <!-- Gender -->
+        <div class="stats-chart-card">
+          <h3 class="stats-chart-title">Jantina / Gender</h3>
+          <canvas id="chartGender"></canvas>
+        </div>
+
+        <!-- Membership Status -->
+        <div class="stats-chart-card">
+          <h3 class="stats-chart-title">Status Keanggotaan / Membership Status</h3>
+          <canvas id="chartStatus"></canvas>
+        </div>
+
+        <!-- Registrations Over Time -->
+        <div class="stats-chart-card stats-chart-card--wide">
+          <h3 class="stats-chart-title">Pendaftaran Mengikut Masa / Registrations Over Time</h3>
+          <canvas id="chartTime"></canvas>
+        </div>
+
+        <!-- Race -->
+        <div class="stats-chart-card">
+          <h3 class="stats-chart-title">Bangsa / Race</h3>
+          <canvas id="chartRace"></canvas>
+        </div>
+
+        <!-- Age Group -->
+        <div class="stats-chart-card">
+          <h3 class="stats-chart-title">Kumpulan Umur / Age Group</h3>
+          <canvas id="chartAge"></canvas>
+        </div>
+
+        <!-- Marital Status -->
+        <div class="stats-chart-card">
+          <h3 class="stats-chart-title">Status Perkahwinan / Marital Status</h3>
+          <canvas id="chartMarital"></canvas>
+        </div>
+
+        <!-- Cell Group -->
+        <div class="stats-chart-card stats-chart-card--wide">
+          <h3 class="stats-chart-title">Ahli Mengikut Komsel / Members by Cell Group</h3>
+          <canvas id="chartKomsel"></canvas>
+        </div>
+
+        <!-- Baptism Year -->
+        <div class="stats-chart-card stats-chart-card--wide">
+          <h3 class="stats-chart-title">Tahun Pembaptisan / Year of Baptism</h3>
+          <canvas id="chartBaptismYear"></canvas>
+        </div>
+
+        <!-- Children count -->
+        <div class="stats-chart-card">
+          <h3 class="stats-chart-title">Bilangan Anak / Number of Children</h3>
+          <canvas id="chartChildren"></canvas>
+        </div>
+
+        <!-- City / Area -->
+        <div class="stats-chart-card">
+          <h3 class="stats-chart-title">Kawasan / City Area</h3>
+          <canvas id="chartCity"></canvas>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <p>&copy; <span id="statsFooterYear"></span> BEM On The Rock. Hak Cipta Terpelihara / All Rights Reserved.</p>
+  </footer>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="theme.js"></script>
+  <script src="stats.js"></script>
+</body>
+</html>
