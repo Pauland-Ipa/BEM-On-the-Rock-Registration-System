@@ -14,6 +14,7 @@ document.addEventListener("DOMContentLoaded", () => {
   bindPhotoUpload();
   bindMaritalStatus();
   bindKomselValidation();
+  initBehalfMode();
 });
 
 // ═══════════════════════════════════════════════
@@ -226,6 +227,46 @@ function generateUniqueID(fullName, icNo, yearJoining) {
   const last4    = ic.length >= 4 ? ic.slice(-4) : ic.padStart(4, "0");
   const yr       = String(yearJoining || "").slice(-2);
   return `${initials}-${last4}-${yr}`;
+}
+
+// ═══════════════════════════════════════════════
+// 1h. BEHALF MODE — conditional rendering
+// ═══════════════════════════════════════════════
+const IS_BEHALF_MODE = new URLSearchParams(window.location.search).get("mode") === "behalf";
+
+function initBehalfMode() {
+  if (!IS_BEHALF_MODE) return;
+
+  const behalfSections = document.getElementById("behalfSections");
+  if (behalfSections) behalfSections.style.display = "block";
+
+  // Show registrant info
+  const regIC   = sessionStorage.getItem("behalf_registrant_ic")   || "";
+  const regName = sessionStorage.getItem("behalf_registrant_name") || "";
+  const display = document.getElementById("behalfRegistrantDisplay");
+  if (display) display.textContent = regName ? `${regName} (${regIC})` : regIC;
+
+  // Change Full Name label
+  const lbl = document.getElementById("fullNameLabel");
+  if (lbl) lbl.innerHTML = `Nama Penuh Yang Ingin Didaftar <span class="label-en">/ Name Of The One To Be Registered</span>`;
+
+  // Change header subtitle
+  const subtitle = document.querySelector(".church-subtitle");
+  if (subtitle) subtitle.textContent = "Pendaftaran Bagi Pihak Orang Lain / Registration On Others' Behalf";
+
+  // Behalf reason — show/hide "other reason" field
+  document.querySelectorAll('input[name="behalfReason"]').forEach(r => {
+    r.addEventListener("change", function() {
+      const otherField = document.getElementById("behalfOtherReasonField");
+      if (this.value === "others") {
+        otherField.classList.add("visible");
+      } else {
+        otherField.classList.remove("visible");
+        const inp = document.getElementById("behalfOtherReason");
+        if (inp) inp.value = "";
+      }
+    });
+  });
 }
 
 
@@ -1153,6 +1194,16 @@ function initSectionE() {
         uniqueID:    generateUniqueID(sectionADraft.fullName, icVal, sectionADraft.yearJoining),
         memberRole:  sectionADraft.memberRole || "",
         photoURL:    photoDataURL || "",
+
+        // Behalf registration data (only if in behalf mode)
+        ...(IS_BEHALF_MODE && {
+          behalfRegistration: true,
+          behalfRegistrantIC:   sessionStorage.getItem("behalf_registrant_ic") || "",
+          behalfRegistrantName: sessionStorage.getItem("behalf_registrant_name") || "",
+          behalfRelationship:   document.getElementById("behalfRelationship")?.value || "",
+          behalfReason:         document.querySelector('input[name="behalfReason"]:checked')?.value || "",
+          behalfOtherReason:    document.getElementById("behalfOtherReason")?.value || "",
+        }),
 
         sectionA: {
           fullName:        (sectionADraft.fullName || "").toUpperCase(),

@@ -6,6 +6,18 @@
   <title>BEM On The Rock — Pendaftaran Ahli Jemaat</title>
   <link rel="stylesheet" href="style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet"/>
+  <script>
+    // Redirect root visitors to home page unless coming from home
+    (function() {
+      const params = new URLSearchParams(window.location.search);
+      const ref = document.referrer;
+      const fromHome = params.has("from") ||
+        (ref && (ref.includes("home.html") || ref.includes("register-behalf.html")));
+      if (!fromHome && window.location.pathname.endsWith("index.html") || window.location.pathname === "/" || window.location.pathname === "") {
+        if (!fromHome) window.location.replace("home.html");
+      }
+    })();
+  </script>
 </head>
 <body>
 
@@ -89,6 +101,70 @@
           </ul>
         </div>
 
+        <!-- ── BEHALF MODE SECTIONS (hidden in normal mode) ── -->
+        <div id="behalfSections" style="display:none;">
+
+          <!-- Behalf notice banner -->
+          <div class="eligibility-notice" style="border-left-color:var(--marigold);background:rgba(255,140,0,0.08);">
+            <p class="eligibility-bm" style="color:var(--marigold-bright);">
+              ⚠️ Anda sedang mendaftar bagi pihak orang lain.
+            </p>
+            <p class="eligibility-en">You are registering on behalf of another person.</p>
+            <p class="eligibility-en" style="margin-top:0.3rem;">Pendaftar / Registrant: <strong id="behalfRegistrantDisplay"></strong></p>
+          </div>
+
+          <!-- Relationship field -->
+          <div class="form-group full-width" style="margin-bottom:1.2rem;">
+            <label class="form-label" for="behalfRelationship">
+              Hubungan dengan Individu yang Ingin Didaftar
+              <span class="label-en">/ Relationship with the Individual to be Registered</span>
+              <span class="required">*</span>
+            </label>
+            <input type="text" id="behalfRelationship" name="behalfRelationship"
+              class="form-input"
+              placeholder="cth/e.g. Ibu/Bapa, Penjaga, Kenalan rapat, Staff gereja..."/>
+            <span class="error-msg" id="err-behalfRelationship"></span>
+          </div>
+
+          <!-- Reason field -->
+          <div class="form-group full-width" style="margin-bottom:1.5rem;">
+            <label class="form-label">
+              Tujuan Mengisi Borang Ini Bagi Pihak Lain
+              <span class="label-en">/ Reason for Filling Out This Form on Others' Behalf</span>
+              <span class="required">*</span>
+            </label>
+            <div class="checkbox-group" style="flex-direction:column;gap:0.6rem;">
+              <label class="checkbox-label">
+                <input type="radio" name="behalfReason" value="oku" id="reasonOKU"/>
+                <span class="custom-radio"></span>
+                Individu Ini O.K.U <em>/ This individual is disabled</em>
+              </label>
+              <label class="checkbox-label">
+                <input type="radio" name="behalfReason" value="elderly" id="reasonElderly"/>
+                <span class="custom-radio"></span>
+                Individu Ini Merupakan Warga Emas Yang Tidak Mampu Membaca Atau Menulis
+                <em>/ This Individual Is Too Old To Read Or Write</em>
+              </label>
+              <label class="checkbox-label">
+                <input type="radio" name="behalfReason" value="others" id="reasonOthers"/>
+                <span class="custom-radio"></span>
+                Lain-Lain <em>/ Others</em>
+              </label>
+            </div>
+            <div class="conditional-field" id="behalfOtherReasonField">
+              <label class="form-label" for="behalfOtherReason">
+                Nyatakan Sebab Lain <span class="label-en">/ State Other Reason</span>
+                <span class="required">*</span>
+              </label>
+              <input type="text" id="behalfOtherReason" name="behalfOtherReason"
+                class="form-input" placeholder="Nyatakan sebab / State your reason"/>
+              <span class="error-msg" id="err-behalfOtherReason"></span>
+            </div>
+            <span class="error-msg" id="err-behalfReason"></span>
+          </div>
+
+        </div><!-- /behalfSections -->
+
         <!-- Member Role Selection -->
         <div class="form-group full-width member-role-box">
           <span class="required" style="display:block; margin-bottom:0.5rem;">*</span>
@@ -151,7 +227,7 @@
           <!-- 1. Full Name -->
           <div class="form-group full-width">
             <label class="form-label" for="fullName">
-              Nama Penuh <span class="label-en">/ Full Name</span>
+              <span id="fullNameLabel">Nama Penuh <span class="label-en">/ Full Name</span></span>
               <span class="required">*</span>
             </label>
             <input type="text" id="fullName" name="fullName"

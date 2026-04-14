@@ -65,7 +65,7 @@
   margin-top: 1rem;
 }
 
-/* ── Nav Button ── */
+/* ── Nav Button (base) ── */
 .home-nav-btn {
   display: flex;
   flex-direction: column;
@@ -74,11 +74,13 @@
   background: rgba(255,140,0,0.07);
   border: 1.5px solid rgba(255,140,0,0.25);
   border-radius: 12px;
-  padding: 1.2rem 1rem;
+  padding: 1rem;
   text-decoration: none;
-  color: var(--text-light);
+  color: var(--text-primary);
   transition: all 0.25s ease;
   cursor: pointer;
+  min-height: 110px;
+  justify-content: center;
 }
 
 .home-nav-btn:hover {
@@ -88,61 +90,66 @@
   box-shadow: 0 6px 20px rgba(255,140,0,0.2);
 }
 
-.home-btn-icon {
-  font-size: 2rem;
-  margin-bottom: 0.2rem;
-}
+.home-btn-icon { font-size: 1.8rem; margin-bottom: 0.15rem; }
 
 .home-btn-bm {
   font-family: var(--font-display);
-  font-size: 0.82rem;
-  font-weight: 600;
+  font-size: 0.82rem; font-weight: 700;
   color: var(--header-title);
   letter-spacing: 0.03em;
-  line-height: 1.4;
-  text-align: center;
+  line-height: 1.4; text-align: center;
 }
 
 .home-btn-en {
-  font-family: var(--font-body);
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  font-style: italic;
-  text-align: center;
-  line-height: 1.4;
+  font-size: 0.78rem; color: var(--text-muted);
+  font-style: italic; text-align: center; line-height: 1.4;
 }
 
-/* Disabled button */
-.home-nav-btn--disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-  pointer-events: none;
-}
-
-.home-btn-soon {
-  font-size: 0.72rem;
-  color: var(--marigold-dim);
-  font-style: italic;
-  margin-top: 0.2rem;
-}
-
-/* Admin button — distinct style */
-.home-nav-btn--admin {
+/* Full-width — same height as regular, spans both columns */
+.home-nav-btn--full {
   grid-column: 1 / -1;
-  background: rgba(255,140,0,0.04);
-  border-color: rgba(255,140,0,0.15);
   flex-direction: row;
-  gap: 0.8rem;
-  padding: 0.85rem 1.5rem;
+  gap: 0.9rem;
+  min-height: 110px;
   justify-content: center;
 }
 
-.home-nav-btn--admin .home-btn-bm,
-.home-nav-btn--admin .home-btn-en {
-  text-align: left;
+.home-nav-btn--full .home-btn-icon { font-size: 1.8rem; margin-bottom: 0; flex-shrink: 0; }
+.home-nav-btn--full .home-btn-bm,
+.home-nav-btn--full .home-btn-en { text-align: left; }
+
+/* Spacer cell — keeps grid balanced */
+.home-btn-spacer { min-height: 110px; visibility: hidden; pointer-events: none; }
+
+/* Disabled */
+.home-nav-btn--disabled { opacity: 0.42; cursor: not-allowed; pointer-events: none; }
+
+.home-btn-soon {
+  font-size: 0.7rem; color: var(--marigold-dim);
+  font-style: italic; margin-top: 0.15rem; text-align: center;
 }
 
-.home-nav-btn--admin .home-btn-icon { font-size: 1.4rem; margin-bottom: 0; }
+/* On Behalf button — product badge */
+.home-nav-btn--behalf { position: relative; border-color: rgba(255,140,0,0.4); background: rgba(255,140,0,0.09); }
+
+.behalf-badge {
+  font-size: 0.67rem; color: var(--text-muted); font-style: italic;
+  line-height: 1.4; text-align: center;
+  background: rgba(255,140,0,0.1); border: 1px solid rgba(255,140,0,0.2);
+  border-radius: 6px; padding: 0.3rem 0.5rem;
+  max-width: 100%; margin-bottom: 0.25rem;
+}
+
+/* Admin button — full-width, compact */
+.home-nav-btn--admin {
+  grid-column: 1 / -1;
+  background: rgba(255,140,0,0.04); border-color: rgba(255,140,0,0.15);
+  flex-direction: row; gap: 0.8rem; padding: 0.75rem 1.5rem;
+  min-height: unset; justify-content: center;
+}
+.home-nav-btn--admin .home-btn-bm,
+.home-nav-btn--admin .home-btn-en { text-align: left; }
+.home-nav-btn--admin .home-btn-icon { font-size: 1.2rem; margin-bottom: 0; }
 
 /* ── Theme Toggle ── */
 .theme-toggle-wrap {
@@ -198,6 +205,8 @@
 /* ── Responsive ── */
 @media (max-width: 560px) {
   .home-btn-grid { grid-template-columns: 1fr; }
+  .home-nav-btn--full  { grid-column: 1; flex-direction: column; }
   .home-nav-btn--admin { grid-column: 1; }
-  .home-welcome-card { padding: 1.8rem 1.2rem; }
+  .home-btn-spacer     { display: none; }
+  .home-welcome-card   { padding: 1.8rem 1.2rem; }
 }

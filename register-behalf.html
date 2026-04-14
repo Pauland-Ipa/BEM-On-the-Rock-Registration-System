@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BEM On The Rock — Daftar Bagi Pihak Orang Lain</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet"/>
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="logo-wrap"><img src="Images/logo.jpg" alt="BEM On The Rock" class="logo-img"/></div>
+      <div class="header-text">
+        <h1 class="church-name">BEM On The Rock</h1>
+        <p class="church-subtitle">Daftar Bagi Pihak Orang Lain / Register On Others' Behalf</p>
+      </div>
+      <div class="logo-wrap logo-wrap-right"><img src="Images/logo_bem_sib.png" alt="B.E.M" class="logo-img logo-bem"/></div>
+    </div>
+  </header>
+
+  <main class="form-main">
+    <a href="home.html" class="back-home-btn">&#8592; Kembali ke Halaman Rumah / Back to Home Page</a>
+
+    <!-- ── Step 1: Verify registrant's IC ── -->
+    <section class="form-section active" id="step-verify">
+      <div class="section-header">
+        <div class="section-badge">1</div>
+        <div>
+          <h2 class="section-title">Pengesahan Ahli Aktif / Active Member Verification</h2>
+          <p class="section-subtitle">Anda perlu menjadi ahli aktif untuk mendaftar bagi pihak orang lain.</p>
+          <p class="section-subtitle">You must be an active member to register on someone else's behalf.</p>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group full-width">
+          <label class="form-label" for="registrantIC">No. KP Anda / Your IC No. <span class="required">*</span></label>
+          <input type="text" id="registrantIC" class="form-input" placeholder="cth/e.g. 901231-14-5678" maxlength="14"/>
+          <span class="error-msg" id="err-registrantIC"></span>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" id="btnVerifyRegistrant">Semak & Teruskan / Verify & Continue &rarr;</button>
+      </div>
+      <div class="draft-notice" id="verifyNotice"></div>
+    </section>
+
+    <!-- ── Step 2: Full registration form (behalf mode) ── -->
+    <section class="form-section" id="step-form" style="display:none;">
+      <!-- This section is populated by loading index.html content in behalf mode via JS -->
+      <!-- We redirect to index.html with special behalf params once verified -->
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <p>&copy; <span id="behalfFooterYear"></span> BEM On The Rock. Hak Cipta Terpelihara / All Rights Reserved.</p>
+  </footer>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="theme.js"></script>
+  <script>
+    document.getElementById("behalfFooterYear").textContent = new Date().getFullYear();
+
+    function formatIC(v) {
+      const d = v.replace(/\D/g,"");
+      let f = d;
+      if (d.length>6) f = d.substring(0,6)+"-"+d.substring(6);
+      if (d.length>8) f = f.substring(0,9)+"-"+d.substring(8);
+      return f.substring(0,14);
+    }
+
+    document.getElementById("registrantIC").addEventListener("input", function() {
+      this.value = formatIC(this.value);
+    });
+
+    document.getElementById("btnVerifyRegistrant").addEventListener("click", async () => {
+      const ic     = document.getElementById("registrantIC").value.replace(/-/g,"");
+      const errEl  = document.getElementById("err-registrantIC");
+      const notice = document.getElementById("verifyNotice");
+      errEl.textContent = "";
+
+      if (ic.length !== 12) {
+        errEl.textContent = "Sila masukkan No. KP yang sah / Please enter a valid IC No.";
+        return;
+      }
+
+      notice.textContent = "Menyemak... / Checking...";
+      try {
+        const snap = await db.collection("registrations")
+          .where("icNo","==",ic)
+          .where("approved","==",true)
+          .get();
+
+        if (snap.empty) {
+          errEl.textContent = "Anda bukan ahli aktif. Hanya ahli aktif boleh mendaftar bagi pihak orang lain. / You are not an active member. Only active members can register on behalf of others.";
+          notice.textContent = "";
+          return;
+        }
+
+        // Verified — redirect to main form in behalf mode
+        notice.textContent = "";
+        sessionStorage.setItem("behalf_registrant_ic", ic);
+        sessionStorage.setItem("behalf_registrant_name", snap.docs[0].data().name || "");
+        window.location.href = "index.html?mode=behalf&from=behalf";
+
+      } catch(e) {
+        errEl.textContent = "Ralat sistem / System error. Please try again.";
+        notice.textContent = "";
+      }
+    });
+  </script>
+</body>
+</html>

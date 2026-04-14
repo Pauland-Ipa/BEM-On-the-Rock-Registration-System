@@ -309,7 +309,18 @@ function buildViewHTML(reg) {
     ? `<div style="text-align:center;margin-bottom:1rem;"><img src="${reg.photoURL}" style="width:100px;height:125px;object-fit:cover;border-radius:8px;border:2px solid var(--marigold-dim);"/></div>`
     : "";
 
+  const behalfSection = reg.behalfRegistration ? `
+    <div class="vf-section-title" style="color:var(--marigold);">⚠️ Didaftar Oleh Orang Lain / Registered By Another Person</div>
+    <div class="vf-grid">
+      ${vRow("Didaftar Oleh / Registered By", `${reg.behalfRegistrantName||"—"} (${reg.behalfRegistrantIC||"—"})`)}
+      ${vRow("Hubungan / Relationship", reg.behalfRelationship)}
+      ${vRow("Sebab / Reason", reg.behalfReason === "oku" ? "Individu O.K.U / Disabled Individual" :
+        reg.behalfReason === "elderly" ? "Warga Emas / Senior / Elderly" :
+        reg.behalfReason === "others" ? `Lain-lain / Others: ${reg.behalfOtherReason||"—"}` : "—")}
+    </div>` : "";
+
   return `
+    ${behalfSection}
     ${photoSection}
     <div class="vf-section-title">A. Maklumat Peribadi / Personal Information</div>
     <div class="vf-grid">
@@ -415,6 +426,16 @@ function printRecord(id) {
     "Saya siap untuk dibimbing, dinasihati & ditegur bila keadaan memerlukan demi kebaikan saya."
   ];
 
+  const behalfPrint = reg.behalfRegistration ? `
+  <h3 style="color:#b35a00;">⚠️ Didaftar Oleh Orang Lain / Registered By Another Person</h3>
+  <div class="row"><span class="lbl">Didaftar Oleh / Registered By:</span><span>${reg.behalfRegistrantName||"—"} (${reg.behalfRegistrantIC||"—"})</span></div>
+  <div class="row"><span class="lbl">Hubungan / Relationship:</span><span>${reg.behalfRelationship||"—"}</span></div>
+  <div class="row"><span class="lbl">Sebab / Reason:</span><span>${
+    reg.behalfReason === "oku"     ? "Individu O.K.U / Disabled Individual" :
+    reg.behalfReason === "elderly" ? "Warga Emas / Senior / Elderly" :
+    reg.behalfReason === "others"  ? `Lain-lain / Others: ${reg.behalfOtherReason||"—"}` : "—"
+  }</span></div>` : "";
+
   const printHTML = `<html><head><title>BEM On The Rock — ${(a.fullName||"Pendaftar").toUpperCase()}</title>
   <style>
     body{font-family:Arial,sans-serif;font-size:11pt;color:#000;margin:2cm}
@@ -440,6 +461,7 @@ function printRecord(id) {
   <h1>BEM On The Rock</h1>
   <h2>Borang Pendaftaran Keanggotaan Gereja / Church Membership Registration Form</h2>
   <h2 class="uid">ID Unik / Unique ID: ${uid}</h2>
+  ${behalfPrint}
   <h3>A. Maklumat Peribadi / Personal Information</h3>
   ${photoSection}
   <div class="row"><span class="lbl">Nama Penuh / Full Name:</span><span style="font-weight:bold;text-transform:uppercase">${a.fullName||"—"}</span></div>
