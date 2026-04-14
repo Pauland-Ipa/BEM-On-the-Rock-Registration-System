@@ -6,7 +6,9 @@
 .login-overlay {
   position: fixed;
   inset: 0;
-  background: radial-gradient(ellipse at center, #1a0e00 0%, #0a0a0a 100%);
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -77,10 +79,8 @@
 
 /* ── Admin Page Layout ── */
 .admin-body {
-  background-color: var(--black-soft);
-  background-image:
-    linear-gradient(rgba(10,10,10,0.78), rgba(10,10,10,0.78)),
-    url('Images/BEM_On_the_Rock_Building_Image.png');
+  background-color: #141414;
+  background-image: url('Images/BEM_On_the_Rock_Building_Image.png');
   background-size: cover;
   background-position: center top;
   background-attachment: fixed;

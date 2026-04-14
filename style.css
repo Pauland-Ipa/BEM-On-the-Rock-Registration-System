@@ -24,10 +24,10 @@
 :root,
 [data-theme="dark"] {
   --bg-page:        #141414;
-  --bg-card:        rgba(14,12,10,0.85);
+  --bg-card:        rgba(14,12,10,0.88);
   --bg-input:       #181818;
-  --bg-header:      #0a0a0a;
-  --bg-step-nav:    #0a0a0a;
+  --bg-header:      rgba(10,10,10,0.82);
+  --bg-step-nav:    rgba(10,10,10,0.82);
   --border-input:   #3A3A3A;
   --border-card:    rgba(255,140,0,0.2);
   --text-primary:   #F5F5F0;
@@ -47,18 +47,22 @@
   --input-border:   #3A3A3A;
   --input-focus:    #FF8C00;
   --card-border:    rgba(255,140,0,0.25);
-  --overlay-bg:     linear-gradient(rgba(10,10,10,0.72), rgba(10,10,10,0.72));
+  /* Header text */
+  --header-title:   #FFA333;
+  --header-sub:     #C0C0C0;
+  /* Step nav */
+  --step-inactive:  rgba(255,255,255,0.35);
 }
 
 /* ── LIGHT MODE ── */
 [data-theme="light"] {
-  --bg-page:        #F2EDE6;
-  --bg-card:        rgba(255,252,248,0.93);
-  --bg-input:       #FFFFFF;
-  --bg-header:      #1A1A1A;
-  --bg-step-nav:    #FFFFFF;
+  --bg-page:        transparent;
+  --bg-card:        rgba(255,252,248,0.92);
+  --bg-input:       rgba(255,255,255,0.95);
+  --bg-header:      rgba(255,250,244,0.92);
+  --bg-step-nav:    rgba(255,250,244,0.92);
   --border-input:   #CCBFA8;
-  --border-card:    rgba(204,112,0,0.3);
+  --border-card:    rgba(204,112,0,0.25);
   --text-primary:   #1A1208;
   --text-secondary: #3D2E10;
   --text-muted:     #6B5C42;
@@ -72,12 +76,17 @@
   --white:          #FFFFFF;
   --white-off:      #FDFAF6;
   --text-light:     #1A1208;
-  --input-bg:       #FFFFFF;
+  --input-bg:       rgba(255,255,255,0.95);
   --input-border:   #CCBFA8;
   --input-focus:    #CC7000;
-  --card-border:    rgba(204,112,0,0.3);
-  --overlay-bg:     linear-gradient(rgba(242,237,230,0.75), rgba(242,237,230,0.75));
+  --card-border:    rgba(204,112,0,0.25);
+  /* Header text */
+  --header-title:   #CC5500;
+  --header-sub:     #3D2E10;
+  /* Step nav */
+  --step-inactive:  rgba(0,0,0,0.35);
 }
+
 
 
 
@@ -90,10 +99,9 @@ body {
   color: var(--text-primary);
   min-height: 100vh;
   line-height: 1.6;
-  background-color: var(--bg-page);
-  background-image:
-    var(--overlay-bg),
-    url('Images/BEM_On_the_Rock_Building_Image.png');
+  /* Background image — no overlay, always visible */
+  background-color: #141414;
+  background-image: url('Images/BEM_On_the_Rock_Building_Image.png');
   background-size: cover;
   background-position: center top;
   background-attachment: fixed;
@@ -117,7 +125,7 @@ body {
   box-shadow: 0 8px 40px rgba(0,0,0,0.3);
 }
 
-/* ── Theme Toggle (shown on all pages via theme.js) ── */
+/* ── Theme Toggle ── */
 .theme-toggle-wrap {
   position: fixed;
   top: 1rem;
@@ -126,16 +134,14 @@ body {
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  background: rgba(0,0,0,0.35);
-  backdrop-filter: blur(6px);
+  background: var(--bg-card);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   padding: 0.35rem 0.65rem;
   border-radius: 999px;
-  border: 1px solid rgba(255,140,0,0.25);
-}
-
-[data-theme="light"] .theme-toggle-wrap {
-  background: rgba(255,255,255,0.75);
-  border-color: rgba(204,112,0,0.3);
+  border: 1px solid var(--border-card);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+  transition: background var(--transition), border-color var(--transition);
 }
 
 .theme-icon { font-size: 0.88rem; }
@@ -198,9 +204,11 @@ body {
 /* ── Header ── */
 .site-header {
   background: var(--bg-header);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-bottom: 2px solid var(--marigold-dim);
   padding: 1.5rem 1rem;
-  box-shadow: 0 4px 32px rgba(0,0,0,0.5);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.4);
   position: relative;
   overflow: hidden;
 }
@@ -248,16 +256,16 @@ body {
   font-family: var(--font-display);
   font-size: clamp(1.3rem, 4vw, 2rem);
   font-weight: 700;
-  color: var(--marigold-bright);
+  color: var(--header-title);
   letter-spacing: 0.08em;
-  text-shadow: 0 0 30px rgba(255,140,0,0.45);
+  text-shadow: 0 0 24px rgba(255,140,0,0.3);
   line-height: 1.2;
 }
 
 .church-subtitle {
   font-family: var(--font-body);
   font-size: clamp(0.8rem, 2.5vw, 1rem);
-  color: var(--silver);
+  color: var(--header-sub);
   letter-spacing: 0.04em;
   margin-top: 0.2rem;
   font-style: italic;
@@ -275,12 +283,14 @@ body {
 /* ── Step Navigator ── */
 .step-nav {
   background: var(--bg-step-nav);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(255,140,0,0.2);
   padding: 1.2rem 1rem;
   position: sticky;
   top: 0;
   z-index: 100;
-  box-shadow: 0 2px 20px rgba(0,0,0,0.3);
+  box-shadow: 0 2px 16px rgba(0,0,0,0.2);
 }
 
 .step-nav-inner {
@@ -318,20 +328,20 @@ body {
   font-family: var(--font-display);
   font-weight: 700;
   font-size: 0.95rem;
-  color: var(--text-secondary);
-  background: var(--bg-page);
+  color: var(--step-inactive);
+  background: var(--bg-card);
   transition: all var(--transition);
 }
 
 .step.active .step-circle {
   background: var(--marigold);
   border-color: var(--marigold-bright);
-  color: var(--black);
+  color: #000;
   box-shadow: 0 0 16px rgba(255,140,0,0.5);
 }
 
 .step.completed .step-circle {
-  background: var(--bg-page);
+  background: var(--bg-card);
   border-color: var(--marigold);
   color: var(--marigold);
   font-size: 0;
