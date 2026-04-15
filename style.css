@@ -179,7 +179,7 @@ body {
 .theme-switch input:checked + .theme-slider { background: var(--marigold); }
 .theme-switch input:checked + .theme-slider::before { transform: translateX(16px); }
 
-/* ── Back to Home button ── */
+/* ── Back to Home button — opaque, always readable ── */
 .back-home-btn {
   display: inline-flex;
   align-items: center;
@@ -187,18 +187,33 @@ body {
   font-family: var(--font-display);
   font-size: 0.82rem;
   letter-spacing: 0.05em;
-  color: var(--marigold);
+  color: var(--marigold-bright);
   text-decoration: none;
-  border: 1px solid var(--marigold-dim);
+  border: 1.5px solid var(--marigold-dim);
   padding: 0.45rem 1rem;
   border-radius: var(--radius);
   margin-bottom: 1.5rem;
   transition: all var(--transition);
+  background: var(--bg-card);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  font-weight: 700;
 }
 
 .back-home-btn:hover {
-  background: rgba(255,140,0,0.08);
+  background: rgba(255,140,0,0.15);
   border-color: var(--marigold);
+  color: var(--marigold-bright);
+}
+
+[data-theme="light"] .back-home-btn {
+  background: rgba(255,252,248,0.97);
+  color: #7A3A00;
+  border-color: #CC7000;
+}
+
+[data-theme="light"] .back-home-btn:hover {
+  background: rgba(255,140,0,0.1);
 }
 
 /* ── Header ── */
@@ -354,38 +369,31 @@ body {
 }
 
 .step-label {
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   text-align: center;
-  color: var(--text-primary);
-  opacity: 0.6;
   line-height: 1.3;
   font-family: var(--font-display);
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  max-width: 64px;
-  transition: color var(--transition), opacity var(--transition);
-}
-
-.step.active .step-label {
-  color: var(--marigold-bright);
-  opacity: 1;
   font-weight: 700;
+  letter-spacing: 0.03em;
+  max-width: 68px;
+  transition: color var(--transition), opacity var(--transition);
+  /* default fallback */
+  color: rgba(255,255,255,0.7);
+  opacity: 1;
 }
 
-.step.completed .step-label {
-  color: var(--marigold);
-  opacity: 0.85;
-}
+.step.active    .step-label { color: var(--marigold-bright); font-weight: 800; }
+.step.completed .step-label { color: var(--marigold);        opacity: 0.9; }
 
-/* Dark mode — step labels white-ish */
-[data-theme="dark"] .step-label { color: #E8E8E4; opacity: 0.55; }
+/* Dark mode — pure white for inactive, marigold for active */
+[data-theme="dark"] .step-label              { color: #FFFFFF; opacity: 0.75; }
 [data-theme="dark"] .step.active .step-label { color: var(--marigold-bright); opacity: 1; }
-[data-theme="dark"] .step.completed .step-label { color: var(--marigold); opacity: 0.9; }
+[data-theme="dark"] .step.completed .step-label { color: var(--marigold-pale); opacity: 1; }
 
-/* Light mode — step labels dark brown */
-[data-theme="light"] .step-label { color: #1A1208; opacity: 0.6; }
-[data-theme="light"] .step.active .step-label { color: var(--marigold-dim); opacity: 1; }
-[data-theme="light"] .step.completed .step-label { color: var(--marigold-dim); opacity: 0.85; }
+/* Light mode — pure black for inactive, deep amber for active */
+[data-theme="light"] .step-label              { color: #000000; opacity: 0.75; }
+[data-theme="light"] .step.active .step-label { color: #7A3A00; opacity: 1; }
+[data-theme="light"] .step.completed .step-label { color: #A05000; opacity: 1; }
 
 .step-line {
   flex: 1;
@@ -715,14 +723,17 @@ input[type="date"].form-input::-webkit-calendar-picker-indicator {
   left: 0;
   width: 100%;
   min-width: 260px;
-  background: var(--bg-card);
-  border: 1px solid var(--border-card);
+  /* Fully opaque — no bleed-through from content behind */
+  background: var(--bg-input);
+  border: 1.5px solid var(--marigold-dim);
   border-radius: var(--radius);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.55);
   z-index: 200;
   overflow: hidden;
-  backdrop-filter: blur(8px);
 }
+
+[data-theme="dark"]  .year-picker-dropdown { background: #1A1A18; }
+[data-theme="light"] .year-picker-dropdown { background: #FFFCF8; }
 
 .year-picker-dropdown.open { display: block; }
 
@@ -731,7 +742,8 @@ input[type="date"].form-input::-webkit-calendar-picker-indicator {
   align-items: center;
   justify-content: space-between;
   padding: 0.6rem 1rem;
-  border-bottom: 1px solid var(--border-card);
+  border-bottom: 1px solid var(--marigold-dim);
+  background: rgba(255,140,0,0.08);
 }
 
 .year-nav-btn {
@@ -795,12 +807,18 @@ input[type="date"].form-input::-webkit-calendar-picker-indicator {
 /* ── Buttons ── */
 .form-actions {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
   margin-top: 2.5rem;
   gap: 1rem;
   flex-wrap: wrap;
 }
+
+/* Explicit right-align for single-button rows */
+.form-actions--end { justify-content: flex-end; }
+
+/* When a back+next pair exists, push them to opposite ends */
+.form-actions:has(.btn-secondary) { justify-content: space-between; }
 
 .btn {
   font-family: var(--font-display);
