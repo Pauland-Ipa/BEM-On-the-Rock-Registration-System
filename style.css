@@ -845,15 +845,20 @@ input[type="date"].form-input::-webkit-calendar-picker-indicator {
 }
 
 .btn-secondary {
-  background: transparent;
+  background: var(--bg-card);
   color: var(--marigold);
   border: 1.5px solid var(--marigold-dim);
 }
 
 .btn-secondary:hover {
-  background: rgba(255,140,0,0.08);
+  background: rgba(255,140,0,0.12);
   border-color: var(--marigold);
   transform: translateY(-2px);
+}
+
+[data-theme="light"] .btn-secondary {
+  background: rgba(255,252,248,0.95);
+  color: var(--marigold-dim);
 }
 
 /* ── Draft Notice ── */

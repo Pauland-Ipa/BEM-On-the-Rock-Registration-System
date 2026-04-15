@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BEM On The Rock — Pindah Gereja</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet"/>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="logo-wrap"><img src="Images/logo.jpg" alt="BEM On The Rock" class="logo-img"/></div>
+      <div class="header-text">
+        <h1 class="church-name">BEM On The Rock</h1>
+        <p class="church-subtitle">Pindah Gereja / Transfer Church</p>
+      </div>
+      <div class="logo-wrap logo-wrap-right"><img src="Images/logo_bem_sib.png" alt="B.E.M" class="logo-img logo-bem"/></div>
+    </div>
+  </header>
+
+  <main class="form-main">
+    <a href="home.html" class="back-home-btn">&#8592; Kembali ke Halaman Rumah / Back to Home Page</a>
+
+    <!-- Screen 1: Verify IC -->
+    <section class="form-section active" id="screen-verify">
+      <div class="section-header">
+        <div class="section-badge">1</div>
+        <div>
+          <h2 class="section-title">Pengesahan Identiti / Identity Verification</h2>
+          <p class="section-subtitle">Masukkan No. KP anda untuk meneruskan. / Enter your IC No. to proceed.</p>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group full-width">
+          <label class="form-label" for="transferIC">No. KP / IC No. <span class="required">*</span></label>
+          <input type="text" id="transferIC" class="form-input" placeholder="cth/e.g. 901231-14-5678" maxlength="14"/>
+          <span class="error-msg" id="err-transferIC"></span>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" id="btnVerifyTransfer">Semak / Verify &rarr;</button>
+      </div>
+      <div class="draft-notice" id="verifyNotice"></div>
+    </section>
+
+    <!-- Screen 2: Transfer form -->
+    <section class="form-section" id="screen-transfer">
+      <div class="section-header">
+        <div class="section-badge">2</div>
+        <div>
+          <h2 class="section-title">Maklumat Pemindahan / Transfer Details</h2>
+          <p class="section-subtitle">
+            Sila isikan perkara berikut sebelum meneruskan proses pemindahan gereja anda.
+          </p>
+          <p class="section-subtitle">
+            Please fill in the following before proceeding with your church transferral process.
+          </p>
+        </div>
+      </div>
+
+      <!-- Member banner -->
+      <div class="current-value-card" id="transferMemberBanner" style="margin-bottom:1.5rem;flex-direction:row;align-items:center;gap:1rem;">
+        <div id="transferMemberPhoto"></div>
+        <div>
+          <div style="font-weight:700;text-transform:uppercase;color:var(--text-primary)" id="transferMemberName"></div>
+          <div style="font-size:0.78rem;color:var(--marigold);font-family:var(--font-display)" id="transferMemberUID"></div>
+        </div>
+      </div>
+
+      <div class="form-grid">
+
+        <!-- Reason for transfer -->
+        <div class="form-group full-width">
+          <label class="form-label" for="transferReason">
+            Tujuan Perpindahan <span class="label-en">/ Reason For Transfer</span>
+            <span class="required">*</span>
+          </label>
+          <input type="text" id="transferReason" class="form-input"
+            placeholder="cth/e.g. Pindah rumah, Pindah kerja..."/>
+          <span class="error-msg" id="err-transferReason"></span>
+        </div>
+
+        <!-- Date of transfer -->
+        <div class="form-group">
+          <label class="form-label" for="transferDate">
+            Tarikh Akan Berpindah <span class="label-en">/ Date of Transfer</span>
+            <span class="required">*</span>
+          </label>
+          <input type="date" id="transferDate" class="form-input"/>
+          <span class="error-msg" id="err-transferDate"></span>
+        </div>
+
+        <!-- Transfer destination -->
+        <div class="form-group">
+          <label class="form-label" for="transferTo">
+            Pindah Ke Mana? <span class="label-en">/ Transfer To Where?</span>
+            <span class="required">*</span>
+          </label>
+          <input type="text" id="transferTo" class="form-input"
+            placeholder="cth/e.g. Gereja BEM Miri, atau Kuala Lumpur..."/>
+          <span class="field-hint">Nama gereja baharu atau kawasan yang akan dituju / Name of new church or area you're moving to</span>
+          <span class="error-msg" id="err-transferTo"></span>
+        </div>
+
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn-secondary" id="btnBackTransfer">&larr; Kembali / Back</button>
+        <button class="btn btn-primary" id="btnConfirmTransfer">
+          Sahkan Pemindahan / Confirm Transfer &rarr;
+        </button>
+      </div>
+      <div class="draft-notice" id="transferNotice"></div>
+    </section>
+
+    <!-- Screen 3: Success -->
+    <div id="transferSuccess" style="display:none;">
+      <div class="success-card">
+        <div class="success-icon">🏛️</div>
+        <h2 class="success-title">Pemindahan Disahkan</h2>
+        <p class="success-title-en">Transfer Confirmed</p>
+        <p class="success-msg">Permohonan pemindahan anda telah berjaya dihantar dan direkodkan.</p>
+        <p class="success-msg-en">Your church transfer request has been successfully submitted and recorded.</p>
+        <a href="home.html" class="btn btn-primary success-back-btn">&#8592; Kembali ke Halaman Rumah / Back to Home Page</a>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <p>&copy; <span id="transferFooterYear"></span> BEM On The Rock. Hak Cipta Terpelihara / All Rights Reserved.</p>
+  </footer>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="theme.js"></script>
+  <script>
+    document.getElementById("transferFooterYear").textContent = new Date().getFullYear();
+    let memberDocId = null, memberData = null;
+
+    function formatIC(v) {
+      const d = v.replace(/\D/g,"");
+      let f = d;
+      if (d.length>6) f = d.substring(0,6)+"-"+d.substring(6);
+      if (d.length>8) f = f.substring(0,9)+"-"+d.substring(8);
+      return f.substring(0,14);
+    }
+
+    function showScreen(id) {
+      ["screen-verify","screen-transfer"].forEach(s => {
+        const el = document.getElementById(s);
+        if (el) el.classList.toggle("active", s===id);
+      });
+      window.scrollTo({top:0,behavior:"smooth"});
+    }
+
+    document.getElementById("transferIC").addEventListener("input", function() {
+      this.value = formatIC(this.value);
+    });
+
+    document.getElementById("btnVerifyTransfer").addEventListener("click", async () => {
+      const ic    = document.getElementById("transferIC").value.replace(/-/g,"");
+      const errEl = document.getElementById("err-transferIC");
+      const notice= document.getElementById("verifyNotice");
+      errEl.textContent = "";
+      if (ic.length !== 12) { errEl.textContent="Sila masukkan No. KP yang sah / Enter a valid IC No."; return; }
+      notice.textContent = "Menyemak... / Checking...";
+      try {
+        const snap = await db.collection("registrations").where("icNo","==",ic).where("approved","==",true).get();
+        if (snap.empty) {
+          errEl.textContent = "Tiada rekod ahli aktif dengan No. KP ini / No active member found.";
+          notice.textContent = "";
+          return;
+        }
+        memberDocId = snap.docs[0].id;
+        memberData  = snap.docs[0].data();
+        notice.textContent = "";
+
+        // Populate banner
+        const a = memberData.sectionA || {};
+        const photoWrap = document.getElementById("transferMemberPhoto");
+        photoWrap.innerHTML = memberData.photoURL
+          ? `<img src="${memberData.photoURL}" style="width:44px;height:55px;object-fit:cover;border-radius:4px;border:1.5px solid var(--marigold-dim);"/>`
+          : `<div style="width:44px;height:55px;line-height:55px;text-align:center;background:var(--bg-input);border-radius:4px;border:1.5px solid var(--border-input);font-size:1.4rem;">👤</div>`;
+        document.getElementById("transferMemberName").textContent = (a.fullName||memberData.name||"—").toUpperCase();
+        document.getElementById("transferMemberUID").textContent  = `ID: ${memberData.uniqueID||"—"}`;
+
+        // Default date to today
+        const today = new Date().toISOString().split("T")[0];
+        document.getElementById("transferDate").value = today;
+
+        showScreen("screen-transfer");
+      } catch(e) {
+        errEl.textContent = "Ralat sistem / System error. Please try again.";
+        notice.textContent = "";
+      }
+    });
+
+    document.getElementById("btnBackTransfer").addEventListener("click", () => showScreen("screen-verify"));
+
+    document.getElementById("btnConfirmTransfer").addEventListener("click", async () => {
+      const reason = document.getElementById("transferReason").value.trim();
+      const date   = document.getElementById("transferDate").value;
+      const to     = document.getElementById("transferTo").value.trim();
+      let valid    = true;
+
+      ["transferReason","transferDate","transferTo"].forEach(id =>
+        document.getElementById("err-"+id).textContent = ""
+      );
+      if (!reason) { document.getElementById("err-transferReason").textContent = "Sila isi tujuan perpindahan / Please state reason"; valid=false; }
+      if (!date)   { document.getElementById("err-transferDate").textContent   = "Sila pilih tarikh / Please select date"; valid=false; }
+      if (!to)     { document.getElementById("err-transferTo").textContent     = "Sila isi destinasi / Please state destination"; valid=false; }
+      if (!valid) return;
+
+      const btn = document.getElementById("btnConfirmTransfer");
+      btn.disabled = true; btn.textContent = "Menyimpan... / Saving...";
+
+      try {
+        await db.collection("registrations").doc(memberDocId).update({
+          transferred:      true,
+          transferReason:   reason,
+          transferDate:     date,
+          transferTo:       to,
+          transferAt:       firebase.firestore.FieldValue.serverTimestamp(),
+          approved:         false,
+          lastUpdated:      firebase.firestore.FieldValue.serverTimestamp(),
+        });
+        document.getElementById("screen-transfer").style.display = "none";
+        document.getElementById("transferSuccess").style.display = "block";
+        window.scrollTo({top:0,behavior:"smooth"});
+      } catch(e) {
+        document.getElementById("transferNotice").textContent = "Ralat / Error: " + e.message;
+        btn.disabled = false; btn.textContent = "Sahkan Pemindahan / Confirm Transfer →";
+      }
+    });
+  </script>
+</body>
+</html>

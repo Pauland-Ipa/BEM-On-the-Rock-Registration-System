@@ -140,13 +140,32 @@ function renderTable() {
     const photoHTML = reg.photoURL
       ? `<img src="${reg.photoURL}" class="admin-photo-thumb" alt="Photo"/>`
       : `<div class="admin-photo-placeholder">👤</div>`;
-    const isActive  = reg.approved === true;
-    const statusHTML = isActive
-      ? `<span class="membership-badge membership-badge--active">✔ Aktif / Active</span>`
-      : `<span class="membership-badge membership-badge--inactive">✖ Tidak Aktif / Inactive</span>`;
-    const activateBtn = isActive
-      ? `<button class="action-dropdown-item deactivate-btn" data-id="${reg.id}" data-name="${reg.name||""}"><span class="action-icon">🔴</span> Nyahaktifkan / Deactivate</button>`
-      : `<button class="action-dropdown-item activate-btn" data-id="${reg.id}" data-name="${reg.name||""}"><span class="action-icon">🟢</span> Aktifkan / Activate</button>`;
+    const isActive      = reg.approved === true;
+    const isTransferred = reg.transferred === true;
+    const isDeceased    = reg.deceased === true;
+
+    let statusHTML;
+    if (isDeceased) {
+      statusHTML = `<span class="membership-badge membership-badge--deceased">✝ Meninggal / Deceased</span>`;
+    } else if (isTransferred) {
+      statusHTML = `<span class="membership-badge membership-badge--transferred">↗ Berpindah / Transferred</span>`;
+    } else if (isActive) {
+      statusHTML = `<span class="membership-badge membership-badge--active">✔ Aktif / Active</span>`;
+    } else {
+      statusHTML = `<span class="membership-badge membership-badge--inactive">✖ Tidak Aktif / Inactive</span>`;
+    }
+
+    // Action button logic
+    let activateBtn;
+    if (isDeceased) {
+      activateBtn = `<button class="action-dropdown-item" style="color:var(--text-muted);cursor:not-allowed;opacity:0.4;" disabled><span class="action-icon">⛔</span> Meninggal / Deceased</button>`;
+    } else if (isTransferred) {
+      activateBtn = `<button class="action-dropdown-item cancel-transfer-btn" data-id="${reg.id}" data-name="${reg.name||""}"><span class="action-icon">↩️</span> Batal Pindah / Cancel Transfer</button>`;
+    } else if (isActive) {
+      activateBtn = `<button class="action-dropdown-item deactivate-btn" data-id="${reg.id}" data-name="${reg.name||""}"><span class="action-icon">🔴</span> Nyahaktifkan / Deactivate</button>`;
+    } else {
+      activateBtn = `<button class="action-dropdown-item activate-btn" data-id="${reg.id}" data-name="${reg.name||""}"><span class="action-icon">🟢</span> Aktifkan / Activate</button>`;
+    }
 
     tr.innerHTML = `
       <td class="col-photo">${photoHTML}</td>
@@ -209,6 +228,9 @@ function bindTableEvents() {
   );
   document.querySelectorAll(".deactivate-btn").forEach(b =>
     b.addEventListener("click", () => openDeactivateModal(b.dataset.id, b.dataset.name))
+  );
+  document.querySelectorAll(".cancel-transfer-btn").forEach(b =>
+    b.addEventListener("click", () => cancelTransfer(b.dataset.id, b.dataset.name))
   );
   document.querySelectorAll(".delete-btn").forEach(b => {
     b.addEventListener("click", () => {
@@ -288,6 +310,21 @@ document.getElementById("confirmDeactivateBtn").addEventListener("click", async 
   closeDeactivateModal();
 });
 
+// ── Cancel Transfer ──
+async function cancelTransfer(id, name) {
+  if (!confirm(`Batal pemindahan ${name}?\nCancel transfer for ${name}?`)) return;
+  try {
+    await db.collection("registrations").doc(id).update({
+      transferred:    false,
+      transferReason: firebase.firestore.FieldValue.delete(),
+      transferDate:   firebase.firestore.FieldValue.delete(),
+      transferTo:     firebase.firestore.FieldValue.delete(),
+      transferAt:     firebase.firestore.FieldValue.delete(),
+      approved:       false,
+    });
+  } catch(e) { alert("Ralat / Error: " + e.message); }
+}
+
 // ── VIEW MODAL — fixed label:value formatting ──
 function vRow(label, value) {
   return `<div class="vf-row"><span class="vf-label">${label}:</span><span class="vf-value">${value||"—"}</span></div>`;
@@ -319,8 +356,26 @@ function buildViewHTML(reg) {
         reg.behalfReason === "others" ? `Lain-lain / Others: ${reg.behalfOtherReason||"—"}` : "—")}
     </div>` : "";
 
+  const transferSection = reg.transferred ? `
+    <div class="vf-section-title" style="color:#3B9EE8;">↗ Maklumat Pemindahan / Transfer Information</div>
+    <div class="vf-grid">
+      ${vRow("Tujuan Perpindahan / Reason For Transfer", reg.transferReason)}
+      ${vRow("Tarikh Akan Berpindah / Date of Transfer",  reg.transferDate)}
+      ${vRow("Pindah Ke Mana? / Transfer To Where?",      reg.transferTo)}
+    </div>` : "";
+
+  const deceasedSection = reg.deceased ? `
+    <div class="vf-section-title" style="color:var(--text-muted);">✝ Maklumat Kematian / Deceased Information</div>
+    <div class="vf-grid">
+      ${vRow("Nombor Lot Kubur / Grave Lot Number", reg.deceasedGraveLot)}
+      ${vRow("Tarikh Kematian / Date of Passing",    reg.deceasedDate)}
+      ${vRow("Diumumkan Oleh / Declared By",         reg.deceasedDeclaredBy ? `IC: ${reg.deceasedDeclaredBy}` : "—")}
+    </div>` : "";
+
   return `
     ${behalfSection}
+    ${transferSection}
+    ${deceasedSection}
     ${photoSection}
     <div class="vf-section-title">A. Maklumat Peribadi / Personal Information</div>
     <div class="vf-grid">
@@ -436,6 +491,18 @@ function printRecord(id) {
     reg.behalfReason === "others"  ? `Lain-lain / Others: ${reg.behalfOtherReason||"—"}` : "—"
   }</span></div>` : "";
 
+  const transferPrint = reg.transferred ? `
+  <h3 style="color:#1a6ea8;">↗ Maklumat Pemindahan / Transfer Information</h3>
+  <div class="row"><span class="lbl">Tujuan Perpindahan / Reason For Transfer:</span><span>${reg.transferReason||"—"}</span></div>
+  <div class="row"><span class="lbl">Tarikh Akan Berpindah / Date of Transfer:</span><span>${reg.transferDate||"—"}</span></div>
+  <div class="row"><span class="lbl">Pindah Ke Mana? / Transfer To Where?:</span><span>${reg.transferTo||"—"}</span></div>` : "";
+
+  const deceasedPrint = reg.deceased ? `
+  <h3 style="color:#555;">✝ Maklumat Kematian / Deceased Information</h3>
+  <div class="row"><span class="lbl">Nombor Lot Kubur / Grave Lot Number:</span><span>${reg.deceasedGraveLot||"—"}</span></div>
+  <div class="row"><span class="lbl">Tarikh Kematian / Date of Passing:</span><span>${reg.deceasedDate||"—"}</span></div>
+  <div class="row"><span class="lbl">Diumumkan Oleh / Declared By (IC):</span><span>${reg.deceasedDeclaredBy||"—"}</span></div>` : "";
+
   const printHTML = `<html><head><title>BEM On The Rock — ${(a.fullName||"Pendaftar").toUpperCase()}</title>
   <style>
     body{font-family:Arial,sans-serif;font-size:11pt;color:#000;margin:2cm}
@@ -462,6 +529,8 @@ function printRecord(id) {
   <h2>Borang Pendaftaran Keanggotaan Gereja / Church Membership Registration Form</h2>
   <h2 class="uid">ID Unik / Unique ID: ${uid}</h2>
   ${behalfPrint}
+  ${transferPrint}
+  ${deceasedPrint}
   <h3>A. Maklumat Peribadi / Personal Information</h3>
   ${photoSection}
   <div class="row"><span class="lbl">Nama Penuh / Full Name:</span><span style="font-weight:bold;text-transform:uppercase">${a.fullName||"—"}</span></div>

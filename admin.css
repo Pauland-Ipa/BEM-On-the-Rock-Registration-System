@@ -544,8 +544,10 @@
   font-family: var(--font-display); font-size: 0.72rem; font-weight: 700;
   letter-spacing: 0.05em; white-space: nowrap;
 }
-.membership-badge--active   { background: rgba(46,125,82,0.2);  color: #4CAF7D; border: 1px solid #2E7D52; }
-.membership-badge--inactive { background: rgba(209,50,50,0.15); color: #E05555; border: 1px solid #C0392B; }
+.membership-badge--active      { background: rgba(46,125,82,0.2);   color: #4CAF7D; border: 1px solid #2E7D52; }
+.membership-badge--inactive    { background: rgba(209,50,50,0.15);  color: #E05555; border: 1px solid #C0392B; }
+.membership-badge--transferred { background: rgba(41,128,185,0.2);  color: #3B9EE8; border: 1px solid #1a6ea8; }
+.membership-badge--deceased    { background: rgba(60,60,60,0.4);    color: #AAAAAA; border: 1px solid #555555; }
 
 /* ── Modal size ── */
 .modal-card--lg { max-width: 780px; max-height: 88vh; }

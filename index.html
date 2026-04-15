@@ -167,7 +167,10 @@
 
         <!-- Member Role Selection -->
         <div class="form-group full-width member-role-box">
-          <span class="required" style="display:block; margin-bottom:0.5rem;">*</span>
+          <label class="form-label" style="margin-bottom:0.5rem;">
+            Pangkat Dalam Komsel <span class="label-en">/ Rank in Cell Group</span>
+            <span class="required">*</span>
+          </label>
           <div class="checkbox-group">
             <label class="checkbox-label">
               <input type="radio" name="memberRole" value="pastoral" id="rolePastoral" />
@@ -182,12 +185,12 @@
             <label class="checkbox-label">
               <input type="radio" name="memberRole" value="komselLeader" id="roleKomselLeader" />
               <span class="custom-radio"></span>
-              Ketua Komsel <em>/ Komsel Leader</em>
+              Ketua Kumpulan Sel <em>/ Cell Group Leader</em>
             </label>
             <label class="checkbox-label">
               <input type="radio" name="memberRole" value="komselMember" id="roleKomselMember" />
               <span class="custom-radio"></span>
-              Ahli Komsel <em>/ Komsel Member</em>
+              Ahli Kumpulan Sel <em>/ Cell Group Member</em>
             </label>
           </div>
           <span class="error-msg" id="err-memberRole"></span>
@@ -307,7 +310,7 @@
               <span class="required">*</span>
             </label>
             <input type="text" id="race" name="race"
-              class="form-input" placeholder="cth/e.g. Kadazan, Iban, Melayu, Cina..." />
+              class="form-input" placeholder="cth/e.g. Kayan, Kenyah, Melanau, Penan, Cina..." />
             <span class="error-msg" id="err-race"></span>
           </div>
 
@@ -456,7 +459,7 @@
               <span class="required">*</span>
             </label>
             <input type="text" id="komselCode" name="komselCode"
-              class="form-input" placeholder="cth/e.g. SN 1, ZV 3, ZPA 2..."
+              class="form-input" placeholder="Masukkan kod komsel anda / Please enter your cell group code"
               style="text-transform:uppercase;" />
             <span class="komsel-valid-badge" id="komselValidBadge"></span>
             <span class="error-msg" id="err-komselCode"></span>
