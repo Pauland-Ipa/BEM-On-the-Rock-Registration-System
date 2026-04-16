@@ -323,14 +323,14 @@ body {
   align-items: center;
   gap: 0.35rem;
   cursor: default;
-  opacity: 0.4;
-  transition: opacity var(--transition), transform var(--transition);
+  transition: transform var(--transition);
   min-width: 70px;
+  /* No opacity — colours controlled per-element below */
 }
 
-.step.active  { opacity: 1; }
-.step.completed { opacity: 0.85; cursor: pointer; }
-.step.completed:hover { opacity: 1; transform: translateY(-2px); }
+.step.active    { }
+.step.completed { cursor: pointer; }
+.step.completed:hover { transform: translateY(-2px); }
 
 .step-circle {
   width: 38px;
@@ -343,30 +343,21 @@ body {
   font-family: var(--font-display);
   font-weight: 700;
   font-size: 0.95rem;
-  color: var(--step-inactive);
   background: var(--bg-card);
   transition: all var(--transition);
 }
 
-.step.active .step-circle {
-  background: var(--marigold);
-  border-color: var(--marigold-bright);
-  color: #000;
-  box-shadow: 0 0 16px rgba(255,140,0,0.5);
-}
+/* Dark mode — inactive circles: white letter, visible border */
+[data-theme="dark"] .step-circle              { color: #FFFFFF;  border-color: rgba(255,255,255,0.45); }
+[data-theme="dark"] .step.active .step-circle { color: #000; background: var(--marigold); border-color: var(--marigold-bright); box-shadow: 0 0 14px rgba(255,140,0,0.5); }
+[data-theme="dark"] .step.completed .step-circle { color: var(--marigold); border-color: var(--marigold); background: var(--bg-card); font-size: 0; }
+[data-theme="dark"] .step.completed .step-circle::after { content: '✓'; font-family: sans-serif; font-size: 1rem; }
 
-.step.completed .step-circle {
-  background: var(--bg-card);
-  border-color: var(--marigold);
-  color: var(--marigold);
-  font-size: 0;
-}
-
-.step.completed .step-circle::after {
-  content: '✓';
-  font-family: sans-serif;
-  font-size: 1rem;
-}
+/* Light mode — inactive circles: black letter, visible border */
+[data-theme="light"] .step-circle              { color: #000000; border-color: rgba(0,0,0,0.4); background: rgba(255,252,248,0.9); }
+[data-theme="light"] .step.active .step-circle { color: #000; background: var(--marigold-dim); border-color: var(--marigold); box-shadow: 0 0 14px rgba(204,112,0,0.4); }
+[data-theme="light"] .step.completed .step-circle { color: #A05000; border-color: #CC7000; background: rgba(255,252,248,0.9); font-size: 0; }
+[data-theme="light"] .step.completed .step-circle::after { content: '✓'; font-family: sans-serif; font-size: 1rem; }
 
 .step-label {
   font-size: 0.72rem;
@@ -376,24 +367,23 @@ body {
   font-weight: 700;
   letter-spacing: 0.03em;
   max-width: 68px;
-  transition: color var(--transition), opacity var(--transition);
-  /* default fallback */
-  color: rgba(255,255,255,0.7);
-  opacity: 1;
+  transition: color var(--transition);
 }
 
-.step.active    .step-label { color: var(--marigold-bright); font-weight: 800; }
-.step.completed .step-label { color: var(--marigold);        opacity: 0.9; }
+/* ── Dark mode step labels ── */
+[data-theme="dark"] .step-label                  { color: #FFFFFF; }
+[data-theme="dark"] .step.active    .step-label  { color: var(--marigold-bright); }
+[data-theme="dark"] .step.completed .step-label  { color: var(--marigold-pale);   }
 
-/* Dark mode — pure white for inactive, marigold for active */
-[data-theme="dark"] .step-label              { color: #FFFFFF; opacity: 0.75; }
-[data-theme="dark"] .step.active .step-label { color: var(--marigold-bright); opacity: 1; }
-[data-theme="dark"] .step.completed .step-label { color: var(--marigold-pale); opacity: 1; }
+/* ── Light mode step labels ── */
+[data-theme="light"] .step-label                 { color: #000000; }
+[data-theme="light"] .step.active    .step-label { color: #7A3A00; }
+[data-theme="light"] .step.completed .step-label { color: #A05000; }
 
-/* Light mode — pure black for inactive, deep amber for active */
-[data-theme="light"] .step-label              { color: #000000; opacity: 0.75; }
-[data-theme="light"] .step.active .step-label { color: #7A3A00; opacity: 1; }
-[data-theme="light"] .step.completed .step-label { color: #A05000; opacity: 1; }
+/* Fallback (no data-theme set yet) */
+.step-label              { color: #FFFFFF; }
+.step.active .step-label { color: var(--marigold-bright); font-weight: 800; }
+.step.completed .step-label { color: var(--marigold-pale); }
 
 .step-line {
   flex: 1;
@@ -494,6 +484,7 @@ body {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1.4rem;
+  overflow: visible;
 }
 
 .form-group { display: flex; flex-direction: column; gap: 0.4rem; }
@@ -622,6 +613,7 @@ input[type="date"].form-input::-webkit-calendar-picker-indicator {
   border-left: 3px solid var(--marigold);
   border-radius: 0 var(--radius) var(--radius) 0;
   animation: fadeSlideIn 0.3s ease forwards;
+  overflow: visible; /* allow year picker dropdown to overflow */
 }
 
 .conditional-field.visible { display: block; }
@@ -692,7 +684,10 @@ input[type="date"].form-input::-webkit-calendar-picker-indicator {
 .photo-change-btn:hover { background: rgba(255,140,0,0.08); }
 
 /* ── Year Grid Picker ── */
-.year-picker-wrap { position: relative; }
+.year-picker-wrap {
+  position: relative;
+  z-index: 50;
+}
 
 .year-picker-display {
   width: 100%;
@@ -949,12 +944,24 @@ input[type="date"].form-input::-webkit-calendar-picker-indicator {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 4rem 2rem;
+  padding: 3rem 2.5rem;
   text-align: center;
   animation: fadeSlideIn 0.5s ease forwards;
+  /* Opaque glass card — matches rest of page */
+  background: var(--bg-card);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1.5px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 12px 48px rgba(0,0,0,0.45);
+  max-width: 640px;
+  margin: 0 auto;
 }
 
-.success-icon { font-size: 4rem; margin-bottom: 1.2rem; }
+[data-theme="dark"]  .success-card { background: rgba(14,12,10,0.92); }
+[data-theme="light"] .success-card { background: rgba(255,252,248,0.97); }
+
+.success-icon { font-size: 3.5rem; margin-bottom: 1.2rem; }
 
 .success-title {
   font-family: var(--font-display);
@@ -964,26 +971,29 @@ input[type="date"].form-input::-webkit-calendar-picker-indicator {
   margin-bottom: 0.2rem;
 }
 
+[data-theme="light"] .success-title { color: #7A3A00; }
+
 .success-title-en {
   font-family: var(--font-display);
-  font-size: clamp(1rem, 3vw, 1.4rem);
-  color: var(--silver);
+  font-size: clamp(0.95rem, 2.5vw, 1.25rem);
+  color: var(--text-muted);
   font-style: italic;
   margin-bottom: 1.5rem;
 }
 
 .success-msg {
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   color: var(--text-primary);
   line-height: 1.7;
   margin-bottom: 0.3rem;
+  font-weight: 600;
 }
 
 .success-msg-en {
   font-size: 0.95rem;
   color: var(--text-secondary);
   font-style: italic;
-  margin-bottom: 2.5rem;
+  margin-bottom: 2.2rem;
 }
 
 .success-back-btn { padding: 0.85rem 2.5rem; font-size: 1rem; }
