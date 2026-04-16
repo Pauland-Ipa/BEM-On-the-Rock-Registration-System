@@ -198,14 +198,91 @@
     </div>
   </div>
 
+  <!-- ═══ MEMBERSHIP CARD MODAL ═══ -->
+  <div class="modal-overlay" id="membershipCardModal" style="display:none;">
+    <div class="modal-card" style="max-width:600px;">
+      <div class="modal-header">
+        <h3 class="modal-title">🪪 Kad Keanggotaan / Membership Card</h3>
+        <button class="modal-close" id="closeMCModal">&times;</button>
+      </div>
+      <div class="modal-body" style="display:flex;flex-direction:column;align-items:center;gap:1.5rem;padding:2rem 1.5rem;">
+
+        <!-- Card preview — same structure as member-facing page -->
+        <div id="adminMembershipCard" style="
+          width:480px; height:286px;
+          background:linear-gradient(135deg,#0a0500 0%,#1a0e00 40%,#0a0a0a 100%);
+          border:2px solid #FF8C00; border-radius:16px; position:relative;
+          overflow:hidden; box-shadow:0 12px 40px rgba(255,140,0,0.3);
+          flex-shrink:0;">
+
+          <div style="position:absolute;top:0;left:0;right:0;height:5px;background:linear-gradient(90deg,#CC7000,#FF8C00,#FFA333,#FF8C00,#CC7000);"></div>
+          <div style="position:absolute;bottom:0;left:0;right:0;height:5px;background:linear-gradient(90deg,#CC7000,#FF8C00,#FFA333,#FF8C00,#CC7000);"></div>
+          <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 80% 20%,rgba(255,140,0,0.12) 0%,transparent 55%),radial-gradient(ellipse at 20% 80%,rgba(255,140,0,0.07) 0%,transparent 45%);pointer-events:none;"></div>
+
+          <!-- Title -->
+          <div style="position:absolute;top:14px;left:0;right:0;padding:0 14px 0 100px;display:flex;flex-direction:column;align-items:center;gap:2px;">
+            <div style="font-family:'Cinzel',serif;font-size:0.72rem;font-weight:700;letter-spacing:0.12em;color:#FFA333;text-transform:uppercase;text-align:center;text-shadow:0 0 12px rgba(255,140,0,0.5);line-height:1.2;">BEM On The Rock<br/>Member Card</div>
+            <div style="font-family:'Cinzel',serif;font-size:0.55rem;letter-spacing:0.08em;color:#C0C0C0;font-style:italic;">Kad Keanggotaan Gereja</div>
+          </div>
+
+          <!-- Logo -->
+          <img src="Images/logo.jpg" style="position:absolute;top:10px;right:14px;width:40px;height:40px;object-fit:contain;opacity:0.9;" alt="Logo"/>
+
+          <!-- Photo area -->
+          <div id="mcPhotoArea" style="position:absolute;top:10px;left:14px;width:68px;height:85px;border-radius:6px;border:2px solid #FF8C00;background:#1a1a1a;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:1.8rem;color:#555;"></div>
+
+          <!-- Info -->
+          <div style="position:absolute;top:104px;left:14px;right:14px;">
+            <div id="mcName" style="font-family:'Cinzel',serif;font-size:0.95rem;font-weight:700;color:#FFF8E7;letter-spacing:0.05em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:5px;"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px 14px;">
+              <div style="display:flex;flex-direction:column;gap:1px;">
+                <span style="font-family:'Cinzel',serif;font-size:0.48rem;letter-spacing:0.1em;color:#FF8C00;text-transform:uppercase;">ID</span>
+                <span id="mcUID" style="font-size:0.75rem;color:#F5F5F0;font-weight:600;"></span>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:1px;">
+                <span style="font-family:'Cinzel',serif;font-size:0.48rem;letter-spacing:0.1em;color:#FF8C00;text-transform:uppercase;">Jantina / Gender</span>
+                <span id="mcGender" style="font-size:0.75rem;color:#F5F5F0;font-weight:600;"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Validity -->
+          <div style="position:absolute;bottom:12px;left:14px;right:14px;display:flex;justify-content:space-between;align-items:flex-end;">
+            <div style="display:flex;flex-direction:column;gap:1px;">
+              <span style="font-family:'Cinzel',serif;font-size:0.46rem;letter-spacing:0.1em;color:#FF8C00;text-transform:uppercase;">Sah Dari / Valid From</span>
+              <span id="mcValidFrom" style="font-size:0.75rem;color:#F5F5F0;font-weight:600;"></span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:1px;">
+              <span style="font-family:'Cinzel',serif;font-size:0.46rem;letter-spacing:0.1em;color:#FF8C00;text-transform:uppercase;">Sah Hingga / Valid Until</span>
+              <span id="mcValidUntil" style="font-size:0.75rem;color:#F5F5F0;font-weight:600;"></span>
+            </div>
+            <div id="mcStatusBadge" style="background:linear-gradient(135deg,#2E7D32,#388E3C);color:#fff;font-family:'Cinzel',serif;font-size:0.54rem;letter-spacing:0.1em;text-transform:uppercase;padding:3px 9px;border-radius:999px;border:1px solid #4CAF50;">Aktif</div>
+          </div>
+        </div><!-- /adminMembershipCard -->
+
+        <!-- Download buttons -->
+        <div style="display:flex;gap:0.85rem;flex-wrap:wrap;justify-content:center;">
+          <button class="mc-dl-btn mc-dl-btn--png" id="adminBtnDLPNG">🖼 Muat Turun PNG</button>
+          <button class="mc-dl-btn mc-dl-btn--pdf" id="adminBtnDLPDF">📄 Muat Turun PDF</button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="closeMCModalBtn">Tutup / Close</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Firebase CDN -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="firebase-config.js"></script>
   <script src="theme.js"></script>
   <script src="language_strings.js"></script>
+  <script src="membership-card.js"></script>
   <script src="admin.js"></script>
 </body>
 </html>

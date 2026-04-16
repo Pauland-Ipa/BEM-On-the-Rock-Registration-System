@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BEM On The Rock — Kad Keanggotaan</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet"/>
+  <!-- html2canvas for PNG export, jsPDF for PDF export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    /* ── Page layout ── */
+    .mc-page-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem 4rem;
+      gap: 2rem;
+    }
+
+    /* ── Verify screen ── */
+    .mc-verify-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-lg);
+      padding: 2.5rem 2rem;
+      width: 100%;
+      max-width: 480px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.35);
+    }
+
+    /* ── Membership Card ── */
+    #membershipCardWrap {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5rem;
+      width: 100%;
+    }
+
+    /* The card itself — credit-card ratio 85.6mm × 54mm → ~3.37:1 scaled up */
+    #membershipCard {
+      width: 520px;
+      height: 310px;
+      background: linear-gradient(135deg, #0a0500 0%, #1a0e00 40%, #0a0a0a 100%);
+      border: 2px solid #FF8C00;
+      border-radius: 16px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 12px 40px rgba(255,140,0,0.35), 0 0 0 1px rgba(255,140,0,0.15);
+      font-family: 'Crimson Pro', serif;
+      color: #F5F5F0;
+      flex-shrink: 0;
+    }
+
+    /* Background watermark pattern */
+    #membershipCard::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 80% 20%, rgba(255,140,0,0.12) 0%, transparent 55%),
+        radial-gradient(ellipse at 20% 80%, rgba(255,140,0,0.07) 0%, transparent 45%);
+      pointer-events: none;
+    }
+
+    .mc-top-stripe {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 5px;
+      background: linear-gradient(90deg, #CC7000, #FF8C00, #FFA333, #FF8C00, #CC7000);
+    }
+
+    .mc-bottom-stripe {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 5px;
+      background: linear-gradient(90deg, #CC7000, #FF8C00, #FFA333, #FF8C00, #CC7000);
+    }
+
+    /* Header row: logo + title */
+    .mc-header {
+      position: absolute;
+      top: 14px; left: 0; right: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      padding: 0 16px 0 100px; /* leave room for photo on left */
+    }
+
+    .mc-title {
+      font-family: 'Cinzel', serif;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      color: #FFA333;
+      text-transform: uppercase;
+      text-align: center;
+      text-shadow: 0 0 12px rgba(255,140,0,0.5);
+      line-height: 1.2;
+    }
+
+    .mc-subtitle {
+      font-family: 'Cinzel', serif;
+      font-size: 0.6rem;
+      letter-spacing: 0.08em;
+      color: #C0C0C0;
+      font-style: italic;
+      text-align: center;
+    }
+
+    /* Logo */
+    .mc-logo {
+      position: absolute;
+      top: 10px;
+      right: 16px;
+      width: 44px;
+      height: 44px;
+      object-fit: contain;
+      opacity: 0.9;
+    }
+
+    /* Photo */
+    .mc-photo {
+      position: absolute;
+      top: 10px;
+      left: 16px;
+      width: 72px;
+      height: 90px;
+      object-fit: cover;
+      border-radius: 6px;
+      border: 2px solid #FF8C00;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      background: #1a1a1a;
+    }
+
+    /* Photo placeholder */
+    .mc-photo-placeholder {
+      position: absolute;
+      top: 10px;
+      left: 16px;
+      width: 72px;
+      height: 90px;
+      border-radius: 6px;
+      border: 2px solid #FF8C00;
+      background: #1a1a1a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      color: #555;
+    }
+
+    /* Member info block */
+    .mc-info {
+      position: absolute;
+      top: 108px;
+      left: 16px;
+      right: 16px;
+    }
+
+    .mc-name {
+      font-family: 'Cinzel', serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #FFF8E7;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.2;
+      margin-bottom: 6px;
+    }
+
+    .mc-fields {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px 16px;
+    }
+
+    .mc-field {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+
+    .mc-field-label {
+      font-family: 'Cinzel', serif;
+      font-size: 0.52rem;
+      letter-spacing: 0.1em;
+      color: #FF8C00;
+      text-transform: uppercase;
+    }
+
+    .mc-field-value {
+      font-size: 0.82rem;
+      color: #F5F5F0;
+      font-weight: 600;
+      line-height: 1.2;
+    }
+
+    /* Validity bar at bottom */
+    .mc-validity {
+      position: absolute;
+      bottom: 12px;
+      left: 16px;
+      right: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    .mc-validity-block {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+
+    .mc-valid-label {
+      font-family: 'Cinzel', serif;
+      font-size: 0.5rem;
+      letter-spacing: 0.1em;
+      color: #FF8C00;
+      text-transform: uppercase;
+    }
+
+    .mc-valid-value {
+      font-size: 0.82rem;
+      color: #F5F5F0;
+      font-weight: 600;
+    }
+
+    .mc-status-badge {
+      background: linear-gradient(135deg, #2E7D32, #388E3C);
+      color: #fff;
+      font-family: 'Cinzel', serif;
+      font-size: 0.58rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 999px;
+      border: 1px solid #4CAF50;
+    }
+
+    /* Download buttons */
+    .mc-download-row {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .mc-dl-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: 'Cinzel', serif;
+      font-size: 0.82rem;
+      letter-spacing: 0.05em;
+      font-weight: 700;
+      padding: 0.6rem 1.6rem;
+      border-radius: var(--radius);
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .mc-dl-btn--pdf {
+      background: linear-gradient(135deg, #CC3333, #E04444);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(200,50,50,0.35);
+    }
+
+    .mc-dl-btn--pdf:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(200,50,50,0.45); }
+
+    .mc-dl-btn--png {
+      background: linear-gradient(135deg, #1565C0, #1976D2);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(21,101,192,0.35);
+    }
+
+    .mc-dl-btn--png:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(21,101,192,0.45); }
+
+    /* Responsive */
+    @media (max-width: 560px) {
+      #membershipCard { width: 340px; height: 202px; transform-origin: top center; }
+      .mc-title { font-size: 0.6rem; }
+      .mc-name  { font-size: 0.75rem; }
+      .mc-photo, .mc-photo-placeholder { width: 52px; height: 66px; }
+      .mc-info  { top: 78px; }
+      .mc-field-value { font-size: 0.68rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="logo-wrap"><img src="Images/logo.jpg" alt="BEM On The Rock" class="logo-img"/></div>
+      <div class="header-text">
+        <h1 class="church-name">BEM On The Rock</h1>
+        <p class="church-subtitle">Kad Keanggotaan / Membership Card</p>
+      </div>
+      <div class="logo-wrap logo-wrap-right"><img src="Images/logo_bem_sib.png" alt="B.E.M" class="logo-img logo-bem"/></div>
+    </div>
+  </header>
+
+  <main class="form-main">
+    <a href="home.html" class="back-home-btn">&#8592; Kembali ke Halaman Rumah / Back to Home Page</a>
+
+    <div class="mc-page-wrap">
+
+      <!-- Screen 1: Verify IC -->
+      <div class="mc-verify-card" id="screenVerify">
+        <div class="section-header" style="margin-bottom:1.5rem;">
+          <div class="section-badge">🪪</div>
+          <div>
+            <h2 class="section-title">Pengesahan Identiti / Identity Verification</h2>
+            <p class="section-subtitle">Masukkan No. KP anda untuk memaparkan kad keanggotaan anda.</p>
+            <p class="section-subtitle">Enter your IC No. to view your membership card.</p>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:1.2rem;">
+          <label class="form-label" for="mcVerifyIC">No. KP / IC No. <span class="required">*</span></label>
+          <input type="text" id="mcVerifyIC" class="form-input" placeholder="cth/e.g. 901231-14-5678" maxlength="14"/>
+          <span class="error-msg" id="err-mcVerifyIC"></span>
+        </div>
+        <div class="form-actions form-actions--end">
+          <button class="btn btn-primary" id="btnVerifyMC">Papar Kad / View Card &rarr;</button>
+        </div>
+        <div class="draft-notice" id="mcVerifyNotice"></div>
+      </div>
+
+      <!-- Screen 2: Card display -->
+      <div id="membershipCardWrap">
+
+        <!-- The card -->
+        <div id="membershipCard">
+          <div class="mc-top-stripe"></div>
+          <div class="mc-bottom-stripe"></div>
+
+          <!-- Title top-centre -->
+          <div class="mc-header">
+            <div class="mc-title">BEM On The Rock<br/>Member Card</div>
+            <div class="mc-subtitle">Kad Keanggotaan Gereja</div>
+          </div>
+
+          <!-- Logo top-right -->
+          <img src="Images/logo.jpg" class="mc-logo" id="mcLogoImg" alt="Logo"/>
+
+          <!-- Photo top-left -->
+          <div id="mcPhotoArea"></div>
+
+          <!-- Info block -->
+          <div class="mc-info">
+            <div class="mc-name" id="mcName">NAMA PENUH</div>
+            <div class="mc-fields">
+              <div class="mc-field">
+                <span class="mc-field-label">ID</span>
+                <span class="mc-field-value" id="mcUID">—</span>
+              </div>
+              <div class="mc-field">
+                <span class="mc-field-label">Jantina / Gender</span>
+                <span class="mc-field-value" id="mcGender">—</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Validity bottom -->
+          <div class="mc-validity">
+            <div class="mc-validity-block">
+              <span class="mc-valid-label">Sah Dari / Valid From</span>
+              <span class="mc-valid-value" id="mcValidFrom">—</span>
+            </div>
+            <div class="mc-validity-block">
+              <span class="mc-valid-label">Sah Hingga / Valid Until</span>
+              <span class="mc-valid-value" id="mcValidUntil">—</span>
+            </div>
+            <div class="mc-status-badge" id="mcStatusBadge">Aktif / Active</div>
+          </div>
+        </div><!-- /membershipCard -->
+
+        <!-- Download buttons -->
+        <div class="mc-download-row">
+          <button class="mc-dl-btn mc-dl-btn--png" id="btnDLPNG">
+            🖼 Muat Turun PNG / Download PNG
+          </button>
+          <button class="mc-dl-btn mc-dl-btn--pdf" id="btnDLPDF">
+            📄 Muat Turun PDF / Download PDF
+          </button>
+        </div>
+
+        <!-- Back -->
+        <button class="btn btn-secondary" id="btnBackToVerify">
+          &larr; Kembali / Back
+        </button>
+
+      </div><!-- /membershipCardWrap -->
+
+    </div><!-- /mc-page-wrap -->
+  </main>
+
+  <footer class="site-footer">
+    <p>&copy; <span id="mcFooterYear"></span> BEM On The Rock. Hak Cipta Terpelihara / All Rights Reserved.</p>
+  </footer>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="theme.js"></script>
+  <script src="membership-card.js"></script>
+</body>
+</html>
