@@ -990,14 +990,15 @@ function bindSectionCEvents() {
 // ── Draft ──
 function collectSectionCData() {
   const children = [];
-  document.querySelectorAll(".child-card").forEach((card, i) => {
-    const num = i + 1;
-    const genderEl = card.querySelector(`input[name="childGender-${card.dataset.childNum}"]:checked`);
-    children.push({
-      name:   card.querySelector(`[id^="childName-"]`)?.value || "",
-      gender: genderEl?.value || "",
-      myKid:  card.querySelector(`[id^="childMyKid-"]`)?.value || "",
-    });
+  document.querySelectorAll(".child-card").forEach((card) => {
+    const genderEl = card.querySelector(`input[name^="childGender-"]:checked`);
+    const name     = card.querySelector(`[id^="childName-"]`)?.value?.trim() || "";
+    const gender   = genderEl?.value || "";
+    const myKid    = card.querySelector(`[id^="childMyKid-"]`)?.value || "";
+    // Only include child if name AND gender are both filled
+    if (name && gender) {
+      children.push({ name, gender, myKid });
+    }
   });
   return { children, savedAt: new Date().toISOString() };
 }

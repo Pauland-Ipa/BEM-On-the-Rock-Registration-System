@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="style.css"/>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="admin.css"/>
+  <link rel="stylesheet" href="stats.css"/>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body class="admin-body">
@@ -25,35 +26,41 @@
   <main class="admin-main">
     <div class="admin-content-card">
 
+      <!-- Top Bar -->
       <div class="admin-topbar" style="margin-bottom:1.5rem;">
         <div class="admin-topbar-left">
           <h2 class="admin-section-title">📊 Statistik <span>/ Statistics</span></h2>
         </div>
-        <div class="admin-topbar-right">
-          <a href="admin.html" class="btn btn-secondary" style="text-decoration:none;">
-            &larr; Kembali ke Laman Admin / Back to Admin
+        <div class="admin-topbar-right" style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">
+
+          <!-- Go To dropdown -->
+          <div class="stats-goto-wrap">
+            <label class="admin-control-label" for="gotoSelect">Pergi ke / Go to:</label>
+            <select id="gotoSelect" class="form-input form-select admin-select" style="min-width:260px;">
+              <option value="">-- Pilih seksyen / Select section --</option>
+              <option value="section-gender">Statistik Jantina / Gender Statistics</option>
+              <option value="section-time">Jumlah Pendaftaran dari Semasa ke Semasa / Registrations Over Time</option>
+              <option value="section-race">Statistik Bangsa / Race Statistics</option>
+              <option value="section-age">Statistik Umur / Age Group Statistics</option>
+              <option value="section-marital">Statistik Status Perkahwinan / Marital Status Statistics</option>
+              <option value="section-komsel">Bilangan Ahli dalam KOMSEL / Members by Cell Group</option>
+              <option value="section-children">Statistik Anggota dengan Anak / Members with Children</option>
+              <option value="section-city">Bilangan Anggota Mengikut Bandar / Members by City</option>
+            </select>
+          </div>
+
+          <div id="statsLoading" class="stats-loading" style="display:none;">
+            <span>Memuatkan... / Loading...</span>
+          </div>
+
+          <a href="admin.html" class="btn btn-secondary" style="text-decoration:none;white-space:nowrap;">
+            &larr; Kembali / Back
           </a>
         </div>
       </div>
 
-      <!-- Date Filter -->
-      <div class="stats-filter-bar">
-        <div class="admin-sort-group">
-          <label class="admin-control-label">Tapis Tarikh / Filter Date:</label>
-          <select id="statsDateFilter" class="form-input form-select admin-select">
-            <option value="all">Semua / All Time</option>
-            <option value="day">Hari Ini / Today</option>
-            <option value="month">Bulan Ini / This Month</option>
-            <option value="year">Tahun Ini / This Year</option>
-          </select>
-        </div>
-        <div id="statsLoading" class="stats-loading" style="display:none;">
-          <span>Memuatkan... / Loading...</span>
-        </div>
-      </div>
-
-      <!-- Summary Cards -->
-      <div class="stats-summary-grid" id="statsSummaryGrid">
+      <!-- ── SUMMARY CARDS ── -->
+      <div class="stats-summary-grid">
         <div class="stats-summary-card">
           <div class="stats-summary-num" id="totalMembers">—</div>
           <div class="stats-summary-label">Jumlah Ahli<br/><em>Total Members</em></div>
@@ -67,81 +74,134 @@
           <div class="stats-summary-label">Ahli Tidak Aktif<br/><em>Inactive Members</em></div>
         </div>
         <div class="stats-summary-card stats-summary-card--blue">
-          <div class="stats-summary-num" id="baptisedMembers">—</div>
-          <div class="stats-summary-label">Sudah Dibaptis<br/><em>Baptised</em></div>
+          <div class="stats-summary-num" id="transferredMembers">—</div>
+          <div class="stats-summary-label">Ahli Berpindah<br/><em>Transferred Members</em></div>
         </div>
         <div class="stats-summary-card stats-summary-card--orange">
+          <div class="stats-summary-num" id="baptisedMembers" style="font-size:1.5rem;">—</div>
+          <div class="stats-summary-label">Ahli Sudah Dibaptis<br/><em>Baptised Members</em></div>
+        </div>
+        <div class="stats-summary-card stats-summary-card--purple">
           <div class="stats-summary-num" id="withChildren">—</div>
-          <div class="stats-summary-label">Mempunyai Anak<br/><em>Have Children</em></div>
+          <div class="stats-summary-label">Ahli Mempunyai Anak<br/><em>Members With Children</em></div>
         </div>
       </div>
 
-      <!-- Charts Grid -->
-      <div class="stats-charts-grid">
-
-        <!-- Gender -->
-        <div class="stats-chart-card">
-          <h3 class="stats-chart-title">Jantina / Gender</h3>
+      <!-- ══ 1. GENDER ══ -->
+      <div class="stats-section-card" id="section-gender">
+        <h3 class="stats-section-title">👥 Statistik Jantina / Gender Statistics</h3>
+        <div class="stats-chart-center">
           <canvas id="chartGender"></canvas>
         </div>
+      </div>
 
-        <!-- Membership Status -->
-        <div class="stats-chart-card">
-          <h3 class="stats-chart-title">Status Keanggotaan / Membership Status</h3>
-          <canvas id="chartStatus"></canvas>
+      <!-- ══ 2. REGISTRATIONS OVER TIME ══ -->
+      <div class="stats-section-card" id="section-time">
+        <div class="stats-section-header">
+          <h3 class="stats-section-title">📈 Jumlah Pendaftaran dari Semasa ke Semasa / Registrations Over Time</h3>
+          <div class="time-filter-group">
+            <button class="time-filter-btn" data-mode="day">Hari / Day</button>
+            <button class="time-filter-btn active" data-mode="month">Bulan / Month</button>
+            <button class="time-filter-btn" data-mode="year">Tahun / Year</button>
+          </div>
         </div>
+        <canvas id="chartTime"></canvas>
+      </div>
 
-        <!-- Registrations Over Time -->
-        <div class="stats-chart-card stats-chart-card--wide">
-          <h3 class="stats-chart-title">Pendaftaran Mengikut Masa / Registrations Over Time</h3>
-          <canvas id="chartTime"></canvas>
+      <!-- ══ 3. RACE TABLE ══ -->
+      <div class="stats-section-card" id="section-race">
+        <h3 class="stats-section-title">🌏 Statistik Bangsa / Race Statistics</h3>
+        <div class="stats-table-wrap">
+          <table class="stats-data-table">
+            <thead>
+              <tr>
+                <th>Bangsa / Race</th>
+                <th style="text-align:center">Jumlah Ahli / Total Members</th>
+              </tr>
+            </thead>
+            <tbody id="raceTableBody"></tbody>
+          </table>
         </div>
+      </div>
 
-        <!-- Race -->
-        <div class="stats-chart-card">
-          <h3 class="stats-chart-title">Bangsa / Race</h3>
-          <canvas id="chartRace"></canvas>
-        </div>
-
-        <!-- Age Group -->
-        <div class="stats-chart-card">
-          <h3 class="stats-chart-title">Kumpulan Umur / Age Group</h3>
+      <!-- ══ 4. AGE GROUP ══ -->
+      <div class="stats-section-card" id="section-age">
+        <h3 class="stats-section-title">🎂 Statistik Kumpulan Umur / Age Group Statistics</h3>
+        <div class="stats-chart-center">
           <canvas id="chartAge"></canvas>
         </div>
+      </div>
 
-        <!-- Marital Status -->
-        <div class="stats-chart-card">
-          <h3 class="stats-chart-title">Status Perkahwinan / Marital Status</h3>
-          <canvas id="chartMarital"></canvas>
+      <!-- ══ 5. MARITAL STATUS ══ -->
+      <div class="stats-section-card" id="section-marital">
+        <h3 class="stats-section-title">💍 Statistik Status Perkahwinan / Marital Status Statistics</h3>
+        <canvas id="chartMarital"></canvas>
+      </div>
+
+      <!-- ══ 6. KOMSEL TABLE ══ -->
+      <div class="stats-section-card" id="section-komsel">
+        <h3 class="stats-section-title">👥 Bilangan Ahli dalam KOMSEL / Members by Cell Group</h3>
+        <div class="stats-table-wrap stats-table-wrap--scroll">
+          <table class="stats-data-table stats-data-table--sticky">
+            <thead>
+              <tr>
+                <th>KOMSEL / Cell Group</th>
+                <th style="text-align:center">Jumlah Ahli / Total Members</th>
+                <th style="text-align:center">Senarai Ahli / List of Members</th>
+              </tr>
+            </thead>
+            <tbody id="komselTableBody"></tbody>
+          </table>
         </div>
+      </div>
 
-        <!-- Cell Group -->
-        <div class="stats-chart-card stats-chart-card--wide">
-          <h3 class="stats-chart-title">Ahli Mengikut Komsel / Members by Cell Group</h3>
-          <canvas id="chartKomsel"></canvas>
+      <!-- ══ 7. CHILDREN ══ -->
+      <div class="stats-section-card" id="section-children">
+        <div class="stats-section-header">
+          <h3 class="stats-section-title">👶 Statistik Anggota dengan Anak / Members with Children</h3>
+          <button class="btn btn-secondary" id="btnChildrenList" style="white-space:nowrap;font-size:0.82rem;">
+            📋 Senarai Anggota / View List
+          </button>
         </div>
+        <canvas id="chartChildren"></canvas>
+      </div>
 
-        <!-- Baptism Year -->
-        <div class="stats-chart-card stats-chart-card--wide">
-          <h3 class="stats-chart-title">Tahun Pembaptisan / Year of Baptism</h3>
-          <canvas id="chartBaptismYear"></canvas>
+      <!-- ══ 8. CITY TABLE ══ -->
+      <div class="stats-section-card" id="section-city">
+        <h3 class="stats-section-title">🏙️ Bilangan Anggota Mengikut Bandar / Members by City</h3>
+        <div class="stats-table-wrap stats-table-wrap--scroll">
+          <table class="stats-data-table stats-data-table--sticky">
+            <thead>
+              <tr>
+                <th>Bandar / City</th>
+                <th style="text-align:center">Jumlah Ahli / Total Members</th>
+                <th style="text-align:center">Senarai Ahli / View List</th>
+              </tr>
+            </thead>
+            <tbody id="cityTableBody"></tbody>
+          </table>
         </div>
+      </div>
 
-        <!-- Children count -->
-        <div class="stats-chart-card">
-          <h3 class="stats-chart-title">Bilangan Anak / Number of Children</h3>
-          <canvas id="chartChildren"></canvas>
-        </div>
+    </div><!-- /admin-content-card -->
+  </main>
 
-        <!-- City / Area -->
-        <div class="stats-chart-card">
-          <h3 class="stats-chart-title">Kawasan / City Area</h3>
-          <canvas id="chartCity"></canvas>
-        </div>
+  <!-- Scroll to top FAB -->
+  <button class="scroll-top-fab" id="btnScrollTop" title="Kembali ke atas / Back to top">↑</button>
 
+  <!-- List modal -->
+  <div class="modal-overlay" id="listModal" style="display:none;">
+    <div class="modal-card modal-card--lg">
+      <div class="modal-header">
+        <h3 class="modal-title" id="listModalTitle"></h3>
+        <button class="modal-close" id="closeListModal">&times;</button>
+      </div>
+      <div class="modal-body" id="listModalBody" style="overflow-y:auto;max-height:60vh;"></div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="closeListModalBtn">Tutup / Close</button>
       </div>
     </div>
-  </main>
+  </div>
 
   <footer class="site-footer">
     <p>&copy; <span id="statsFooterYear"></span> BEM On The Rock. Hak Cipta Terpelihara / All Rights Reserved.</p>

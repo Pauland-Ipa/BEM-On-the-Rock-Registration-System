@@ -1,276 +1,509 @@
 "use strict";
 /* ═══════════════════════════════════════════════
-   BEM On The Rock — stats.js
-   Membership Statistics with Chart.js
+   BEM On The Rock — stats.js  (full rewrite)
 ═══════════════════════════════════════════════ */
 
 document.getElementById("statsFooterYear").textContent = new Date().getFullYear();
 
-// ── Chart colour palette (marigold theme) ──
-const PALETTE = [
-  "#FF8C00","#FFA333","#FFB347","#CC7000","#E67E00",
-  "#FF6B00","#FFD580","#B35A00","#FF9E33","#FFCD80",
-  "#E8A000","#D4760A","#C46A00","#F0A830","#FFC060"
-];
+// ── Colour palette ──
+const MARIGOLD  = "#FF8C00";
+const AGE_COLS  = ["#e74c3c","#3498db","#2ecc71","#9b59b6","#f39c12"];
+const MARITAL_COLS_MALE   = "#3498db";
+const MARITAL_COLS_FEMALE = "#e84393";
 
-const CHART_TEXT = getComputedStyle(document.documentElement)
-  .getPropertyValue("--text-primary").trim() || "#F5F5F0";
-
-const chartDefaults = {
-  plugins: {
-    legend: { labels: { color: CHART_TEXT, font: { family: "Crimson Pro, serif", size: 13 } } }
-  },
-  scales: {
-    x: { ticks: { color: CHART_TEXT }, grid: { color: "rgba(255,140,0,0.1)" } },
-    y: { ticks: { color: CHART_TEXT }, grid: { color: "rgba(255,140,0,0.1)" } }
-  }
-};
-
-const pieDefaults = {
-  plugins: {
-    legend: { labels: { color: CHART_TEXT, font: { family: "Crimson Pro, serif", size: 13 } } }
-  }
-};
-
+let allData  = [];
 let allCharts = {};
-let allData   = [];
+
+// ── Chart text colour (re-read every render) ──
+function chartText() {
+  return document.documentElement.getAttribute("data-theme") === "light" ? "#1A1208" : "#F5F5F0";
+}
+
+function chartGridColor() {
+  return document.documentElement.getAttribute("data-theme") === "light"
+    ? "rgba(0,0,0,0.1)" : "rgba(255,255,255,0.08)";
+}
 
 // ── Auth guard ──
 auth.onAuthStateChanged(user => {
   if (!user) { window.location.href = "admin.html"; return; }
-  loadAndRender("all");
+  loadStats();
 });
 
-document.getElementById("statsDateFilter").addEventListener("change", function() {
-  loadAndRender(this.value);
-});
-
-async function loadAndRender(filter) {
+async function loadStats() {
   document.getElementById("statsLoading").style.display = "block";
   try {
     const snap = await db.collection("registrations").get();
     allData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    const filtered = applyDateFilter(allData, filter);
-    renderAll(filtered);
+    renderSummary();
+    renderGender();
+    renderTime("month");
+    renderRaceTable();
+    renderAge();
+    renderMarital();
+    renderKomselTable();
+    renderChildrenChart();
+    renderCityTable();
   } catch(e) {
-    console.error("Stats load error:", e);
+    console.error("Stats error:", e);
   }
   document.getElementById("statsLoading").style.display = "none";
 }
 
-function applyDateFilter(data, filter) {
-  if (filter === "all") return data;
-  const now   = new Date();
-  const today = now.toISOString().split("T")[0];
-  return data.filter(r => {
-    const d = r.submittedAt?.toDate ? r.submittedAt.toDate() : new Date(r.dateApplied || "");
-    if (!d || isNaN(d)) return false;
-    if (filter === "day")   return d.toISOString().split("T")[0] === today;
-    if (filter === "month") return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
-    if (filter === "year")  return d.getFullYear() === now.getFullYear();
-    return true;
+// ══════════════════════════════════════════════
+// SUMMARY CARDS
+// ══════════════════════════════════════════════
+function renderSummary() {
+  const total      = allData.length;
+  const active     = allData.filter(r => r.approved && !r.transferred && !r.deceased).length;
+  const inactive   = allData.filter(r => !r.approved && !r.transferred && !r.deceased).length;
+  const transferred= allData.filter(r => r.transferred).length;
+  const baptised   = allData.filter(r => r.sectionA?.baptismStatus === "baptised").length;
+  const withKids   = allData.filter(r => countValidChildren(r) > 0).length;
+
+  document.getElementById("totalMembers").textContent     = total;
+  document.getElementById("activeMembers").textContent    = active;
+  document.getElementById("inactiveMembers").textContent  = inactive;
+  document.getElementById("transferredMembers").textContent = transferred;
+  document.getElementById("baptisedMembers").textContent  = `${baptised} / ${total}`;
+  document.getElementById("withChildren").textContent     = withKids;
+}
+
+// ── Count only filled children (name + gender both required) ──
+function countValidChildren(reg) {
+  return (reg.sectionC?.children || []).filter(c => c.name?.trim() && c.gender).length;
+}
+
+// ══════════════════════════════════════════════
+// GENDER — Doughnut
+// ══════════════════════════════════════════════
+function renderGender() {
+  const counts = { male:0, female:0, unknown:0 };
+  allData.forEach(r => {
+    const g = r.sectionA?.gender;
+    if (g === "male") counts.male++;
+    else if (g === "female") counts.female++;
+    else counts.unknown++;
   });
-}
 
-function countBy(data, fn) {
-  const map = {};
-  data.forEach(r => {
-    const k = fn(r) || "Tidak Diketahui / Unknown";
-    map[k] = (map[k] || 0) + 1;
-  });
-  return map;
-}
-
-function destroyChart(id) {
-  if (allCharts[id]) { allCharts[id].destroy(); delete allCharts[id]; }
-}
-
-function getAgeGroup(dob) {
-  if (!dob) return "Tidak Diketahui / Unknown";
-  const birth = new Date(dob);
-  if (isNaN(birth)) return "Tidak Diketahui / Unknown";
-  const age = Math.floor((new Date() - birth) / (365.25 * 24 * 3600 * 1000));
-  if (age < 13) return "Kanak-kanak / Child (<13)";
-  if (age <= 17) return "Remaja / Teen (13–17)";
-  if (age <= 29) return "Dewasa Muda / Young Adult (18–29)";
-  if (age <= 59) return "Dewasa / Adult (30–59)";
-  return "Warga Emas / Senior (60+)";
-}
-
-function getCityFromAddress(addr) {
-  if (!addr) return "Tidak Diketahui / Unknown";
-  const lower = addr.toLowerCase();
-  if (lower.includes("kuching"))      return "Kuching";
-  if (lower.includes("miri"))         return "Miri";
-  if (lower.includes("sibu"))         return "Sibu";
-  if (lower.includes("bintulu"))      return "Bintulu";
-  if (lower.includes("samarahan"))    return "Kota Samarahan";
-  if (lower.includes("serian"))       return "Serian";
-  if (lower.includes("sri aman"))     return "Sri Aman";
-  if (lower.includes("betong"))       return "Betong";
-  if (lower.includes("sarikei"))      return "Sarikei";
-  if (lower.includes("kapit"))        return "Kapit";
-  return "Lain-lain / Others";
-}
-
-function makeBarChart(id, labels, values, label) {
-  destroyChart(id);
-  const ctx = document.getElementById(id)?.getContext("2d");
+  destroyChart("chartGender");
+  const ctx = document.getElementById("chartGender")?.getContext("2d");
   if (!ctx) return;
-  allCharts[id] = new Chart(ctx, {
-    type: "bar",
-    data: {
-      labels,
-      datasets: [{ label, data: values, backgroundColor: PALETTE.slice(0, labels.length), borderRadius: 6 }]
-    },
-    options: { ...chartDefaults, plugins: { ...chartDefaults.plugins, legend: { display: false } } }
-  });
-}
-
-function makePieChart(id, labels, values) {
-  destroyChart(id);
-  const ctx = document.getElementById(id)?.getContext("2d");
-  if (!ctx) return;
-  allCharts[id] = new Chart(ctx, {
+  allCharts["chartGender"] = new Chart(ctx, {
     type: "doughnut",
     data: {
-      labels,
-      datasets: [{ data: values, backgroundColor: PALETTE.slice(0, labels.length), borderWidth: 2, borderColor: "rgba(0,0,0,0.3)" }]
+      labels: ["Lelaki / Male", "Perempuan / Female", "Tidak Diketahui / Unknown"],
+      datasets: [{ data: [counts.male, counts.female, counts.unknown],
+        backgroundColor: ["#3498db","#e84393","#333333"], borderWidth: 2, borderColor: "rgba(0,0,0,0.3)" }]
     },
-    options: { ...pieDefaults, cutout: "55%" }
+    options: { ...pieOpts(), cutout: "55%" }
   });
 }
 
-function makeLineChart(id, labels, values, label) {
-  destroyChart(id);
-  const ctx = document.getElementById(id)?.getContext("2d");
+// ══════════════════════════════════════════════
+// REGISTRATIONS OVER TIME — Line chart
+// ══════════════════════════════════════════════
+function renderTime(mode) {
+  const now = new Date();
+  let labels = [], dataCounts = [];
+
+  if (mode === "day") {
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
+    labels = Array.from({length: daysInMonth}, (_,i) => `${i+1}`);
+    dataCounts = new Array(daysInMonth).fill(0);
+    allData.forEach(r => {
+      const d = getDate(r);
+      if (d && d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()) {
+        dataCounts[d.getDate()-1]++;
+      }
+    });
+  } else if (mode === "month") {
+    labels = ["Jan","Feb","Mac","Apr","Mei","Jun","Jul","Ogs","Sep","Okt","Nov","Dis"];
+    dataCounts = new Array(12).fill(0);
+    allData.forEach(r => {
+      const d = getDate(r);
+      if (d && d.getFullYear() === now.getFullYear()) dataCounts[d.getMonth()]++;
+    });
+  } else { // year
+    const startYear = now.getFullYear() - 10;
+    labels = Array.from({length:11}, (_,i) => String(startYear+i));
+    dataCounts = new Array(11).fill(0);
+    allData.forEach(r => {
+      const d = getDate(r);
+      if (d) { const idx = d.getFullYear() - startYear; if (idx>=0&&idx<=10) dataCounts[idx]++; }
+    });
+  }
+
+  destroyChart("chartTime");
+  const ctx = document.getElementById("chartTime")?.getContext("2d");
   if (!ctx) return;
-  allCharts[id] = new Chart(ctx, {
+  allCharts["chartTime"] = new Chart(ctx, {
     type: "line",
     data: {
       labels,
       datasets: [{
-        label, data: values,
-        borderColor: "#FF8C00", backgroundColor: "rgba(255,140,0,0.15)",
-        tension: 0.4, fill: true, pointBackgroundColor: "#FF8C00"
+        label: "Pendaftaran / Registrations",
+        data: dataCounts,
+        borderColor: MARIGOLD,
+        backgroundColor: "rgba(255,140,0,0.15)",
+        tension: 0.4, fill: true,
+        pointBackgroundColor: MARIGOLD, pointRadius: 5
       }]
     },
-    options: chartDefaults
-  });
-}
-
-function makeHBarChart(id, labels, values, label) {
-  destroyChart(id);
-  const ctx = document.getElementById(id)?.getContext("2d");
-  if (!ctx) return;
-  allCharts[id] = new Chart(ctx, {
-    type: "bar",
-    data: {
-      labels,
-      datasets: [{ label, data: values, backgroundColor: PALETTE.slice(0, labels.length), borderRadius: 4 }]
-    },
     options: {
-      indexAxis: "y",
-      ...chartDefaults,
-      plugins: { ...chartDefaults.plugins, legend: { display: false } }
+      ...barOpts(),
+      scales: {
+        x: { ticks: { color: chartText() }, grid: { color: chartGridColor() } },
+        y: {
+          ticks: { color: chartText(), stepSize: 1,
+            callback: v => Number.isInteger(v) ? v : null
+          },
+          grid: { color: chartGridColor() },
+          beginAtZero: true
+        }
+      }
     }
   });
 }
 
-function renderAll(data) {
-  const total    = data.length;
-  const active   = data.filter(r => r.approved).length;
-  const inactive = total - active;
-  const baptised = data.filter(r => r.sectionA?.baptismStatus === "baptised").length;
-  const withKids = data.filter(r => (r.sectionC?.children || []).length > 0).length;
+function getDate(reg) {
+  if (reg.submittedAt?.toDate) return reg.submittedAt.toDate();
+  if (reg.dateApplied) return new Date(reg.dateApplied);
+  return null;
+}
 
-  document.getElementById("totalMembers").textContent    = total;
-  document.getElementById("activeMembers").textContent   = active;
-  document.getElementById("inactiveMembers").textContent = inactive;
-  document.getElementById("baptisedMembers").textContent = baptised;
-  document.getElementById("withChildren").textContent    = withKids;
-
-  // Gender
-  const gender = countBy(data, r => {
-    const g = r.sectionA?.gender;
-    return g === "male" ? "Lelaki / Male" : g === "female" ? "Perempuan / Female" : null;
+// ── Time filter buttons ──
+document.querySelectorAll(".time-filter-btn").forEach(btn => {
+  btn.addEventListener("click", function() {
+    document.querySelectorAll(".time-filter-btn").forEach(b => b.classList.remove("active"));
+    this.classList.add("active");
+    renderTime(this.dataset.mode);
   });
-  makePieChart("chartGender", Object.keys(gender), Object.values(gender));
+});
 
-  // Membership Status
-  makePieChart("chartStatus",
-    ["Aktif / Active", "Tidak Aktif / Inactive"],
-    [active, inactive]
-  );
-
-  // Registrations over time (by month)
-  const byMonth = {};
-  data.forEach(r => {
-    const d = r.submittedAt?.toDate ? r.submittedAt.toDate() : new Date(r.dateApplied || "");
-    if (!d || isNaN(d)) return;
-    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
-    byMonth[key] = (byMonth[key] || 0) + 1;
+// ══════════════════════════════════════════════
+// RACE — Table
+// ══════════════════════════════════════════════
+function renderRaceTable() {
+  const counts = {};
+  allData.forEach(r => {
+    const race = (r.sectionA?.race || "").trim() || "Tidak Diketahui / Unknown";
+    counts[race] = (counts[race]||0) + 1;
   });
-  const sortedMonths = Object.keys(byMonth).sort();
-  makeLineChart("chartTime", sortedMonths, sortedMonths.map(k => byMonth[k]), "Pendaftaran / Registrations");
+  const sorted = Object.entries(counts).sort((a,b) => b[1]-a[1]);
+  const tbody = document.getElementById("raceTableBody");
+  if (!tbody) return;
+  tbody.innerHTML = sorted.map(([race,n]) => `
+    <tr>
+      <td>${race}</td>
+      <td style="text-align:center;font-weight:700;color:var(--marigold-bright)">${n}</td>
+    </tr>`).join("");
+}
 
-  // Race
-  const race = countBy(data, r => r.sectionA?.race);
-  makeHBarChart("chartRace", Object.keys(race), Object.values(race), "Ahli / Members");
+// ══════════════════════════════════════════════
+// AGE GROUP — Doughnut
+// ══════════════════════════════════════════════
+function getAgeGroup(dob) {
+  if (!dob) return "Tidak Diketahui";
+  const birth = new Date(dob);
+  if (isNaN(birth)) return "Tidak Diketahui";
+  const age = Math.floor((new Date()-birth)/(365.25*24*3600*1000));
+  if (age<13)  return "Kanak-kanak / Child (<13)";
+  if (age<=17) return "Remaja / Teen (13–17)";
+  if (age<=29) return "Dewasa Muda / Young Adult (18–29)";
+  if (age<=59) return "Dewasa / Adult (30–59)";
+  return "Warga Emas / Senior (60+)";
+}
 
-  // Age Group
-  const ageGroups = {
-    "Remaja / Teen (13–17)": 0,
-    "Dewasa Muda / Young Adult (18–29)": 0,
-    "Dewasa / Adult (30–59)": 0,
-    "Warga Emas / Senior (60+)": 0,
-    "Tidak Diketahui / Unknown": 0
-  };
-  data.forEach(r => {
+function renderAge() {
+  const ORDER = [
+    "Kanak-kanak / Child (<13)",
+    "Remaja / Teen (13–17)",
+    "Dewasa Muda / Young Adult (18–29)",
+    "Dewasa / Adult (30–59)",
+    "Warga Emas / Senior (60+)",
+    "Tidak Diketahui"
+  ];
+  const COLS = ["#FF6384","#36A2EB","#FFCE56","#4BC0C0","#9966FF","#aaaaaa"];
+  const counts = {};
+  ORDER.forEach(k => counts[k]=0);
+  allData.forEach(r => {
     const g = getAgeGroup(r.sectionA?.dob);
-    ageGroups[g] = (ageGroups[g] || 0) + 1;
+    counts[g] = (counts[g]||0)+1;
   });
-  const ageLbls = Object.keys(ageGroups).filter(k => ageGroups[k] > 0);
-  makePieChart("chartAge", ageLbls, ageLbls.map(k => ageGroups[k]));
+  const labels = ORDER.filter(k => counts[k]>0);
+  const values = labels.map(k => counts[k]);
+  const colors = labels.map(k => COLS[ORDER.indexOf(k)]);
 
-  // Marital Status
-  const maritalLabels = {
-    single:"Bujang / Single", engaged:"Bertunang / Engaged",
-    married:"Berkahwin / Married", divorced:"Bercerai / Divorced", widowed:"Balu / Widowed"
+  destroyChart("chartAge");
+  const ctx = document.getElementById("chartAge")?.getContext("2d");
+  if (!ctx) return;
+  allCharts["chartAge"] = new Chart(ctx, {
+    type: "doughnut",
+    data: { labels, datasets: [{ data: values, backgroundColor: colors, borderWidth:2, borderColor:"rgba(0,0,0,0.3)" }] },
+    options: { ...pieOpts(), cutout:"50%" }
+  });
+}
+
+// ══════════════════════════════════════════════
+// MARITAL STATUS — Dual grouped bar (male/female)
+// ══════════════════════════════════════════════
+function renderMarital() {
+  const CATS = ["single","engaged","married","divorced","widowed"];
+  const LABELS = ["Bujang / Single","Bertunang / Engaged","Berkahwin / Married","Bercerai / Divorced","Balu/Duda / Widowed"];
+  const male = new Array(5).fill(0), female = new Array(5).fill(0);
+
+  allData.forEach(r => {
+    const ms = r.sectionA?.maritalStatus;
+    const g  = r.sectionA?.gender;
+    const idx = CATS.indexOf(ms);
+    if (idx<0) return;
+    if (g==="male") male[idx]++;
+    else if (g==="female") female[idx]++;
+  });
+
+  destroyChart("chartMarital");
+  const ctx = document.getElementById("chartMarital")?.getContext("2d");
+  if (!ctx) return;
+  allCharts["chartMarital"] = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: LABELS,
+      datasets: [
+        { label:"Lelaki / Male",    data:male,   backgroundColor:MARITAL_COLS_MALE,   borderRadius:4 },
+        { label:"Perempuan / Female",data:female, backgroundColor:MARITAL_COLS_FEMALE, borderRadius:4 }
+      ]
+    },
+    options: {
+      ...barOpts(),
+      plugins: { ...barOpts().plugins, legend:{ labels:{ color:chartText() } } },
+      scales: {
+        x: { ticks:{ color:chartText() }, grid:{ color:chartGridColor() } },
+        y: {
+          ticks:{ color:chartText(), stepSize:1, callback: v=>Number.isInteger(v)?v:null },
+          grid:{ color:chartGridColor() }, beginAtZero:true
+        }
+      }
+    }
+  });
+}
+
+// ══════════════════════════════════════════════
+// KOMSEL TABLE — 3 columns with modal
+// ══════════════════════════════════════════════
+function renderKomselTable() {
+  const map = {}; // code → [ {name, uid} ]
+  allData.forEach(r => {
+    const code = (r.sectionA?.komselCode||"").trim().toUpperCase() || "—";
+    if (!map[code]) map[code] = [];
+    map[code].push({ name: r.name||"—", uid: r.uniqueID||"—" });
+  });
+
+  const sorted = Object.entries(map).sort((a,b) => a[0].localeCompare(b[0]));
+  const tbody  = document.getElementById("komselTableBody");
+  if (!tbody) return;
+
+  tbody.innerHTML = sorted.map(([code,members]) => `
+    <tr>
+      <td style="font-weight:700;color:var(--marigold-bright)">${code}</td>
+      <td style="text-align:center">${members.length}</td>
+      <td style="text-align:center">
+        <button class="stats-view-btn" data-code="${code}">👁 Lihat / View</button>
+      </td>
+    </tr>`).join("");
+
+  tbody.querySelectorAll(".stats-view-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const code    = btn.dataset.code;
+      const members = map[code];
+      openListModal(
+        `Ahli Komsel ${code} / Cell Group ${code} Members`,
+        `<table class="stats-modal-table">
+          <thead><tr><th>Nama / Name</th><th>ID Unik / Unique ID</th></tr></thead>
+          <tbody>${members.map(m=>`<tr><td>${m.name}</td><td style="color:var(--marigold);font-family:var(--font-display);font-size:0.85rem">${m.uid}</td></tr>`).join("")}</tbody>
+        </table>`
+      );
+    });
+  });
+}
+
+// ══════════════════════════════════════════════
+// CHILDREN CHART + LIST MODAL
+// ══════════════════════════════════════════════
+function renderChildrenChart() {
+  const buckets = {0:0,1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0};
+  allData.forEach(r => {
+    const n = countValidChildren(r);
+    if (n >= 8) buckets[8]++;
+    else buckets[n]++;
+  });
+
+  const labels = [
+    "Tiada anak","1 anak","2 anak","3 anak","4 anak","5 anak","6 anak","7 anak","8+ anak"
+  ];
+
+  destroyChart("chartChildren");
+  const ctx = document.getElementById("chartChildren")?.getContext("2d");
+  if (!ctx) return;
+  allCharts["chartChildren"] = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [{ label:"Bilangan Ahli / Members",
+        data: Object.values(buckets),
+        backgroundColor: MARIGOLD, borderRadius:6 }]
+    },
+    options: {
+      ...barOpts(),
+      plugins: { ...barOpts().plugins, legend:{ display:false } },
+      scales: {
+        x: { ticks:{ color:chartText() }, grid:{ color:chartGridColor() } },
+        y: {
+          ticks:{ color:chartText(), stepSize:1, callback:v=>Number.isInteger(v)?v:null },
+          grid:{ color:chartGridColor() }, beginAtZero:true
+        }
+      }
+    }
+  });
+
+  // List button
+  document.getElementById("btnChildrenList")?.addEventListener("click", () => {
+    const withKids = allData
+      .filter(r => countValidChildren(r)>0)
+      .map(r => {
+        const kids  = (r.sectionC?.children||[]).filter(c=>c.name?.trim()&&c.gender);
+        const boys  = kids.filter(c=>c.gender==="male").length;
+        const girls = kids.filter(c=>c.gender==="female").length;
+        return { name:r.name||"—", boys, girls, total:kids.length };
+      })
+      .sort((a,b) => b.total-a.total);
+
+    openListModal(
+      "Senarai Ahli yang Mempunyai Anak / Members with Children",
+      `<table class="stats-modal-table">
+        <thead><tr>
+          <th>Nama Anggota / Member Name</th>
+          <th>Anak Lelaki / Boy(s)</th>
+          <th>Anak Perempuan / Girl(s)</th>
+          <th>Jumlah Anak / Total</th>
+        </tr></thead>
+        <tbody>${withKids.map(m=>`
+          <tr>
+            <td>${m.name}</td>
+            <td style="text-align:center">${m.boys}</td>
+            <td style="text-align:center">${m.girls}</td>
+            <td style="text-align:center;font-weight:700;color:var(--marigold-bright)">${m.total}</td>
+          </tr>`).join("")}
+        </tbody>
+      </table>`
+    );
+  });
+}
+
+// ══════════════════════════════════════════════
+// CITY TABLE — 3 columns with modal
+// ══════════════════════════════════════════════
+function getCityFromAddress(addr) {
+  if (!addr) return "Tidak Diketahui / Unknown";
+  const lower = addr.toLowerCase();
+  const cities = [
+    ["Kuching","kuching"],["Miri","miri"],["Sibu","sibu"],["Bintulu","bintulu"],
+    ["Kota Samarahan","samarahan"],["Serian","serian"],["Sri Aman","sri aman"],
+    ["Betong","betong"],["Sarikei","sarikei"],["Kapit","kapit"],["Limbang","limbang"],
+    ["Lawas","lawas"],["Mukah","mukah"],["Bau","bau"],["Kota Kinabalu","kinabalu"],
+  ];
+  for (const [name, key] of cities) {
+    if (lower.includes(key)) return name;
+  }
+  return "Lain-lain / Others";
+}
+
+function renderCityTable() {
+  const map = {}; // city → [ {name,uid} ]
+  allData.forEach(r => {
+    const city = getCityFromAddress(r.sectionA?.currentAddress);
+    if (!map[city]) map[city] = [];
+    map[city].push({ name:r.name||"—", uid:r.uniqueID||"—" });
+  });
+
+  const sorted = Object.entries(map).sort((a,b) => b[1].length - a[1].length);
+  const tbody  = document.getElementById("cityTableBody");
+  if (!tbody) return;
+
+  tbody.innerHTML = sorted.map(([city,members]) => `
+    <tr>
+      <td style="font-weight:700">${city}</td>
+      <td style="text-align:center">${members.length}</td>
+      <td style="text-align:center">
+        <button class="stats-view-btn" data-city="${city}">👁 Lihat / View</button>
+      </td>
+    </tr>`).join("");
+
+  tbody.querySelectorAll(".stats-view-btn[data-city]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const city    = btn.dataset.city;
+      const members = map[city];
+      openListModal(
+        `Ahli dari ${city} / Members from ${city}`,
+        `<table class="stats-modal-table">
+          <thead><tr><th>Nama / Name</th><th>ID Unik / Unique ID</th></tr></thead>
+          <tbody>${members.map(m=>`<tr><td>${m.name}</td><td style="color:var(--marigold);font-family:var(--font-display);font-size:0.85rem">${m.uid}</td></tr>`).join("")}</tbody>
+        </table>`
+      );
+    });
+  });
+}
+
+// ══════════════════════════════════════════════
+// LIST MODAL — shared
+// ══════════════════════════════════════════════
+function openListModal(title, bodyHTML) {
+  document.getElementById("listModalTitle").textContent = title;
+  document.getElementById("listModalBody").innerHTML = bodyHTML;
+  document.getElementById("listModal").style.display = "flex";
+}
+document.getElementById("closeListModal")?.addEventListener("click",    () => document.getElementById("listModal").style.display="none");
+document.getElementById("closeListModalBtn")?.addEventListener("click", () => document.getElementById("listModal").style.display="none");
+
+// ══════════════════════════════════════════════
+// GO-TO NAV DROPDOWN
+// ══════════════════════════════════════════════
+document.getElementById("gotoSelect")?.addEventListener("change", function() {
+  const id = this.value;
+  if (!id) return;
+  const el = document.getElementById(id);
+  if (el) el.scrollIntoView({ behavior:"smooth", block:"start" });
+  this.value = "";
+});
+
+// Scroll-to-top button
+document.getElementById("btnScrollTop")?.addEventListener("click", () => {
+  window.scrollTo({ top:0, behavior:"smooth" });
+});
+
+// ══════════════════════════════════════════════
+// CHART HELPERS
+// ══════════════════════════════════════════════
+function destroyChart(id) {
+  if (allCharts[id]) { allCharts[id].destroy(); delete allCharts[id]; }
+}
+
+function pieOpts() {
+  return {
+    plugins: {
+      legend: { labels: { color: chartText(), font:{ family:"Crimson Pro, serif", size:13 }, padding:16 } }
+    }
   };
-  const marital = countBy(data, r => maritalLabels[r.sectionA?.maritalStatus] || null);
-  makeBarChart("chartMarital", Object.keys(marital), Object.values(marital), "Ahli / Members");
+}
 
-  // Cell Group
-  const komsel = countBy(data, r => r.sectionA?.komselCode || null);
-  const komselSorted = Object.entries(komsel).sort((a,b) => a[0].localeCompare(b[0]));
-  makeHBarChart("chartKomsel", komselSorted.map(x=>x[0]), komselSorted.map(x=>x[1]), "Ahli / Members");
-
-  // Baptism Year
-  const bapYr = {};
-  data.filter(r => r.sectionA?.baptismStatus === "baptised").forEach(r => {
-    const y = r.sectionA?.baptismYear || "?";
-    bapYr[y] = (bapYr[y] || 0) + 1;
-  });
-  const bapSorted = Object.entries(bapYr).sort((a,b) => a[0].localeCompare(b[0]));
-  makeBarChart("chartBaptismYear", bapSorted.map(x=>x[0]), bapSorted.map(x=>x[1]), "Ahli Dibaptis / Baptised");
-
-  // Children count
-  const childCount = { "0": 0, "1": 0, "2": 0, "3": 0, "4+": 0 };
-  data.forEach(r => {
-    const n = (r.sectionC?.children || []).length;
-    if (n === 0) childCount["0"]++;
-    else if (n === 1) childCount["1"]++;
-    else if (n === 2) childCount["2"]++;
-    else if (n === 3) childCount["3"]++;
-    else childCount["4+"]++;
-  });
-  makePieChart("chartChildren",
-    ["Tiada / None", "1 Anak / Child", "2 Anak / Children", "3 Anak / Children", "4+ Anak / Children"],
-    [childCount["0"], childCount["1"], childCount["2"], childCount["3"], childCount["4+"]]
-  );
-
-  // City
-  const city = countBy(data, r => getCityFromAddress(r.sectionA?.currentAddress));
-  makePieChart("chartCity", Object.keys(city), Object.values(city));
+function barOpts() {
+  return {
+    plugins: {
+      legend: { display: false }
+    },
+    scales: {
+      x: { ticks:{ color:chartText() }, grid:{ color:chartGridColor() } },
+      y: { ticks:{ color:chartText() }, grid:{ color:chartGridColor() }, beginAtZero:true }
+    }
+  };
 }
