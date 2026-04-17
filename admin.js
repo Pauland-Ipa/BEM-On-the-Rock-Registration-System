@@ -5,6 +5,19 @@
 
 document.getElementById("adminFooterYear").textContent = new Date().getFullYear();
 
+// ── Password visibility toggle ──
+document.getElementById("togglePassword")?.addEventListener("click", function() {
+  const input = document.getElementById("adminPassword");
+  const icon  = document.getElementById("togglePasswordIcon");
+  if (input.type === "password") {
+    input.type = "text";
+    icon.textContent = "👁";
+  } else {
+    input.type = "password";
+    icon.textContent = "🙈";
+  }
+});
+
 function generateAdminUniqueID(fullName, icNo, yearJoining) {
   const names    = (fullName || "").trim().split(/\s+/).filter(Boolean);
   const initials = names.map(n => n[0].toUpperCase()).join("");
@@ -183,7 +196,7 @@ function renderTable() {
           <button class="action-dropdown-item view-btn" data-id="${reg.id}"><span class="action-icon">📄</span> Lihat / View</button>
           <button class="action-dropdown-item print-btn" data-id="${reg.id}"><span class="action-icon">🖨️</span> Cetak / Print</button>
           ${activateBtn}
-          <button class="action-dropdown-item" data-id="${reg.id}" style="color:var(--text-muted);cursor:not-allowed;opacity:0.5;"><span class="action-icon">🪪</span> Kad Ahli / Membership Card</button>
+          <button class="action-dropdown-item membership-card-btn" data-id="${reg.id}"><span class="action-icon">🪪</span> Kad Ahli / Membership Card</button>
           <button class="action-dropdown-item delete delete-btn" data-id="${reg.id}"><span class="action-icon">🗑️</span> Padam / Delete</button>
         </div>
       </td>`;
@@ -228,6 +241,9 @@ function bindTableEvents() {
   );
   document.querySelectorAll(".deactivate-btn").forEach(b =>
     b.addEventListener("click", () => openDeactivateModal(b.dataset.id, b.dataset.name))
+  );
+  document.querySelectorAll(".membership-card-btn").forEach(b =>
+    b.addEventListener("click", () => openMembershipCardModal(b.dataset.id))
   );
   document.querySelectorAll(".cancel-transfer-btn").forEach(b =>
     b.addEventListener("click", () => cancelTransfer(b.dataset.id, b.dataset.name))
@@ -309,6 +325,47 @@ document.getElementById("confirmDeactivateBtn").addEventListener("click", async 
   } catch(e) { alert("Ralat / Error: " + e.message); }
   closeDeactivateModal();
 });
+
+// ── Membership Card Modal ──
+function openMembershipCardModal(id) {
+  const reg = registrations.find(r => r.id === id);
+  if (!reg) return;
+
+  const cardEl = document.getElementById("adminMembershipCard");
+  if (!cardEl) return;
+
+  // Populate using shared helper from membership-card.js
+  populateMembershipCard(cardEl, reg);
+
+  // Wire download buttons
+  const safeName = (reg.sectionA?.fullName || reg.name || "member").replace(/\s+/g,"-").toLowerCase();
+  document.getElementById("adminBtnDLPNG").onclick = () => downloadCardPNG(cardEl, `kad-keanggotaan-${safeName}`);
+  document.getElementById("adminBtnDLPDF").onclick = () => downloadCardPDF(cardEl, `kad-keanggotaan-${safeName}`);
+
+  document.getElementById("membershipCardModal").style.display = "flex";
+}
+
+document.getElementById("closeMCModal")   ?.addEventListener("click", () => document.getElementById("membershipCardModal").style.display="none");
+document.getElementById("closeMCModalBtn")?.addEventListener("click", () => document.getElementById("membershipCardModal").style.display="none");
+
+// ── Membership Card button styles (inline for admin) ──
+(function injectMCButtonStyles() {
+  const style = document.createElement("style");
+  style.textContent = `
+    .mc-dl-btn {
+      display:inline-flex; align-items:center; gap:0.5rem;
+      font-family:var(--font-display); font-size:0.78rem;
+      letter-spacing:0.05em; font-weight:700;
+      padding:0.5rem 1.2rem; border-radius:var(--radius);
+      border:none; cursor:pointer; transition:all 0.2s ease;
+    }
+    .mc-dl-btn--pdf { background:linear-gradient(135deg,#CC3333,#E04444); color:#fff; }
+    .mc-dl-btn--pdf:hover { transform:translateY(-2px); }
+    .mc-dl-btn--png { background:linear-gradient(135deg,#1565C0,#1976D2); color:#fff; }
+    .mc-dl-btn--png:hover { transform:translateY(-2px); }
+  `;
+  document.head.appendChild(style);
+})();
 
 // ── Cancel Transfer ──
 async function cancelTransfer(id, name) {

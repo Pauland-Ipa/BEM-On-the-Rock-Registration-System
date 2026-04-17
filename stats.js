@@ -75,15 +75,15 @@ function countValidChildren(reg) {
 }
 
 // ══════════════════════════════════════════════
-// GENDER — Doughnut
+// GENDER — Doughnut (no Unknown legend)
 // ══════════════════════════════════════════════
 function renderGender() {
-  const counts = { male:0, female:0, unknown:0 };
+  const counts = { male:0, female:0 };
   allData.forEach(r => {
     const g = r.sectionA?.gender;
     if (g === "male") counts.male++;
     else if (g === "female") counts.female++;
-    else counts.unknown++;
+    // Unknown silently omitted from chart
   });
 
   destroyChart("chartGender");
@@ -92,9 +92,9 @@ function renderGender() {
   allCharts["chartGender"] = new Chart(ctx, {
     type: "doughnut",
     data: {
-      labels: ["Lelaki / Male", "Perempuan / Female", "Tidak Diketahui / Unknown"],
-      datasets: [{ data: [counts.male, counts.female, counts.unknown],
-        backgroundColor: ["#3498db","#e84393","#333333"], borderWidth: 2, borderColor: "rgba(0,0,0,0.3)" }]
+      labels: ["Lelaki / Male", "Perempuan / Female"],
+      datasets: [{ data: [counts.male, counts.female],
+        backgroundColor: ["#3498db","#e84393"], borderWidth: 2, borderColor: "rgba(0,0,0,0.3)" }]
     },
     options: { ...pieOpts(), cutout: "55%" }
   });
@@ -182,22 +182,38 @@ document.querySelectorAll(".time-filter-btn").forEach(btn => {
 });
 
 // ══════════════════════════════════════════════
-// RACE — Table
+// RACE — Table with list modal
 // ══════════════════════════════════════════════
 function renderRaceTable() {
-  const counts = {};
+  const map = {}; // race → [{ name, uid }]
   allData.forEach(r => {
     const race = (r.sectionA?.race || "").trim() || "Tidak Diketahui / Unknown";
-    counts[race] = (counts[race]||0) + 1;
+    if (!map[race]) map[race] = [];
+    map[race].push({ name: (r.name || r.sectionA?.fullName || "—").toUpperCase(), uid: r.uniqueID || "—" });
   });
-  const sorted = Object.entries(counts).sort((a,b) => b[1]-a[1]);
+  const sorted = Object.entries(map).sort((a,b) => b[1].length - a[1].length);
   const tbody = document.getElementById("raceTableBody");
   if (!tbody) return;
-  tbody.innerHTML = sorted.map(([race,n]) => `
+
+  tbody.innerHTML = sorted.map(([race, members]) => `
     <tr>
       <td>${race}</td>
-      <td style="text-align:center;font-weight:700;color:var(--marigold-bright)">${n}</td>
+      <td style="text-align:center;font-weight:700;color:var(--marigold-bright)">${members.length}</td>
+      <td style="text-align:center">
+        <button class="stats-view-btn" data-race="${encodeURIComponent(race)}">👁 Lihat / View</button>
+      </td>
     </tr>`).join("");
+
+  tbody.querySelectorAll(".stats-view-btn[data-race]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const race    = decodeURIComponent(btn.dataset.race);
+      const members = map[race];
+      openListModal(
+        `Ahli Bangsa ${race} / Members of Race: ${race}`,
+        buildMemberListTable(members)
+      );
+    });
+  });
 }
 
 // ══════════════════════════════════════════════
@@ -222,7 +238,7 @@ function renderAge() {
     "Dewasa Muda / Young Adult (18–29)",
     "Dewasa / Adult (30–59)",
     "Warga Emas / Senior (60+)",
-    "Tidak Diketahui"
+    "Tidak Diketahui / Unknown"
   ];
   const COLS = ["#FF6384","#36A2EB","#FFCE56","#4BC0C0","#9966FF","#aaaaaa"];
   const counts = {};
@@ -231,9 +247,11 @@ function renderAge() {
     const g = getAgeGroup(r.sectionA?.dob);
     counts[g] = (counts[g]||0)+1;
   });
-  const labels = ORDER.filter(k => counts[k]>0);
-  const values = labels.map(k => counts[k]);
-  const colors = labels.map(k => COLS[ORDER.indexOf(k)]);
+
+  // Show all groups (including zeros) so legends are always visible
+  const labels = ORDER;
+  const values = ORDER.map(k => counts[k]);
+  const colors = COLS;
 
   destroyChart("chartAge");
   const ctx = document.getElementById("chartAge")?.getContext("2d");
@@ -241,7 +259,22 @@ function renderAge() {
   allCharts["chartAge"] = new Chart(ctx, {
     type: "doughnut",
     data: { labels, datasets: [{ data: values, backgroundColor: colors, borderWidth:2, borderColor:"rgba(0,0,0,0.3)" }] },
-    options: { ...pieOpts(), cutout:"50%" }
+    options: {
+      cutout: "50%",
+      plugins: {
+        legend: {
+          display: true,
+          position: "right",
+          labels: {
+            color: chartText(),
+            font: { family:"Crimson Pro, serif", size:13 },
+            padding: 14,
+            // Show all labels even if value is 0
+            filter: () => true
+          }
+        }
+      }
+    }
   });
 }
 
@@ -289,14 +322,29 @@ function renderMarital() {
 }
 
 // ══════════════════════════════════════════════
+// SHARED: member list table builder
+// ══════════════════════════════════════════════
+function buildMemberListTable(members) {
+  return `<table class="stats-modal-table">
+    <thead><tr><th>Nama / Name</th><th>ID Unik / Unique ID</th></tr></thead>
+    <tbody>${members.map(m=>`
+      <tr>
+        <td>${(m.name||"—").toUpperCase()}</td>
+        <td style="color:var(--marigold);font-family:var(--font-display);font-size:0.85rem">${m.uid||"—"}</td>
+      </tr>`).join("")}
+    </tbody>
+  </table>`;
+}
+
+// ══════════════════════════════════════════════
 // KOMSEL TABLE — 3 columns with modal
 // ══════════════════════════════════════════════
 function renderKomselTable() {
-  const map = {}; // code → [ {name, uid} ]
+  const map = {};
   allData.forEach(r => {
     const code = (r.sectionA?.komselCode||"").trim().toUpperCase() || "—";
     if (!map[code]) map[code] = [];
-    map[code].push({ name: r.name||"—", uid: r.uniqueID||"—" });
+    map[code].push({ name:(r.name||r.sectionA?.fullName||"—"), uid:r.uniqueID||"—" });
   });
 
   const sorted = Object.entries(map).sort((a,b) => a[0].localeCompare(b[0]));
@@ -308,21 +356,15 @@ function renderKomselTable() {
       <td style="font-weight:700;color:var(--marigold-bright)">${code}</td>
       <td style="text-align:center">${members.length}</td>
       <td style="text-align:center">
-        <button class="stats-view-btn" data-code="${code}">👁 Lihat / View</button>
+        <button class="stats-view-btn" data-code="${encodeURIComponent(code)}">👁 Lihat / View</button>
       </td>
     </tr>`).join("");
 
-  tbody.querySelectorAll(".stats-view-btn").forEach(btn => {
+  tbody.querySelectorAll(".stats-view-btn[data-code]").forEach(btn => {
     btn.addEventListener("click", () => {
-      const code    = btn.dataset.code;
+      const code    = decodeURIComponent(btn.dataset.code);
       const members = map[code];
-      openListModal(
-        `Ahli Komsel ${code} / Cell Group ${code} Members`,
-        `<table class="stats-modal-table">
-          <thead><tr><th>Nama / Name</th><th>ID Unik / Unique ID</th></tr></thead>
-          <tbody>${members.map(m=>`<tr><td>${m.name}</td><td style="color:var(--marigold);font-family:var(--font-display);font-size:0.85rem">${m.uid}</td></tr>`).join("")}</tbody>
-        </table>`
-      );
+      openListModal(`Ahli Komsel ${code} / Cell Group ${code} Members`, buildMemberListTable(members));
     });
   });
 }
@@ -338,9 +380,7 @@ function renderChildrenChart() {
     else buckets[n]++;
   });
 
-  const labels = [
-    "Tiada anak","1 anak","2 anak","3 anak","4 anak","5 anak","6 anak","7 anak","8+ anak"
-  ];
+  const labels = ["Tiada anak","1 anak","2 anak","3 anak","4 anak","5 anak","6 anak","7 anak","8+ anak"];
 
   destroyChart("chartChildren");
   const ctx = document.getElementById("chartChildren")?.getContext("2d");
@@ -349,47 +389,33 @@ function renderChildrenChart() {
     type: "bar",
     data: {
       labels,
-      datasets: [{ label:"Bilangan Ahli / Members",
-        data: Object.values(buckets),
-        backgroundColor: MARIGOLD, borderRadius:6 }]
+      datasets: [{ label:"Bilangan Ahli / Members", data: Object.values(buckets), backgroundColor: MARIGOLD, borderRadius:6 }]
     },
     options: {
       ...barOpts(),
       plugins: { ...barOpts().plugins, legend:{ display:false } },
       scales: {
         x: { ticks:{ color:chartText() }, grid:{ color:chartGridColor() } },
-        y: {
-          ticks:{ color:chartText(), stepSize:1, callback:v=>Number.isInteger(v)?v:null },
-          grid:{ color:chartGridColor() }, beginAtZero:true
-        }
+        y: { ticks:{ color:chartText(), stepSize:1, callback:v=>Number.isInteger(v)?v:null }, grid:{ color:chartGridColor() }, beginAtZero:true }
       }
     }
   });
 
-  // List button
   document.getElementById("btnChildrenList")?.addEventListener("click", () => {
     const withKids = allData
       .filter(r => countValidChildren(r)>0)
       .map(r => {
         const kids  = (r.sectionC?.children||[]).filter(c=>c.name?.trim()&&c.gender);
-        const boys  = kids.filter(c=>c.gender==="male").length;
-        const girls = kids.filter(c=>c.gender==="female").length;
-        return { name:r.name||"—", boys, girls, total:kids.length };
+        return { name:(r.name||r.sectionA?.fullName||"—"), boys:kids.filter(c=>c.gender==="male").length, girls:kids.filter(c=>c.gender==="female").length, total:kids.length };
       })
       .sort((a,b) => b.total-a.total);
 
-    openListModal(
-      "Senarai Ahli yang Mempunyai Anak / Members with Children",
+    openListModal("Senarai Ahli yang Mempunyai Anak / Members with Children",
       `<table class="stats-modal-table">
-        <thead><tr>
-          <th>Nama Anggota / Member Name</th>
-          <th>Anak Lelaki / Boy(s)</th>
-          <th>Anak Perempuan / Girl(s)</th>
-          <th>Jumlah Anak / Total</th>
-        </tr></thead>
+        <thead><tr><th>Nama Anggota / Name</th><th>Anak Lelaki / Boy(s)</th><th>Anak Perempuan / Girl(s)</th><th>Jumlah / Total</th></tr></thead>
         <tbody>${withKids.map(m=>`
           <tr>
-            <td>${m.name}</td>
+            <td>${(m.name||"—").toUpperCase()}</td>
             <td style="text-align:center">${m.boys}</td>
             <td style="text-align:center">${m.girls}</td>
             <td style="text-align:center;font-weight:700;color:var(--marigold-bright)">${m.total}</td>
@@ -412,18 +438,16 @@ function getCityFromAddress(addr) {
     ["Betong","betong"],["Sarikei","sarikei"],["Kapit","kapit"],["Limbang","limbang"],
     ["Lawas","lawas"],["Mukah","mukah"],["Bau","bau"],["Kota Kinabalu","kinabalu"],
   ];
-  for (const [name, key] of cities) {
-    if (lower.includes(key)) return name;
-  }
+  for (const [name, key] of cities) { if (lower.includes(key)) return name; }
   return "Lain-lain / Others";
 }
 
 function renderCityTable() {
-  const map = {}; // city → [ {name,uid} ]
+  const map = {};
   allData.forEach(r => {
     const city = getCityFromAddress(r.sectionA?.currentAddress);
     if (!map[city]) map[city] = [];
-    map[city].push({ name:r.name||"—", uid:r.uniqueID||"—" });
+    map[city].push({ name:(r.name||r.sectionA?.fullName||"—"), uid:r.uniqueID||"—" });
   });
 
   const sorted = Object.entries(map).sort((a,b) => b[1].length - a[1].length);
@@ -435,21 +459,15 @@ function renderCityTable() {
       <td style="font-weight:700">${city}</td>
       <td style="text-align:center">${members.length}</td>
       <td style="text-align:center">
-        <button class="stats-view-btn" data-city="${city}">👁 Lihat / View</button>
+        <button class="stats-view-btn" data-city="${encodeURIComponent(city)}">👁 Lihat / View</button>
       </td>
     </tr>`).join("");
 
   tbody.querySelectorAll(".stats-view-btn[data-city]").forEach(btn => {
     btn.addEventListener("click", () => {
-      const city    = btn.dataset.city;
+      const city    = decodeURIComponent(btn.dataset.city);
       const members = map[city];
-      openListModal(
-        `Ahli dari ${city} / Members from ${city}`,
-        `<table class="stats-modal-table">
-          <thead><tr><th>Nama / Name</th><th>ID Unik / Unique ID</th></tr></thead>
-          <tbody>${members.map(m=>`<tr><td>${m.name}</td><td style="color:var(--marigold);font-family:var(--font-display);font-size:0.85rem">${m.uid}</td></tr>`).join("")}</tbody>
-        </table>`
-      );
+      openListModal(`Ahli dari ${city} / Members from ${city}`, buildMemberListTable(members));
     });
   });
 }

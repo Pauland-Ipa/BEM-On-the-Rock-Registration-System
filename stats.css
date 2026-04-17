@@ -262,3 +262,40 @@
 @media (max-width: 400px) {
   .stats-summary-grid { grid-template-columns: 1fr; }
 }
+
+/* ── Item 8: Back button top-right of card ── */
+.admin-topbar {
+  position: relative;
+}
+
+/* Move back button to top-right inline with title */
+.admin-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+/* ── Item 8: FAB with dark ring for contrast ── */
+.scroll-top-fab {
+  background: var(--marigold);
+  color: #000;
+  box-shadow:
+    0 0 0 3px rgba(0,0,0,0.7),
+    0 4px 16px rgba(255,140,0,0.45);
+}
+
+.scroll-top-fab:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 0 0 3px rgba(0,0,0,0.7),
+    0 8px 24px rgba(255,140,0,0.55);
+}
+
+/* ── Item 7: Grey text in light mode — stats page ── */
+[data-theme="light"] .stats-summary-label,
+[data-theme="light"] .stats-summary-label em,
+[data-theme="light"] .stats-loading,
+[data-theme="light"] .admin-control-label {
+  color: #000000 !important;
+}

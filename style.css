@@ -487,8 +487,15 @@ body {
   overflow: visible;
 }
 
-.form-group { display: flex; flex-direction: column; gap: 0.4rem; }
-.form-group.full-width { grid-column: 1 / -1; }
+/* Each form group gets a stacking context — baptism group (full-width) 
+   must paint above citizenship group below it in the grid */
+.form-group { display: flex; flex-direction: column; gap: 0.4rem; position: relative; z-index: 1; }
+.form-group.full-width { grid-column: 1 / -1; z-index: 2; }
+
+/* Baptism field specifically gets higher z-index when its dropdown is open */
+#baptismDateField,
+.year-picker-wrap,
+.year-picker-dropdown { z-index: 50; }
 
 /* ── Labels ── */
 .form-label {
@@ -686,7 +693,6 @@ input[type="date"].form-input::-webkit-calendar-picker-indicator {
 /* ── Year Grid Picker ── */
 .year-picker-wrap {
   position: relative;
-  z-index: 50;
 }
 
 .year-picker-display {
@@ -1615,3 +1621,30 @@ input[type="date"].form-input::-webkit-calendar-picker-indicator {
 @media (max-width: 400px) {
   .step-label { display: none; }
 }
+
+
+/* ── Item 7: Grey text → pure black in light mode ── */
+[data-theme="light"] .text-muted,
+[data-theme="light"] .field-hint,
+[data-theme="light"] .label-en,
+[data-theme="light"] .section-subtitle,
+[data-theme="light"] .eligibility-en,
+[data-theme="light"] .church-subtitle,
+[data-theme="light"] .stats-summary-label,
+[data-theme="light"] .stats-summary-label em,
+[data-theme="light"] .home-btn-en,
+[data-theme="light"] .home-welcome-en,
+[data-theme="light"] .pledge-en,
+[data-theme="light"] .instruction-en,
+[data-theme="light"] .th-en,
+[data-theme="light"] .success-title-en,
+[data-theme="light"] .success-msg-en,
+[data-theme="light"] .view-field-label,
+[data-theme="light"] .update-menu-en,
+[data-theme="light"] .current-value-label,
+[data-theme="light"] p[style*="color:var(--text-muted)"] {
+  color: #000000 !important;
+  opacity: 1;
+}
+
+[data-theme="light"] var(--text-secondary) { color: #1A1208; }

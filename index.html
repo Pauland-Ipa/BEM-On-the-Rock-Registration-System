@@ -7,14 +7,15 @@
   <link rel="stylesheet" href="style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet"/>
   <script>
-    // Redirect root visitors to home page unless coming from home
+    // Redirect to home page unless arriving via an internal link
     (function() {
       const params = new URLSearchParams(window.location.search);
-      const ref = document.referrer;
-      const fromHome = params.has("from") ||
-        (ref && (ref.includes("home.html") || ref.includes("register-behalf.html")));
-      if (!fromHome && window.location.pathname.endsWith("index.html") || window.location.pathname === "/" || window.location.pathname === "") {
-        if (!fromHome) window.location.replace("home.html");
+      const ref    = document.referrer;
+      // Allow through if: has ?from= param, or referred from our own pages
+      const allowed = params.has("from") || params.has("mode") ||
+        (ref && ref.includes(window.location.hostname));
+      if (!allowed) {
+        window.location.replace("home.html");
       }
     })();
   </script>
