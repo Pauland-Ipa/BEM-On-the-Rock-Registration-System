@@ -34,8 +34,9 @@ function buildYearDropdown() {
 
 // ═══════════════════════════════════════════════
 // 1b. BAPTISM YEAR GRID PICKER (1920 → current year)
+//     Dropdown uses position:fixed to escape all stacking contexts
 // ═══════════════════════════════════════════════
-let baptismPickerPage = 0; // page of 12 years
+let baptismPickerPage = 0;
 const BAPTISM_START = 1920;
 
 function buildBaptismYearPicker() {
@@ -48,11 +49,27 @@ function buildBaptismYearPicker() {
   const dropdown = document.getElementById("baptismYearDropdown");
   if (!display || !dropdown) return;
 
+  // Position dropdown using fixed coordinates from button rect
+  function positionDropdown() {
+    const rect = display.getBoundingClientRect();
+    dropdown.style.top   = (rect.bottom + 4) + "px";
+    dropdown.style.left  = rect.left + "px";
+    dropdown.style.width = rect.width + "px";
+  }
+
   display.addEventListener("click", (e) => {
     e.stopPropagation();
-    dropdown.classList.toggle("open");
-    display.classList.toggle("open");
-    renderBaptismYearGrid();
+    const isOpen = dropdown.classList.contains("open");
+    // Close all other dropdowns
+    document.querySelectorAll(".year-picker-dropdown.open").forEach(d => d.classList.remove("open"));
+    if (!isOpen) {
+      positionDropdown();
+      dropdown.classList.add("open");
+      display.classList.add("open");
+      renderBaptismYearGrid();
+    } else {
+      display.classList.remove("open");
+    }
   });
 
   document.getElementById("baptismYearPrev")?.addEventListener("click", (e) => {
@@ -66,10 +83,19 @@ function buildBaptismYearPicker() {
     if (baptismPickerPage < total - 1) { baptismPickerPage++; renderBaptismYearGrid(); }
   });
 
-  document.addEventListener("click", () => {
-    dropdown.classList.remove("open");
-    display.classList.remove("open");
+  // Close on outside click or scroll
+  document.addEventListener("click", (e) => {
+    if (!display.contains(e.target) && !dropdown.contains(e.target)) {
+      dropdown.classList.remove("open");
+      display.classList.remove("open");
+    }
   });
+
+  document.addEventListener("scroll", () => {
+    if (dropdown.classList.contains("open")) {
+      positionDropdown(); // reposition on scroll
+    }
+  }, true);
 }
 
 function renderBaptismYearGrid() {

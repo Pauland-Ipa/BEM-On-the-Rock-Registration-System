@@ -487,15 +487,12 @@ body {
   overflow: visible;
 }
 
-/* Each form group gets a stacking context — baptism group (full-width) 
-   must paint above citizenship group below it in the grid */
-.form-group { display: flex; flex-direction: column; gap: 0.4rem; position: relative; z-index: 1; }
-.form-group.full-width { grid-column: 1 / -1; z-index: 2; }
+.form-group { display: flex; flex-direction: column; gap: 0.4rem; }
+.form-group.full-width { grid-column: 1 / -1; }
 
-/* Baptism field specifically gets higher z-index when its dropdown is open */
+/* Year picker wrap — no z-index needed, dropdown is position:fixed via JS */
 #baptismDateField,
-.year-picker-wrap,
-.year-picker-dropdown { z-index: 50; }
+.year-picker-wrap { position: relative; }
 
 /* ── Labels ── */
 .form-label {
@@ -620,7 +617,6 @@ input[type="date"].form-input::-webkit-calendar-picker-indicator {
   border-left: 3px solid var(--marigold);
   border-radius: 0 var(--radius) var(--radius) 0;
   animation: fadeSlideIn 0.3s ease forwards;
-  overflow: visible; /* allow year picker dropdown to overflow */
 }
 
 .conditional-field.visible { display: block; }
@@ -691,9 +687,7 @@ input[type="date"].form-input::-webkit-calendar-picker-indicator {
 .photo-change-btn:hover { background: rgba(255,140,0,0.08); }
 
 /* ── Year Grid Picker ── */
-.year-picker-wrap {
-  position: relative;
-}
+.year-picker-wrap { position: relative; }
 
 .year-picker-display {
   width: 100%;
@@ -719,17 +713,14 @@ input[type="date"].form-input::-webkit-calendar-picker-indicator {
 
 .year-picker-dropdown {
   display: none;
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  width: 100%;
+  position: fixed; /* fixed — escapes ALL stacking contexts and overflow:hidden parents */
   min-width: 260px;
-  /* Fully opaque — no bleed-through from content behind */
+  /* top/left set by JS via getBoundingClientRect */
   background: var(--bg-input);
   border: 1.5px solid var(--marigold-dim);
   border-radius: var(--radius);
   box-shadow: 0 8px 32px rgba(0,0,0,0.55);
-  z-index: 200;
+  z-index: 9000; /* above everything */
   overflow: hidden;
 }
 
@@ -1623,7 +1614,7 @@ input[type="date"].form-input::-webkit-calendar-picker-indicator {
 }
 
 
-/* ── Item 7: Grey text → pure black in light mode ── */
+/* ── Light mode: grey text → pure black ── */
 [data-theme="light"] .text-muted,
 [data-theme="light"] .field-hint,
 [data-theme="light"] .label-en,
@@ -1641,10 +1632,7 @@ input[type="date"].form-input::-webkit-calendar-picker-indicator {
 [data-theme="light"] .success-msg-en,
 [data-theme="light"] .view-field-label,
 [data-theme="light"] .update-menu-en,
-[data-theme="light"] .current-value-label,
-[data-theme="light"] p[style*="color:var(--text-muted)"] {
+[data-theme="light"] .current-value-label {
   color: #000000 !important;
   opacity: 1;
 }
-
-[data-theme="light"] var(--text-secondary) { color: #1A1208; }
