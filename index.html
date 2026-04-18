@@ -374,27 +374,20 @@
             </div>
             <span class="error-msg" id="err-baptismStatus"></span>
 
-            <!-- Conditional: Year of Baptism (grid picker) -->
+            <!-- Conditional: Year of Baptism (plain number input) -->
             <div class="conditional-field" id="baptismDateField">
-              <label class="form-label">
+              <label class="form-label" for="baptismYear">
                 Tahun Pembaptisan <span class="label-en">/ Year of Baptism</span>
                 <span class="required">*</span>
               </label>
-              <div class="year-picker-wrap">
-                <button type="button" class="year-picker-display" id="baptismYearDisplay">
-                  <span id="baptismYearLabel">-- Pilih Tahun / Select Year --</span>
-                  <span class="year-picker-arrow">▼</span>
-                </button>
-                <div class="year-picker-dropdown" id="baptismYearDropdown">
-                  <div class="year-picker-nav">
-                    <button type="button" class="year-nav-btn" id="baptismYearPrev">&#8249;</button>
-                    <span class="year-nav-label" id="baptismYearNavLabel"></span>
-                    <button type="button" class="year-nav-btn" id="baptismYearNext">&#8250;</button>
-                  </div>
-                  <div class="year-grid" id="baptismYearGrid"></div>
-                </div>
-              </div>
-              <input type="hidden" id="baptismYear" name="baptismYear"/>
+              <input type="number" id="baptismYear" name="baptismYear"
+                class="form-input"
+                placeholder="cth/e.g. 2005"
+                min="1920"
+                max="2099"
+                style="max-width:160px;"
+                oninput="this.value=this.value.replace(/[^0-9]/g,'').substring(0,4)"/>
+              <span class="field-hint">Masukkan tahun sahaja / Enter year only (e.g. 1998)</span>
               <span class="error-msg" id="err-baptismDate"></span>
             </div>
           </div>

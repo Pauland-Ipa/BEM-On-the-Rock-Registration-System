@@ -33,101 +33,11 @@ function buildYearDropdown() {
 }
 
 // ═══════════════════════════════════════════════
-// 1b. BAPTISM YEAR GRID PICKER (1920 → current year)
-//     Dropdown uses position:fixed to escape all stacking contexts
+// 1b. BAPTISM YEAR — simple number input
 // ═══════════════════════════════════════════════
-let baptismPickerPage = 0;
-const BAPTISM_START = 1920;
-
 function buildBaptismYearPicker() {
-  const currentYear = new Date().getFullYear();
-  const totalYears  = currentYear - BAPTISM_START + 1;
-  const totalPages  = Math.ceil(totalYears / 12);
-  baptismPickerPage = totalPages - 1; // start at most recent page
-
-  const display  = document.getElementById("baptismYearDisplay");
-  const dropdown = document.getElementById("baptismYearDropdown");
-  if (!display || !dropdown) return;
-
-  // Position dropdown using fixed coordinates from button rect
-  function positionDropdown() {
-    const rect = display.getBoundingClientRect();
-    dropdown.style.top   = (rect.bottom + 4) + "px";
-    dropdown.style.left  = rect.left + "px";
-    dropdown.style.width = rect.width + "px";
-  }
-
-  display.addEventListener("click", (e) => {
-    e.stopPropagation();
-    const isOpen = dropdown.classList.contains("open");
-    // Close all other dropdowns
-    document.querySelectorAll(".year-picker-dropdown.open").forEach(d => d.classList.remove("open"));
-    if (!isOpen) {
-      positionDropdown();
-      dropdown.classList.add("open");
-      display.classList.add("open");
-      renderBaptismYearGrid();
-    } else {
-      display.classList.remove("open");
-    }
-  });
-
-  document.getElementById("baptismYearPrev")?.addEventListener("click", (e) => {
-    e.stopPropagation();
-    if (baptismPickerPage > 0) { baptismPickerPage--; renderBaptismYearGrid(); }
-  });
-
-  document.getElementById("baptismYearNext")?.addEventListener("click", (e) => {
-    e.stopPropagation();
-    const total = Math.ceil((new Date().getFullYear() - BAPTISM_START + 1) / 12);
-    if (baptismPickerPage < total - 1) { baptismPickerPage++; renderBaptismYearGrid(); }
-  });
-
-  // Close on outside click or scroll
-  document.addEventListener("click", (e) => {
-    if (!display.contains(e.target) && !dropdown.contains(e.target)) {
-      dropdown.classList.remove("open");
-      display.classList.remove("open");
-    }
-  });
-
-  document.addEventListener("scroll", () => {
-    if (dropdown.classList.contains("open")) {
-      positionDropdown(); // reposition on scroll
-    }
-  }, true);
-}
-
-function renderBaptismYearGrid() {
-  const grid    = document.getElementById("baptismYearGrid");
-  const navLabel= document.getElementById("baptismYearNavLabel");
-  const currentYear = new Date().getFullYear();
-  if (!grid) return;
-
-  const start = BAPTISM_START + baptismPickerPage * 12;
-  const end   = Math.min(start + 11, currentYear);
-  navLabel.textContent = `${start} – ${end}`;
-
-  grid.innerHTML = "";
-  for (let y = start; y <= start + 11; y++) {
-    const div = document.createElement("div");
-    div.className = "year-grid-item" + (y > currentYear ? " future" : "");
-    div.textContent = y;
-    const saved = document.getElementById("baptismYear")?.value;
-    if (saved && parseInt(saved) === y) div.classList.add("selected");
-    div.addEventListener("click", (e) => {
-      e.stopPropagation();
-      document.getElementById("baptismYear").value = y;
-      document.getElementById("baptismYearLabel").textContent = y;
-      document.getElementById("baptismYearDropdown").classList.remove("open");
-      document.getElementById("baptismYearDisplay").classList.remove("open");
-      grid.querySelectorAll(".year-grid-item").forEach(el => el.classList.remove("selected"));
-      div.classList.add("selected");
-      saveDraft();
-      checkNextButton();
-    });
-    grid.appendChild(div);
-  }
+  // No picker needed — using plain number input now
+  // Just auto-populate with current year as placeholder hint
 }
 
 // ═══════════════════════════════════════════════
@@ -373,7 +283,7 @@ function bindEvents() {
     });
   }
 
-  // ── Baptism Status: show/hide year picker ──
+  // ── Baptism Status: show/hide year input ──
   const baptismRadios = document.querySelectorAll('input[name="baptismStatus"]');
   baptismRadios.forEach(radio => {
     radio.addEventListener("change", function () {
@@ -382,10 +292,8 @@ function bindEvents() {
         dateField.classList.add("visible");
       } else {
         dateField.classList.remove("visible");
-        const hid = document.getElementById("baptismYear");
-        if (hid) hid.value = "";
-        const lbl = document.getElementById("baptismYearLabel");
-        if (lbl) lbl.textContent = "-- Pilih Tahun / Select Year --";
+        const yInput = document.getElementById("baptismYear");
+        if (yInput) yInput.value = "";
         clearError("baptismDate");
       }
       saveDraft();
