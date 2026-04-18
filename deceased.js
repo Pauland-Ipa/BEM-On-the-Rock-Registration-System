@@ -1,0 +1,312 @@
+"use strict";
+/* ═══════════════════════════════════════════════
+   BEM On The Rock — deceased.js
+═══════════════════════════════════════════════ */
+
+document.getElementById("deceasedFooterYear").textContent = new Date().getFullYear();
+
+// ── State ──
+let heirMemberData     = null; // Firestore data if heir is a registered member
+let deceasedMemberData = null; // Firestore data if deceased was a registered member
+let deceasedDocId      = null; // doc ID if deceased found in DB
+
+// ── Helpers ──
+function formatIC(v) {
+  const d = v.replace(/\D/g,"");
+  let f = d;
+  if (d.length>6) f = d.substring(0,6)+"-"+d.substring(6);
+  if (d.length>8) f = f.substring(0,9)+"-"+d.substring(8);
+  return f.substring(0,14);
+}
+
+function formatPhone(v) {
+  const d = v.replace(/\D/g,"");
+  return d.length > 3 ? d.substring(0,3)+"-"+d.substring(3,10) : d;
+}
+
+function showSection(id) {
+  ["section-a","section-b","section-c"].forEach(s => {
+    const el = document.getElementById(s);
+    if (el) el.classList.toggle("active", s === id);
+  });
+  window.scrollTo({top:0, behavior:"smooth"});
+}
+
+// ══════════════════════════════════════════════
+// SECTION A — Heir Status
+// ══════════════════════════════════════════════
+document.querySelectorAll('input[name="heirStatus"]').forEach(radio => {
+  radio.addEventListener("change", function() {
+    const v = this.value;
+    document.getElementById("heirRegisteredFields").classList.toggle("visible", v === "registered");
+    document.getElementById("heirManualFields").classList.toggle("visible",     v === "unregistered" || v === "outsider");
+    document.getElementById("heirRelationshipField").classList.add("visible");
+    // Clear previous lookups
+    heirMemberData = null;
+    document.getElementById("heirMemberBanner").style.display = "none";
+    document.getElementById("heirLookupNotice").textContent = "";
+  });
+});
+
+// IC auto-format
+document.getElementById("heirIC")?.addEventListener("input", function() {
+  this.value = formatIC(this.value);
+});
+document.getElementById("heirManualIC")?.addEventListener("input", function() {
+  this.value = formatIC(this.value);
+});
+
+// Phone auto-format
+document.getElementById("heirPhone")?.addEventListener("input", function() {
+  this.value = formatPhone(this.value);
+});
+document.getElementById("conductorPhone")?.addEventListener("input", function() {
+  this.value = formatPhone(this.value);
+});
+document.getElementById("witnessPhone")?.addEventListener("input", function() {
+  this.value = formatPhone(this.value);
+});
+
+// Registered member IC lookup — search regardless of approval status
+document.getElementById("heirIC")?.addEventListener("blur", async function() {
+  const ic = this.value.replace(/-/g,"");
+  if (ic.length !== 12) return;
+  const notice = document.getElementById("heirLookupNotice");
+  notice.textContent = "Menyemak... / Checking...";
+  try {
+    const snap = await db.collection("registrations").where("icNo","==",ic).limit(1).get();
+    if (snap.empty) {
+      notice.textContent = "Tiada rekod dijumpai. / No record found.";
+      heirMemberData = null;
+      document.getElementById("heirMemberBanner").style.display = "none";
+    } else {
+      heirMemberData = snap.docs[0].data();
+      notice.textContent = "";
+      const banner = document.getElementById("heirMemberBanner");
+      document.getElementById("heirMemberName").textContent =
+        (heirMemberData.sectionA?.fullName || heirMemberData.name || "—").toUpperCase();
+      document.getElementById("heirMemberUID").textContent =
+        `ID: ${heirMemberData.uniqueID || "—"} | ${heirMemberData.approved ? "Ahli Aktif / Active" : "Tidak Aktif / Inactive"}`;
+      banner.style.display = "block";
+    }
+  } catch(e) {
+    notice.textContent = "Ralat / Error checking record.";
+  }
+});
+
+// Next A → B
+document.getElementById("btnNextA").addEventListener("click", () => {
+  const status = document.querySelector('input[name="heirStatus"]:checked')?.value;
+  let valid = true;
+  document.getElementById("err-heirStatus").textContent = "";
+
+  if (!status) {
+    document.getElementById("err-heirStatus").textContent = "Sila pilih satu pilihan / Please select an option.";
+    valid = false;
+  }
+
+  if (status === "registered") {
+    const ic = document.getElementById("heirIC").value.replace(/-/g,"");
+    if (ic.length !== 12) {
+      document.getElementById("err-heirIC").textContent = "Sila masukkan No. KP yang sah / Enter valid IC No.";
+      valid = false;
+    }
+  } else if (status === "unregistered" || status === "outsider") {
+    if (!document.getElementById("heirFullName").value.trim()) {
+      document.getElementById("err-heirFullName").textContent = "Diperlukan / Required";
+      valid = false;
+    }
+    if (document.getElementById("heirManualIC").value.replace(/-/g,"").length !== 12) {
+      document.getElementById("err-heirManualIC").textContent = "No. KP tidak sah / Invalid IC";
+      valid = false;
+    }
+    if (!document.getElementById("heirPhone").value.trim()) {
+      document.getElementById("err-heirPhone").textContent = "Diperlukan / Required";
+      valid = false;
+    }
+    if (!document.getElementById("heirAddress").value.trim()) {
+      document.getElementById("err-heirAddress").textContent = "Diperlukan / Required";
+      valid = false;
+    }
+  }
+
+  if (!document.getElementById("heirRelationship").value.trim()) {
+    document.getElementById("err-heirRelationship").textContent = "Sila isi hubungan / Please state relationship.";
+    valid = false;
+  }
+
+  if (valid) showSection("section-b");
+});
+
+// ══════════════════════════════════════════════
+// SECTION B — Deceased Info + Auto-fill
+// ══════════════════════════════════════════════
+document.getElementById("btnBackB").addEventListener("click", () => showSection("section-a"));
+
+// Check deceased name/IC against DB
+async function checkDeceasedInDB(nameOrIC, isIC) {
+  try {
+    let snap;
+    if (isIC) {
+      const clean = nameOrIC.replace(/-/g,"");
+      if (clean.length !== 12) return;
+      snap = await db.collection("registrations").where("icNo","==",clean).limit(1).get();
+    } else {
+      const upper = nameOrIC.toUpperCase();
+      snap = await db.collection("registrations").where("name","==",upper).limit(1).get();
+    }
+    if (!snap || snap.empty) { deceasedMemberData = null; deceasedDocId = null; return; }
+    deceasedDocId   = snap.docs[0].id;
+    deceasedMemberData = snap.docs[0].data();
+    document.getElementById("autoFillNotice").style.display = "block";
+  } catch(e) { /* silent */ }
+}
+
+document.getElementById("deceasedFullName").addEventListener("blur", function() {
+  if (this.value.trim().length > 2) checkDeceasedInDB(this.value.trim(), false);
+});
+
+document.getElementById("deceasedIC").addEventListener("input", function() {
+  this.value = formatIC(this.value);
+});
+
+document.getElementById("deceasedIC").addEventListener("blur", function() {
+  const clean = this.value.replace(/-/g,"");
+  if (clean.length === 12) checkDeceasedInDB(clean, true);
+});
+
+document.getElementById("btnAutoFillYes").addEventListener("click", () => {
+  if (!deceasedMemberData) return;
+  const a = deceasedMemberData.sectionA || {};
+  document.getElementById("deceasedFullName").value  = a.fullName  || deceasedMemberData.name || "";
+  document.getElementById("deceasedIC").value        = a.icNo      || deceasedMemberData.icNo || "";
+  document.getElementById("deceasedRace").value      = a.race      || "";
+  document.getElementById("deceasedAddress").value   = a.currentAddress || "";
+  // Gender
+  if (a.gender) {
+    const g = document.querySelector(`input[name="deceasedGender"][value="${a.gender}"]`);
+    if (g) g.checked = true;
+  }
+  document.getElementById("autoFillNotice").style.display = "none";
+});
+
+document.getElementById("btnAutoFillNo").addEventListener("click", () => {
+  document.getElementById("autoFillNotice").style.display = "none";
+  deceasedMemberData = null;
+  deceasedDocId      = null;
+});
+
+// Next B → C
+document.getElementById("btnNextB").addEventListener("click", () => {
+  let valid = true;
+  ["err-deceasedFullName","err-deceasedIC","err-deceasedGender","err-dateOfPassing","err-declaration"]
+    .forEach(id => { const el=document.getElementById(id); if(el) el.textContent=""; });
+
+  if (!document.getElementById("deceasedFullName").value.trim()) {
+    document.getElementById("err-deceasedFullName").textContent = "Diperlukan / Required"; valid = false;
+  }
+  if (document.getElementById("deceasedIC").value.replace(/-/g,"").length !== 12) {
+    document.getElementById("err-deceasedIC").textContent = "No. KP tidak sah / Invalid IC"; valid = false;
+  }
+  if (!document.querySelector('input[name="deceasedGender"]:checked')) {
+    document.getElementById("err-deceasedGender").textContent = "Sila pilih jantina / Select gender"; valid = false;
+  }
+  if (!document.getElementById("dateOfPassing").value) {
+    document.getElementById("err-dateOfPassing").textContent = "Sila pilih tarikh / Select date"; valid = false;
+  }
+  if (!document.getElementById("declarationCheck").checked) {
+    document.getElementById("err-declaration").textContent = "Sila tandakan pengakuan ini / Please tick this declaration"; valid = false;
+  }
+
+  if (valid) showSection("section-c");
+});
+
+// ══════════════════════════════════════════════
+// SECTION C — Submit
+// ══════════════════════════════════════════════
+document.getElementById("btnBackC").addEventListener("click", () => showSection("section-b"));
+
+document.getElementById("btnSubmitDeceased").addEventListener("click", async () => {
+  const btn    = document.getElementById("btnSubmitDeceased");
+  const notice = document.getElementById("submitNotice");
+  btn.disabled = true;
+  btn.textContent = "Menghantar... / Submitting...";
+
+  try {
+    const heirStatus = document.querySelector('input[name="heirStatus"]:checked')?.value;
+
+    // Build heir info
+    let heirInfo = { type: heirStatus, relationship: document.getElementById("heirRelationship").value.trim() };
+    if (heirStatus === "registered" && heirMemberData) {
+      heirInfo = {
+        ...heirInfo,
+        name:     (heirMemberData.sectionA?.fullName || heirMemberData.name || "").toUpperCase(),
+        ic:       heirMemberData.icNo || "",
+        phone:    heirMemberData.sectionA?.phoneNumber || "",
+        uniqueID: heirMemberData.uniqueID || "",
+        approved: heirMemberData.approved || false,
+      };
+    } else {
+      heirInfo = {
+        ...heirInfo,
+        name:    document.getElementById("heirFullName").value.trim().toUpperCase(),
+        ic:      document.getElementById("heirManualIC").value.replace(/-/g,""),
+        phone:   document.getElementById("heirPhone").value.trim(),
+        address: document.getElementById("heirAddress").value.trim(),
+      };
+    }
+
+    const deceasedIC = document.getElementById("deceasedIC").value.replace(/-/g,"");
+    const deceasedRecord = {
+      // Section A — Heir
+      heirInfo,
+
+      // Section B — Deceased Personal
+      deceasedName:    document.getElementById("deceasedFullName").value.trim().toUpperCase(),
+      deceasedIC:      deceasedIC,
+      deceasedGender:  document.querySelector('input[name="deceasedGender"]:checked')?.value || "",
+      deceasedRace:    document.getElementById("deceasedRace").value.trim(),
+      deceasedAddress: document.getElementById("deceasedAddress").value.trim(),
+      wasRegisteredMember: !!deceasedDocId,
+      registeredMemberUID: deceasedMemberData?.uniqueID || "",
+
+      // Section B — Death
+      dateOfPassing: document.getElementById("dateOfPassing").value,
+      causeOfDeath:  document.getElementById("causeOfDeath").value.trim(),
+      graveLot:      document.getElementById("graveLot").value.trim(),
+
+      // Section C — Funeral
+      burialDate:     document.getElementById("burialDate").value,
+      conductedBy:    document.getElementById("conductedBy").value.trim(),
+      conductorPhone: document.getElementById("conductorPhone").value.trim(),
+      witnessBy:      document.getElementById("witnessBy").value.trim(),
+      witnessPhone:   document.getElementById("witnessPhone").value.trim(),
+
+      submittedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    };
+
+    // Save to dedicated 'deceased' collection
+    await db.collection("deceased").add(deceasedRecord);
+
+    // If deceased was a registered member, also mark them in registrations
+    if (deceasedDocId) {
+      await db.collection("registrations").doc(deceasedDocId).update({
+        deceased:          true,
+        deceasedDate:      deceasedRecord.dateOfPassing,
+        deceasedGraveLot:  deceasedRecord.graveLot,
+        deceasedDeclaredBy: heirInfo.ic || "",
+        lastUpdated: firebase.firestore.FieldValue.serverTimestamp(),
+      });
+    }
+
+    // Show success
+    document.getElementById("section-c").style.display = "none";
+    document.getElementById("deceasedSuccess").style.display  = "block";
+    window.scrollTo({top:0, behavior:"smooth"});
+
+  } catch(e) {
+    notice.textContent = "Ralat semasa menghantar / Submission error: " + e.message;
+    btn.disabled = false;
+    btn.textContent = "Hantar / Submit →";
+  }
+});

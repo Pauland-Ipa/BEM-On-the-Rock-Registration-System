@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BEM On The Rock — Maklumat Kematian (Admin)</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="admin.css"/>
+</head>
+<body class="admin-body">
+
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="logo-wrap"><img src="Images/logo.jpg" alt="BEM On The Rock" class="logo-img"/></div>
+      <div class="header-text">
+        <h1 class="church-name">BEM On The Rock</h1>
+        <p class="church-subtitle">Maklumat Kematian / Deceased Information</p>
+      </div>
+      <div class="logo-wrap logo-wrap-right"><img src="Images/logo_bem_sib.png" alt="B.E.M" class="logo-img logo-bem"/></div>
+    </div>
+  </header>
+
+  <main class="admin-main">
+    <div class="admin-content-card">
+
+      <div class="admin-topbar" style="margin-bottom:1.5rem;">
+        <div class="admin-topbar-left">
+          <h2 class="admin-section-title">🕊️ Senarai Kematian <span>/ Deceased Records</span></h2>
+        </div>
+        <div class="admin-topbar-right">
+          <a href="admin.html" class="btn btn-secondary" style="text-decoration:none;">
+            &larr; Kembali ke Admin / Back to Admin
+          </a>
+        </div>
+      </div>
+
+      <!-- Search -->
+      <div class="admin-search-bar" style="margin-bottom:1rem;">
+        <input type="text" id="deceasedSearch" class="form-input admin-search-input"
+          placeholder="🔍 Cari nama si mati / Search by deceased name"/>
+      </div>
+
+      <div class="admin-table-wrap">
+        <table class="admin-table" id="deceasedTable">
+          <thead>
+            <tr>
+              <th class="col-num">Bil.<br/><em class="th-en">No.</em></th>
+              <th>Nama yang Telah Meninggal<br/><em class="th-en">Name of Deceased</em></th>
+              <th>Tarikh Pengkuburan<br/><em class="th-en">Burial Date</em></th>
+              <th>Nombor Lot Kubur<br/><em class="th-en">Grave Lot No.</em></th>
+              <th class="col-action">Butiran<br/><em class="th-en">Detail</em></th>
+            </tr>
+          </thead>
+          <tbody id="deceasedTableBody"></tbody>
+        </table>
+        <div class="admin-empty" id="deceasedEmpty" style="display:none;">
+          <p>Tiada rekod kematian. / No deceased records found.</p>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Detail Modal -->
+  <div class="modal-overlay" id="detailModal" style="display:none;">
+    <div class="modal-card modal-card--lg">
+      <div class="modal-header">
+        <h3 class="modal-title">🕊️ Butiran Kematian / Deceased Details</h3>
+        <button class="modal-close" id="closeDetailModal">&times;</button>
+      </div>
+      <div class="modal-body" id="detailModalBody" style="overflow-y:auto;max-height:70vh;"></div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="closeDetailModalBtn">Tutup / Close</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <p>&copy; <span id="deceasedAdminFooterYear"></span> BEM On The Rock. Hak Cipta Terpelihara / All Rights Reserved.</p>
+  </footer>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="theme.js"></script>
+  <script src="deceased-admin-view.js"></script>
+</body>
+</html>

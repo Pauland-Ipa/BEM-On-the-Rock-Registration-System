@@ -3,26 +3,18 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>BEM On The Rock — Maklumat Anggota Meninggal</title>
+  <title>BEM On The Rock — Maklumat Kematian</title>
   <link rel="stylesheet" href="style.css"/>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet"/>
 </head>
 <body>
-  <div class="theme-toggle-wrap" id="themeToggleWrap">
-    <span class="theme-icon">☀️</span>
-    <label class="theme-switch">
-      <input type="checkbox" id="themeToggle"/>
-      <span class="theme-slider"></span>
-    </label>
-    <span class="theme-icon">🌙</span>
-  </div>
 
   <header class="site-header">
     <div class="header-inner">
       <div class="logo-wrap"><img src="Images/logo.jpg" alt="BEM On The Rock" class="logo-img"/></div>
       <div class="header-text">
         <h1 class="church-name">BEM On The Rock</h1>
-        <p class="church-subtitle">Kemas Kini Maklumat Anggota yang Telah Meninggal Dunia / Update Information of the Deceased</p>
+        <p class="church-subtitle">Kemas Kini Maklumat Kematian / Update Deceased Information</p>
       </div>
       <div class="logo-wrap logo-wrap-right"><img src="Images/logo_bem_sib.png" alt="B.E.M" class="logo-img logo-bem"/></div>
     </div>
@@ -31,73 +23,275 @@
   <main class="form-main">
     <a href="home.html" class="back-home-btn">&#8592; Kembali ke Halaman Rumah / Back to Home Page</a>
 
-    <!-- Step 1: Verify reporter -->
-    <section class="form-section active" id="step-verify">
+    <!-- ══ SECTION A: Heir Information ══ -->
+    <section class="form-section active" id="section-a">
       <div class="section-header">
-        <div class="section-badge">1</div>
+        <div class="section-badge">A</div>
         <div>
-          <h2 class="section-title">Pengesahan Anggota / Member Verification</h2>
-          <p class="section-subtitle">Sila masukkan No. KP anda untuk mengesahkan status keanggotaan anda.</p>
-          <p class="section-subtitle">Please enter your IC No. to verify your membership status.</p>
+          <h2 class="section-title">Maklumat Waris / Heir Information</h2>
+          <p class="section-subtitle">Maklumat individu yang mengisi borang ini.</p>
+          <p class="section-subtitle">Information of the person filling in this form.</p>
         </div>
       </div>
-      <div class="form-grid">
+
+      <!-- Membership question -->
+      <div class="form-group full-width" style="margin-bottom:1.5rem;">
+        <label class="form-label">
+          Adakah anda berdaftar sebagai anggota gereja BEM On The Rock?
+          <span class="label-en">/ Are you registered as a member of BEM On The Rock?</span>
+          <span class="required">*</span>
+        </label>
+        <div class="checkbox-group" style="flex-direction:column;gap:0.6rem;margin-top:0.5rem;">
+          <label class="checkbox-label">
+            <input type="radio" name="heirStatus" value="registered" id="heirRegistered"/>
+            <span class="custom-radio"></span>
+            Ya <em>/ Yes</em>
+          </label>
+          <label class="checkbox-label">
+            <input type="radio" name="heirStatus" value="unregistered" id="heirUnregistered"/>
+            <span class="custom-radio"></span>
+            Tidak <em>/ No</em>
+          </label>
+          <label class="checkbox-label">
+            <input type="radio" name="heirStatus" value="outsider" id="heirOutsider"/>
+            <span class="custom-radio"></span>
+            Saya tidak beribadah di BEM On The Rock [Orang luar]
+            <em>/ I don't pray in BEM On The Rock [Outsider]</em>
+          </label>
+        </div>
+        <span class="error-msg" id="err-heirStatus"></span>
+      </div>
+
+      <!-- Registered member: IC lookup -->
+      <div class="conditional-field" id="heirRegisteredFields">
         <div class="form-group full-width">
-          <label class="form-label" for="reporterIC">No. KP Anda / Your IC No. <span class="required">*</span></label>
-          <input type="text" id="reporterIC" class="form-input" placeholder="cth/e.g. 901231-14-5678" maxlength="14"/>
-          <span class="error-msg" id="err-reporterIC"></span>
+          <label class="form-label" for="heirIC">No. KP / IC No. <span class="required">*</span></label>
+          <input type="text" id="heirIC" class="form-input" placeholder="cth/e.g. 901231-14-5678" maxlength="14"/>
+          <span class="error-msg" id="err-heirIC"></span>
+          <div class="draft-notice" id="heirLookupNotice"></div>
+        </div>
+        <!-- Auto-filled info display -->
+        <div id="heirMemberBanner" style="display:none;" class="eligibility-notice" style="margin-top:0.8rem;">
+          <p class="eligibility-bm" id="heirMemberName"></p>
+          <p class="eligibility-en" id="heirMemberUID"></p>
         </div>
       </div>
-      <div class="form-actions">
-        <button class="btn btn-primary" id="btnVerifyReporter">Seterusnya / Next &rarr;</button>
+
+      <!-- Unregistered / Outsider: manual fields -->
+      <div class="conditional-field" id="heirManualFields">
+        <div class="form-grid">
+          <div class="form-group full-width">
+            <label class="form-label" for="heirFullName">Nama Penuh / Full Name <span class="required">*</span></label>
+            <input type="text" id="heirFullName" class="form-input" placeholder="Masukkan nama penuh / Enter full name"/>
+            <span class="error-msg" id="err-heirFullName"></span>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="heirManualIC">No. KP / IC No. <span class="required">*</span></label>
+            <input type="text" id="heirManualIC" class="form-input" placeholder="cth/e.g. 901231-14-5678" maxlength="14"/>
+            <span class="error-msg" id="err-heirManualIC"></span>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="heirPhone">No. Telefon / Phone No. <span class="required">*</span></label>
+            <input type="tel" id="heirPhone" class="form-input" placeholder="cth/e.g. 011-12345678"/>
+            <span class="error-msg" id="err-heirPhone"></span>
+          </div>
+          <div class="form-group full-width">
+            <label class="form-label" for="heirAddress">Alamat / Address <span class="required">*</span></label>
+            <textarea id="heirAddress" class="form-input form-textarea" rows="2" placeholder="Masukkan alamat / Enter address"></textarea>
+            <span class="error-msg" id="err-heirAddress"></span>
+          </div>
+        </div>
       </div>
-      <div class="draft-notice" id="verifyNotice"></div>
+
+      <!-- Relationship — always shown after status selected -->
+      <div class="conditional-field" id="heirRelationshipField">
+        <div class="form-group full-width">
+          <label class="form-label" for="heirRelationship">
+            Apakah hubungan anda dengan si mati? <span class="label-en">/ What is your relationship with the deceased?</span>
+            <span class="required">*</span>
+          </label>
+          <input type="text" id="heirRelationship" class="form-input"
+            placeholder="cth/e.g. Ibu/Bapa, Saudara, Kenalan/Rakan..."/>
+          <span class="error-msg" id="err-heirRelationship"></span>
+        </div>
+      </div>
+
+      <div class="form-actions form-actions--end" style="margin-top:2rem;">
+        <button type="button" class="btn btn-primary" id="btnNextA">Seterusnya / Next &rarr;</button>
+      </div>
     </section>
 
-    <!-- Step 2: Deceased info -->
-    <section class="form-section" id="step-deceased">
+    <!-- ══ SECTION B: Deceased's Information ══ -->
+    <section class="form-section" id="section-b">
       <div class="section-header">
-        <div class="section-badge">2</div>
+        <div class="section-badge">B</div>
         <div>
-          <h2 class="section-title">Maklumat Anggota Meninggal / Deceased Member Information</h2>
-          <p class="section-subtitle">Sila isi maklumat anggota yang telah meninggal dunia.</p>
-          <p class="section-subtitle">Please fill in the information of the deceased member.</p>
+          <h2 class="section-title">Butiran Si Mati / The Deceased's Information</h2>
+          <p class="section-subtitle">Maklumat peribadi dan berkenaan kematian si mati.</p>
+          <p class="section-subtitle">Personal information and death details of the deceased.</p>
         </div>
       </div>
+
+      <!-- Part 1: Personal info -->
+      <div class="section-notice" style="margin-bottom:1.2rem;">
+        <p class="notice-bm" style="font-weight:700;">Bahagian 1: Maklumat Peribadi Si Mati / Part 1: Personal Information of the Deceased</p>
+      </div>
+
+      <!-- Auto-fill notice (non-modal) -->
+      <div id="autoFillNotice" style="display:none;" class="eligibility-notice" style="margin-bottom:1rem;background:rgba(255,140,0,0.08);">
+        <p class="eligibility-bm">
+          Kami mengesan bahawa si mati telah berdaftar sebagai ahli gereja. Adakah anda ingin mengisi maklumat peribadinya yang lain secara automatik?
+        </p>
+        <p class="eligibility-en">We detected that the deceased was registered as a church member. Would you like to automatically fill in the rest of their personal information?</p>
+        <div style="display:flex;gap:0.8rem;margin-top:0.8rem;">
+          <button type="button" class="btn btn-primary" id="btnAutoFillYes" style="padding:0.4rem 1.2rem;font-size:0.85rem;">Ya / Yes</button>
+          <button type="button" class="btn btn-secondary" id="btnAutoFillNo" style="padding:0.4rem 1.2rem;font-size:0.85rem;">Tidak / No</button>
+        </div>
+      </div>
+
       <div class="form-grid">
+        <div class="form-group full-width">
+          <label class="form-label" for="deceasedFullName">Nama Penuh Si Mati / Full Name of the Deceased <span class="required">*</span></label>
+          <input type="text" id="deceasedFullName" class="form-input" placeholder="Masukkan nama penuh / Enter full name"/>
+          <span class="error-msg" id="err-deceasedFullName"></span>
+        </div>
         <div class="form-group">
-          <label class="form-label" for="deceasedIC">No. KP si Mati / Deceased IC No. <span class="required">*</span></label>
+          <label class="form-label" for="deceasedIC">No. KP / IC No. <span class="required">*</span></label>
           <input type="text" id="deceasedIC" class="form-input" placeholder="cth/e.g. 901231-14-5678" maxlength="14"/>
           <span class="error-msg" id="err-deceasedIC"></span>
         </div>
         <div class="form-group">
-          <label class="form-label" for="graveLot">Nombor Lot Kubur / Grave Lot Number <span class="required">*</span></label>
-          <input type="text" id="graveLot" class="form-input" placeholder="cth/e.g. A-123"/>
-          <span class="error-msg" id="err-graveLot"></span>
+          <label class="form-label">Jantina / Gender <span class="required">*</span></label>
+          <div class="checkbox-group">
+            <label class="checkbox-label">
+              <input type="radio" name="deceasedGender" value="male"/>
+              <span class="custom-radio"></span>
+              Lelaki <em>/ Male</em>
+            </label>
+            <label class="checkbox-label">
+              <input type="radio" name="deceasedGender" value="female"/>
+              <span class="custom-radio"></span>
+              Perempuan <em>/ Female</em>
+            </label>
+          </div>
+          <span class="error-msg" id="err-deceasedGender"></span>
         </div>
         <div class="form-group">
-          <label class="form-label" for="dateOfPassing">Tarikh Kematian / Date of Passing <span class="required">*</span></label>
+          <label class="form-label" for="deceasedRace">Bangsa / Race</label>
+          <input type="text" id="deceasedRace" class="form-input" placeholder="cth/e.g. Kayan, Kenyah, Cina..."/>
+        </div>
+        <div class="form-group full-width">
+          <label class="form-label" for="deceasedAddress">Alamat / Address</label>
+          <textarea id="deceasedAddress" class="form-input form-textarea" rows="2" placeholder="Masukkan alamat / Enter address"></textarea>
+        </div>
+      </div>
+
+      <!-- Part 2: Death details -->
+      <div class="section-notice" style="margin:1.5rem 0 1.2rem;">
+        <p class="notice-bm" style="font-weight:700;">Bahagian 2: Maklumat Berkenaan Kematian / Part 2: Information Regarding the Death</p>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label" for="dateOfPassing">Tarikh Meninggal Dunia / Date of Passing <span class="required">*</span></label>
           <input type="date" id="dateOfPassing" class="form-input"/>
           <span class="error-msg" id="err-dateOfPassing"></span>
         </div>
+        <div class="form-group">
+          <label class="form-label" for="causeOfDeath">Punca Kematian / Cause of Death</label>
+          <input type="text" id="causeOfDeath" class="form-input"
+            placeholder="cth/e.g. Sakit tua, kanser, kemalangan..."/>
+        </div>
+        <div class="form-group full-width">
+          <label class="form-label" for="graveLot">Nombor Lot Kubur / Grave Lot Number</label>
+          <input type="text" id="graveLot" class="form-input"
+            placeholder="Sila masukkan nombor lot kubur si mati / Please enter the grave lot number"/>
+        </div>
       </div>
-      <div class="form-actions">
-        <button class="btn btn-secondary" id="btnBackDeceased">&larr; Kembali / Back</button>
-        <button class="btn btn-primary" id="btnSubmitDeceased">Hantar / Submit &rarr;</button>
+
+      <!-- Declaration checkbox -->
+      <div style="margin-top:1.5rem;">
+        <label class="checkbox-label" style="align-items:flex-start;gap:0.8rem;">
+          <input type="checkbox" id="declarationCheck" style="margin-top:3px;"/>
+          <span class="custom-checkbox"></span>
+          <span style="font-size:0.95rem;color:var(--text-primary);line-height:1.6;">
+            Saya mengaku bahawa butiran yang diberikan adalah benar.
+            <em style="color:var(--text-muted);">/ I declare that the details provided are true.</em>
+          </span>
+        </label>
+        <span class="error-msg" id="err-declaration"></span>
+      </div>
+
+      <div class="form-actions" style="margin-top:2rem;">
+        <button type="button" class="btn btn-secondary" id="btnBackB">&larr; Kembali / Back</button>
+        <button type="button" class="btn btn-primary" id="btnNextB">Seterusnya / Next &rarr;</button>
       </div>
     </section>
 
-    <!-- Step 3: Success -->
+    <!-- ══ SECTION C: Funeral Service ══ -->
+    <section class="form-section" id="section-c">
+      <div class="section-header">
+        <div class="section-badge">C</div>
+        <div>
+          <h2 class="section-title">Acara Pengebumian / Funeral Service</h2>
+          <p class="section-subtitle">Butiran berkenaan upacara pengebumian si mati.</p>
+          <p class="section-subtitle">Details regarding the funeral service of the deceased.</p>
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label" for="burialDate">Tarikh Dikuburkan / Date of Burial</label>
+          <input type="date" id="burialDate" class="form-input"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="conductedBy">Dijalankan Oleh / Conducted By</label>
+          <input type="text" id="conductedBy" class="form-input"
+            placeholder="Nyatakan nama yang menjalankan pengebumian / State the name of conductor"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="conductorPhone">No. Tel Pengendali / Conductor's Phone No.</label>
+          <input type="tel" id="conductorPhone" class="form-input" placeholder="cth/e.g. 011-12345678"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="witnessBy">Disaksikan Oleh / Witnessed By</label>
+          <input type="text" id="witnessBy" class="form-input"
+            placeholder="Nyatakan nama saksi / State the name of witness"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="witnessPhone">No. Tel Saksi / Witness's Phone No.</label>
+          <input type="tel" id="witnessPhone" class="form-input" placeholder="cth/e.g. 011-12345678"/>
+        </div>
+      </div>
+
+      <div class="form-actions" style="margin-top:2rem;">
+        <button type="button" class="btn btn-secondary" id="btnBackC">&larr; Kembali / Back</button>
+        <button type="button" class="btn btn-primary" id="btnSubmitDeceased">Hantar / Submit &rarr;</button>
+      </div>
+      <div class="draft-notice" id="submitNotice"></div>
+    </section>
+
+    <!-- ══ SUCCESS ══ -->
     <div id="deceasedSuccess" style="display:none;">
-      <div class="success-card">
+      <div class="success-card" style="text-align:center;">
         <div class="success-icon">🕊️</div>
-        <h2 class="success-title">Maklumat Telah Dihantar</h2>
-        <p class="success-title-en">Information Submitted</p>
-        <p class="success-msg">Semoga rohnya tenang. Terima kasih kerana memaklumkan pihak gereja.</p>
-        <p class="success-msg-en">May their soul rest in peace. Thank you for notifying the church.</p>
+        <h2 class="success-title">Maklumat kematian si mati sudah direkodkan</h2>
+        <p class="success-title-en">The deceased's death information has been recorded.</p>
+        <div style="margin:1.5rem auto;max-width:560px;padding:1rem 1.5rem;
+          background:rgba(255,140,0,0.06);border-left:3px solid var(--marigold-dim);
+          border-radius:0 var(--radius) var(--radius) 0;font-style:italic;line-height:1.8;
+          color:var(--text-primary);">
+          <p style="margin-bottom:0.4rem;font-size:0.9rem;">
+            Yohanes 11:25-26: Yesus menyatakan, "Akulah kebangkitan dan hidup. Barangsiapa percaya kepada-Ku, ia akan hidup, walaupun ia sudah mati."
+          </p>
+          <p style="font-size:0.82rem;color:var(--text-muted);">
+            John 11:25-26: Jesus states, "I am the resurrection and the life. The one who believes in me will live, even though they die."
+          </p>
+        </div>
         <a href="home.html" class="btn btn-primary success-back-btn">&#8592; Kembali ke Halaman Rumah / Back to Home Page</a>
       </div>
     </div>
+
   </main>
 
   <footer class="site-footer">
@@ -108,86 +302,6 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js"></script>
   <script src="theme.js"></script>
-  <script>
-    document.getElementById("deceasedFooterYear").textContent = new Date().getFullYear();
-
-    function formatIC(value) {
-      const digits = value.replace(/\D/g,"");
-      let f = digits;
-      if (digits.length > 6) f = digits.substring(0,6)+"-"+digits.substring(6);
-      if (digits.length > 8) f = f.substring(0,9)+"-"+digits.substring(8);
-      return f.substring(0,14);
-    }
-
-    document.getElementById("reporterIC").addEventListener("input", function() {
-      this.value = formatIC(this.value);
-    });
-    document.getElementById("deceasedIC").addEventListener("input", function() {
-      this.value = formatIC(this.value);
-    });
-
-    document.getElementById("btnVerifyReporter").addEventListener("click", async () => {
-      const ic = document.getElementById("reporterIC").value.replace(/-/g,"");
-      const errEl = document.getElementById("err-reporterIC");
-      const notice = document.getElementById("verifyNotice");
-      errEl.textContent = "";
-      if (ic.length !== 12) { errEl.textContent = "Sila masukkan No. KP yang sah / Please enter a valid IC No."; return; }
-
-      notice.textContent = "Menyemak... / Checking...";
-      try {
-        const snap = await db.collection("registrations").where("icNo","==",ic).where("approved","==",true).get();
-        if (snap.empty) {
-          errEl.textContent = "No. KP ini bukan anggota aktif / This IC No. is not an active member.";
-          notice.textContent = "";
-        } else {
-          notice.textContent = "";
-          document.getElementById("step-verify").classList.remove("active");
-          document.getElementById("step-deceased").classList.add("active");
-        }
-      } catch(e) {
-        errEl.textContent = "Ralat sistem / System error. Please try again.";
-        notice.textContent = "";
-      }
-    });
-
-    document.getElementById("btnBackDeceased").addEventListener("click", () => {
-      document.getElementById("step-deceased").classList.remove("active");
-      document.getElementById("step-verify").classList.add("active");
-    });
-
-    document.getElementById("btnSubmitDeceased").addEventListener("click", async () => {
-      const reporterIC = document.getElementById("reporterIC").value.replace(/-/g,"");
-      const deceasedIC = document.getElementById("deceasedIC").value.replace(/-/g,"");
-      const graveLot   = document.getElementById("graveLot").value.trim();
-      const dateOfPassing = document.getElementById("dateOfPassing").value;
-      let valid = true;
-
-      ["deceasedIC","graveLot","dateOfPassing"].forEach(id => {
-        document.getElementById("err-"+id).textContent = "";
-      });
-      if (deceasedIC.length !== 12) { document.getElementById("err-deceasedIC").textContent = "No. KP tidak sah / Invalid IC No."; valid = false; }
-      if (!graveLot) { document.getElementById("err-graveLot").textContent = "Sila isi nombor lot kubur / Please enter grave lot number"; valid = false; }
-      if (!dateOfPassing) { document.getElementById("err-dateOfPassing").textContent = "Sila pilih tarikh / Please select date"; valid = false; }
-      if (!valid) return;
-
-      try {
-        // Mark deceased in Firestore
-        const snap = await db.collection("registrations").where("icNo","==",deceasedIC).get();
-        if (snap.empty) { document.getElementById("err-deceasedIC").textContent = "Tiada rekod dengan No. KP ini / No record found with this IC No."; return; }
-        const docId = snap.docs[0].id;
-        await db.collection("registrations").doc(docId).update({
-          deceased: true,
-          deceasedDeclaredBy: reporterIC,
-          deceasedGraveLot: graveLot,
-          deceasedDate: dateOfPassing,
-          deceasedAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        document.getElementById("step-deceased").style.display = "none";
-        document.getElementById("deceasedSuccess").style.display = "block";
-      } catch(e) {
-        alert("Ralat semasa menghantar / Error submitting. Please try again.");
-      }
-    });
-  </script>
+  <script src="deceased.js"></script>
 </body>
 </html>

@@ -31,7 +31,7 @@
             <button type="button" id="togglePassword"
               style="position:absolute;right:0.65rem;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:1.2rem;color:var(--marigold);padding:0;line-height:1;z-index:2;"
               title="Tunjuk/Sembunyi Kata Laluan / Show/Hide Password">
-              <span id="togglePasswordIcon">🙈</span>
+              <span id="togglePasswordIcon" style="display:flex;align-items:center;"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg></span>
             </button>
           </div>
         </div>
@@ -68,6 +68,9 @@
             <h2 class="admin-section-title">Senarai Pendaftaran <span>/ Registration List</span></h2>
           </div>
           <div class="admin-topbar-right">
+            <a href="deceased-admin-view.html" class="btn btn-secondary admin-stats-btn" style="text-decoration:none;">
+              🕊️ Maklumat Kematian / Deceased
+            </a>
             <a href="stats.html" class="btn btn-secondary admin-stats-btn">
               📊 Statistik / Statistics
             </a>
@@ -177,7 +180,17 @@
         <button class="modal-close" id="closeActivateModal">&times;</button>
       </div>
       <div class="modal-body" style="text-align:center;">
-        <p id="activateModalText" style="font-size:1.05rem;line-height:1.7;"></p>
+        <p id="activateModalText" style="font-size:1.05rem;line-height:1.7;margin-bottom:1.2rem;"></p>
+        <div style="text-align:left;max-width:280px;margin:0 auto;">
+          <label class="form-label" for="activateDate" style="font-size:0.85rem;margin-bottom:0.3rem;display:block;">
+            Tarikh Pengaktifan / Activation Date
+          </label>
+          <input type="date" id="activateDate" class="form-input"
+            style="font-size:0.92rem;padding:0.5rem 0.8rem;"/>
+          <p class="field-hint" style="margin-top:0.3rem;font-size:0.75rem;">
+            Boleh diubah untuk ahli lama / Can be changed for existing members
+          </p>
+        </div>
       </div>
       <div class="modal-footer" style="justify-content:center;gap:1rem;">
         <button class="btn btn-secondary" id="cancelActivateBtn">Batal / Cancel</button>
