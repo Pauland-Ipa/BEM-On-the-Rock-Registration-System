@@ -283,17 +283,21 @@ function bindEvents() {
     });
   }
 
-  // ── Baptism Status: show/hide year input ──
+  // ── Baptism Status: show/hide year input column ──
   const baptismRadios = document.querySelectorAll('input[name="baptismStatus"]');
   baptismRadios.forEach(radio => {
     radio.addEventListener("change", function () {
-      const dateField = document.getElementById("baptismDateField");
+      const yearField   = document.getElementById("baptismDateField");
+      const spacer      = document.getElementById("baptismYearSpacer");
+      const citizenship = document.getElementById("citizenship-row"); // may not exist
       if (this.value === "baptised") {
-        dateField.classList.add("visible");
+        yearField.style.display = "flex"; // show year column
+        if (spacer) spacer.style.display = "none";
       } else {
-        dateField.classList.remove("visible");
+        yearField.style.display = "none";
         const yInput = document.getElementById("baptismYear");
         if (yInput) yInput.value = "";
+        if (spacer) spacer.style.display = "";
         clearError("baptismDate");
       }
       saveDraft();
@@ -428,8 +432,11 @@ function loadDraft() {
       const radio = document.querySelector(`input[name="baptismStatus"][value="${data.baptismStatus}"]`);
       if (radio) {
         radio.checked = true;
+        const yearField = document.getElementById("baptismDateField");
+        const spacer    = document.getElementById("baptismYearSpacer");
         if (data.baptismStatus === "baptised") {
-          document.getElementById("baptismDateField").classList.add("visible");
+          yearField.style.display = "flex";
+          if (spacer) spacer.style.display = "none";
         }
       }
     }

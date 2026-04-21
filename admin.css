@@ -147,9 +147,16 @@
 
 /* ── Admin Table ── */
 .admin-table-wrap {
-  overflow: visible;
+  overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch; /* smooth scroll on iOS */
   border: 1px solid var(--card-border);
   border-radius: var(--radius-lg);
+}
+
+/* Ensure table never shrinks below its natural width */
+.admin-table {
+  min-width: 700px; /* forces horizontal scroll before content clips */
 }
 
 .admin-table {

@@ -85,23 +85,32 @@
         <!-- Date of transfer -->
         <div class="form-group">
           <label class="form-label" for="transferDate">
-            Tarikh Akan Berpindah <span class="label-en">/ Date of Transfer</span>
+            Tarikh Berpindah <span class="label-en">/ Date Transferring</span>
             <span class="required">*</span>
           </label>
           <input type="date" id="transferDate" class="form-input"/>
           <span class="error-msg" id="err-transferDate"></span>
         </div>
 
-        <!-- Transfer destination -->
+        <!-- City transferring to -->
         <div class="form-group">
           <label class="form-label" for="transferTo">
-            Pindah Ke Mana? <span class="label-en">/ Transfer To Where?</span>
+            Bandar yang Anda Akan Berpindah Ke <span class="label-en">/ City You're Transferring To</span>
             <span class="required">*</span>
           </label>
           <input type="text" id="transferTo" class="form-input"
-            placeholder="cth/e.g. Gereja BEM Miri, atau Kuala Lumpur..."/>
-          <span class="field-hint">Nama gereja baharu atau kawasan yang akan dituju / Name of new church or area you're moving to</span>
+            placeholder="cth/e.g. Bintulu, Sibu, Kuching..."/>
           <span class="error-msg" id="err-transferTo"></span>
+        </div>
+
+        <!-- New church name (optional) -->
+        <div class="form-group full-width">
+          <label class="form-label" for="newChurchName">
+            Nama Gereja Baharu <span class="label-en">/ Name of the New Church</span>
+          </label>
+          <input type="text" id="newChurchName" class="form-input"
+            placeholder="cth/e.g. BEM Bandar Bintulu, BEM Olive Garden..."/>
+          <span class="field-hint">Jika anda belum mengetahui gereja baharu anda, biarkan kosong / If you haven't decided on your new church, leave empty</span>
         </div>
 
       </div>
@@ -201,17 +210,18 @@
     document.getElementById("btnBackTransfer").addEventListener("click", () => showScreen("screen-verify"));
 
     document.getElementById("btnConfirmTransfer").addEventListener("click", async () => {
-      const reason = document.getElementById("transferReason").value.trim();
-      const date   = document.getElementById("transferDate").value;
-      const to     = document.getElementById("transferTo").value.trim();
-      let valid    = true;
+      const reason     = document.getElementById("transferReason").value.trim();
+      const date       = document.getElementById("transferDate").value;
+      const to         = document.getElementById("transferTo").value.trim();
+      const newChurch  = document.getElementById("newChurchName")?.value.trim() || "";
+      let valid        = true;
 
       ["transferReason","transferDate","transferTo"].forEach(id =>
         document.getElementById("err-"+id).textContent = ""
       );
       if (!reason) { document.getElementById("err-transferReason").textContent = "Sila isi tujuan perpindahan / Please state reason"; valid=false; }
       if (!date)   { document.getElementById("err-transferDate").textContent   = "Sila pilih tarikh / Please select date"; valid=false; }
-      if (!to)     { document.getElementById("err-transferTo").textContent     = "Sila isi destinasi / Please state destination"; valid=false; }
+      if (!to)     { document.getElementById("err-transferTo").textContent     = "Sila isi bandar / Please state city"; valid=false; }
       if (!valid) return;
 
       const btn = document.getElementById("btnConfirmTransfer");
@@ -219,13 +229,14 @@
 
       try {
         await db.collection("registrations").doc(memberDocId).update({
-          transferred:      true,
-          transferReason:   reason,
-          transferDate:     date,
-          transferTo:       to,
-          transferAt:       firebase.firestore.FieldValue.serverTimestamp(),
-          approved:         false,
-          lastUpdated:      firebase.firestore.FieldValue.serverTimestamp(),
+          transferred:    true,
+          transferReason: reason,
+          transferDate:   date,
+          transferTo:     to,
+          newChurchName:  newChurch,
+          transferAt:     firebase.firestore.FieldValue.serverTimestamp(),
+          approved:       false,
+          lastUpdated:    firebase.firestore.FieldValue.serverTimestamp(),
         });
         document.getElementById("screen-transfer").style.display = "none";
         document.getElementById("transferSuccess").style.display = "block";

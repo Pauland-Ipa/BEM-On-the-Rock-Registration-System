@@ -31,7 +31,7 @@ const MARITAL_MAP = {
 // ── Screen management ──
 const screens = [
   "screen-verify","screen-menu","screen-phone","screen-occupation",
-  "screen-marital","screen-baptism","screen-komsel","screen-children"
+  "screen-marital","screen-baptism","screen-komsel","screen-children","screen-photo"
 ];
 
 function showScreen(id) {
@@ -228,11 +228,78 @@ function populateSubScreen(screen) {
     editChildren = JSON.parse(JSON.stringify(memberData.sectionC?.children || []));
     renderChildrenEdit();
   }
+
+  if (screen === "photo") {
+    // Show current photo if available
+    const preview = document.getElementById("currentPhotoPreview");
+    if (memberData.photoURL) {
+      preview.innerHTML = `<img src="${memberData.photoURL}" style="width:100%;height:100%;object-fit:cover;" alt="Current photo"/>`;
+    } else {
+      preview.innerHTML = "👤";
+    }
+    // Reset upload UI
+    updatePhotoDataURL = null;
+    document.getElementById("updatePhotoPreviewWrap").classList.remove("visible");
+    document.getElementById("updatePhotoLabel").style.display = "";
+    document.getElementById("updatePhotoInput").value = "";
+    document.getElementById("btnSavePhoto").disabled = true;
+    document.getElementById("err-updatePhoto").textContent = "";
+  }
 }
 
 // ═══════════════════════════════════════════════
-// PHONE
+// PHOTO UPDATE
 // ═══════════════════════════════════════════════
+let updatePhotoDataURL = null;
+
+document.getElementById("updatePhotoInput")?.addEventListener("change", function() {
+  const file = this.files[0];
+  if (!file) return;
+  const errEl = document.getElementById("err-updatePhoto");
+  if (file.size > 2 * 1024 * 1024) {
+    errEl.textContent = "Saiz fail melebihi 2MB / File size exceeds 2MB";
+    return;
+  }
+  errEl.textContent = "";
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    updatePhotoDataURL = e.target.result;
+    const previewImg  = document.getElementById("updatePhotoPreviewImg");
+    const previewWrap = document.getElementById("updatePhotoPreviewWrap");
+    previewImg.src    = updatePhotoDataURL;
+    previewWrap.classList.add("visible");
+    document.getElementById("updatePhotoLabel").style.display = "none";
+    document.getElementById("btnSavePhoto").disabled = false;
+  };
+  reader.readAsDataURL(file);
+});
+
+document.getElementById("updatePhotoChangeBtn")?.addEventListener("click", () => {
+  updatePhotoDataURL = null;
+  document.getElementById("updatePhotoPreviewImg").src = "";
+  document.getElementById("updatePhotoPreviewWrap").classList.remove("visible");
+  document.getElementById("updatePhotoLabel").style.display = "";
+  document.getElementById("updatePhotoInput").value = "";
+  document.getElementById("btnSavePhoto").disabled = true;
+});
+
+document.getElementById("btnSavePhoto")?.addEventListener("click", async () => {
+  if (!updatePhotoDataURL || !memberDocId) return;
+  const btn = document.getElementById("btnSavePhoto");
+  btn.disabled = true; btn.textContent = "Menyimpan... / Saving...";
+  try {
+    await db.collection("registrations").doc(memberDocId).update({
+      photoURL:    updatePhotoDataURL,
+      lastUpdated: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+    const snap = await db.collection("registrations").doc(memberDocId).get();
+    memberData = snap.data();
+    showSuccessAndReturn("Gambar Profil / Profile Picture");
+  } catch(e) {
+    document.getElementById("err-updatePhoto").textContent = "Ralat / Error: " + e.message;
+    btn.disabled = false; btn.textContent = "💾 Simpan Gambar Baharu / Save New Photo";
+  }
+});
 document.getElementById("newPhone").addEventListener("input", function() {
   this.value = formatPhone(this.value);
   const valid = this.value.replace(/\D/g,"").length >= 9;

@@ -1,18 +1,16 @@
 /* ═══════════════════════════════════════════════
    BEM On The Rock — theme.js
-   Shared dark/light mode logic for all pages
+   Dark mode is the default. Saved preference overrides.
 ═══════════════════════════════════════════════ */
 
 (function() {
-  // Apply saved or system theme immediately to avoid flash
-  const saved   = localStorage.getItem("bem_theme");
-  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-  const isDark  = saved ? saved === "dark" : prefersDark;
+  // Dark mode is default — only override if user has explicitly saved a preference
+  const saved = localStorage.getItem("bem_theme");
+  const isDark = saved ? saved === "dark" : true; // default: dark
   document.documentElement.setAttribute("data-theme", isDark ? "dark" : "light");
 })();
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Inject toggle into every page if not already present
   if (!document.getElementById("themeToggleWrap")) {
     const wrap = document.createElement("div");
     wrap.className = "theme-toggle-wrap";
@@ -27,8 +25,8 @@ document.addEventListener("DOMContentLoaded", () => {
     document.body.prepend(wrap);
   }
 
-  const toggle  = document.getElementById("themeToggle");
-  const isDark  = document.documentElement.getAttribute("data-theme") === "dark";
+  const toggle = document.getElementById("themeToggle");
+  const isDark = document.documentElement.getAttribute("data-theme") === "dark";
   toggle.checked = isDark;
 
   toggle.addEventListener("change", () => {

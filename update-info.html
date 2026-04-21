@@ -75,6 +75,11 @@
       </div>
 
       <div class="update-menu-grid">
+        <button class="update-menu-btn" data-screen="photo">
+          <span class="update-menu-icon">📷</span>
+          <span class="update-menu-bm">Kemas Kini Gambar Anda</span>
+          <span class="update-menu-en">Update Your Picture</span>
+        </button>
         <button class="update-menu-btn" data-screen="phone">
           <span class="update-menu-icon">📞</span>
           <span class="update-menu-bm">Tukar Nombor Telefon</span>
@@ -296,6 +301,50 @@
         <button class="btn btn-secondary back-to-menu">&#8592; Kembali / Back</button>
         <button class="btn btn-primary" id="btnSaveChildren">
           💾 Simpan / Save Children
+        </button>
+      </div>
+    </section>
+
+    <!-- ══ SCREEN: Update Photo ══ -->
+    <section class="form-section" id="screen-photo">
+      <div class="section-header">
+        <div class="section-badge">📷</div>
+        <div>
+          <h2 class="section-title">Kemas Kini Gambar Anda</h2>
+          <p class="section-subtitle">Update Your Profile Picture</p>
+        </div>
+      </div>
+
+      <!-- Current photo -->
+      <div class="current-value-card" style="align-items:center;flex-direction:row;gap:1rem;">
+        <div id="currentPhotoPreview" style="width:80px;height:100px;border-radius:6px;border:2px solid var(--marigold-dim);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--bg-input);font-size:2rem;">👤</div>
+        <div>
+          <span class="current-value-label">Gambar semasa / Current photo</span>
+          <span class="current-value-text" style="font-size:0.9rem;">Muat naik gambar baharu di bawah untuk menggantikannya.</span>
+          <span class="current-value-text" style="font-size:0.82rem;font-weight:400;font-style:italic;color:var(--text-muted);">Upload a new photo below to replace it.</span>
+        </div>
+      </div>
+
+      <!-- Upload area -->
+      <div class="photo-upload-wrap" style="margin-top:1rem;">
+        <label class="photo-upload-label" id="updatePhotoLabel">
+          <input type="file" id="updatePhotoInput" accept=".jpg,.jpeg,.png,.webp"/>
+          <span class="photo-upload-icon">📷</span>
+          <span class="photo-upload-text-bm">Sila muat naik gambar terkini berukuran pasport rasmi. Saiz maksimum 2MB.</span>
+          <span class="photo-upload-text-en">Please upload a recent, formal passport-sized photo. Maximum 2MB.</span>
+          <span class="photo-upload-text-en">Format: JPG, JPEG, PNG, WEBP</span>
+        </label>
+        <div class="photo-preview-wrap" id="updatePhotoPreviewWrap">
+          <img src="" alt="Preview" class="photo-preview-img" id="updatePhotoPreviewImg"/>
+          <button type="button" class="photo-change-btn" id="updatePhotoChangeBtn">✎ Tukar / Change</button>
+        </div>
+        <span class="error-msg" id="err-updatePhoto"></span>
+      </div>
+
+      <div class="form-actions" style="margin-top:1.5rem;">
+        <button class="btn btn-secondary back-to-menu">&#8592; Kembali / Back</button>
+        <button class="btn btn-primary" id="btnSavePhoto" disabled>
+          💾 Simpan Gambar Baharu / Save New Photo
         </button>
       </div>
     </section>

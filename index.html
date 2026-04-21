@@ -170,7 +170,7 @@
         <!-- Member Role Selection -->
         <div class="form-group full-width member-role-box">
           <label class="form-label" style="margin-bottom:0.5rem;">
-            Pangkat Dalam Komsel <span class="label-en">/ Rank in Cell Group</span>
+            Jawatan Dalam Komsel <span class="label-en">/ Position within Cell Group</span>
             <span class="required">*</span>
           </label>
           <div class="checkbox-group">
@@ -355,8 +355,8 @@
             </div>
           </div>
 
-          <!-- 7. Baptism Status -->
-          <div class="form-group full-width">
+          <!-- 7. Baptism Status + Year (side by side in grid) -->
+          <div class="form-group">
             <label class="form-label">
               Status Pembaptisan <span class="label-en">/ Baptism Status</span>
               <span class="required">*</span>
@@ -374,24 +374,25 @@
               </label>
             </div>
             <span class="error-msg" id="err-baptismStatus"></span>
-
-            <!-- Conditional: Year of Baptism (plain number input) -->
-            <div class="conditional-field" id="baptismDateField">
-              <label class="form-label" for="baptismYear">
-                Tahun Pembaptisan <span class="label-en">/ Year of Baptism</span>
-                <span class="required">*</span>
-              </label>
-              <input type="number" id="baptismYear" name="baptismYear"
-                class="form-input"
-                placeholder="cth/e.g. 2005"
-                min="1920"
-                max="2099"
-                style="max-width:160px;"
-                oninput="this.value=this.value.replace(/[^0-9]/g,'').substring(0,4)"/>
-              <span class="field-hint">Masukkan tahun sahaja / Enter year only (e.g. 1998)</span>
-              <span class="error-msg" id="err-baptismDate"></span>
-            </div>
           </div>
+
+          <!-- 7b. Year of Baptism — own column, shown when baptised selected -->
+          <div class="form-group" id="baptismDateField" style="display:none;">
+            <label class="form-label" for="baptismYear">
+              Tahun Pembaptisan <span class="label-en">/ Year of Baptism</span>
+              <span class="required">*</span>
+            </label>
+            <input type="number" id="baptismYear" name="baptismYear"
+              class="form-input"
+              placeholder="cth/e.g. 2005"
+              min="1920"
+              max="2099"
+              oninput="this.value=this.value.replace(/[^0-9]/g,'').substring(0,4)"/>
+            <span class="error-msg" id="err-baptismDate"></span>
+          </div>
+
+          <!-- Spacer: when baptism year NOT shown, fill the column so citizenship stays full-width -->
+          <div id="baptismYearSpacer"></div>
 
           <!-- 8. Citizenship -->
           <div class="form-group full-width">
