@@ -267,14 +267,29 @@ body {
 
 .logo-bem { border-radius: 50%; }
 
+/* ── Church name font spans ── */
 .church-name {
-  font-family: var(--font-display);
   font-size: clamp(1.3rem, 4vw, 2rem);
-  font-weight: 700;
   color: var(--header-title);
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   text-shadow: 0 0 24px rgba(255,140,0,0.3);
   line-height: 1.2;
+  font-weight: 700;
+}
+
+/* "BEM" — Britannic Bold (Windows) with Impact fallback */
+.church-name-bem {
+  font-family: "Britannic Bold", "Impact", "Arial Black", sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+/* "On the ROCK" — Forte (Windows) with Georgia italic fallback */
+.church-name-rock {
+  font-family: "Forte", "Palatino Linotype", "Book Antiqua", "Georgia", serif;
+  font-weight: 400;
+  font-style: italic;
+  letter-spacing: 0.06em;
 }
 
 .church-subtitle {
@@ -1647,4 +1662,73 @@ input[type="date"].form-input::-webkit-calendar-picker-indicator {
 [data-theme="light"] .current-value-label {
   color: #000000 !important;
   opacity: 1;
+}
+
+/* ══════════════════════════════════════
+   PAYMENT PAGE
+══════════════════════════════════════ */
+.pay-member-banner {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: rgba(255,140,0,0.06);
+  border: 1px solid rgba(255,140,0,0.2);
+  border-radius: var(--radius);
+  padding: 1rem 1.2rem;
+  margin-bottom: 1.5rem;
+}
+
+.pay-member-photo img { border-radius: 4px; border: 1.5px solid var(--marigold-dim); }
+
+.pay-member-name {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pay-member-id {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  color: var(--marigold);
+  letter-spacing: 0.06em;
+  margin-top: 0.15rem;
+}
+
+.pay-member-status { margin-top: 0.1rem; }
+
+.pay-section-title {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+  color: var(--marigold-bright);
+  margin-bottom: 0.8rem;
+  text-transform: uppercase;
+}
+
+.pay-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.2rem;
+  background: rgba(255,140,0,0.08);
+  border: 1.5px solid rgba(255,140,0,0.3);
+  border-radius: var(--radius);
+}
+
+.pay-total-label {
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0.04em;
+}
+
+.pay-total-amount {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--marigold-bright);
 }

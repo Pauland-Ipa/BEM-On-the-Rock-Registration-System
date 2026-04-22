@@ -52,7 +52,7 @@
       <div class="header-inner">
         <div class="logo-wrap"><img src="Images/logo.jpg" alt="BEM On The Rock Logo" class="logo-img"/></div>
         <div class="header-text">
-          <h1 class="church-name">BEM On The Rock</h1>
+          <h1 class="church-name"><span class="church-name-bem">BEM</span> <span class="church-name-rock">On the ROCK</span></h1>
           <p class="church-subtitle">Laman Admin &nbsp;/&nbsp; Admin Page</p>
         </div>
         <div class="logo-wrap logo-wrap-right"><img src="Images/logo_bem_sib.png" alt="B.E.M Logo" class="logo-img logo-bem"/></div>
@@ -289,6 +289,29 @@
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" id="closeMCModalBtn">Tutup / Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ UNPAID FEES WARNING MODAL ═══ -->
+  <div class="modal-overlay" id="unpaidWarningModal" style="display:none;">
+    <div class="modal-card modal-card--sm">
+      <div class="modal-header">
+        <h3 class="modal-title" style="color:#E8A000;">⚠️ Yuran Belum Dibayar / Unpaid Fees</h3>
+        <button class="modal-close" onclick="document.getElementById('unpaidWarningModal').style.display='none'">&times;</button>
+      </div>
+      <div class="modal-body" style="text-align:center;">
+        <p style="font-size:1rem;color:var(--text-primary);line-height:1.7;margin-bottom:0.5rem;">
+          Pengguna ini (<strong id="unpaidWarningName"></strong>) masih belum membayar yuran tahunannya
+          (<strong id="unpaidWarningAmount" style="color:var(--marigold-bright);"></strong>).
+        </p>
+        <p style="font-size:0.88rem;color:var(--text-muted);font-style:italic;line-height:1.6;">
+          This user has yet to pay their annual fee. Would you like to activate their membership status anyway?
+        </p>
+      </div>
+      <div class="modal-footer" style="justify-content:center;gap:1rem;">
+        <button class="btn btn-secondary" id="btnCancelUnpaid">Tidak / No</button>
+        <button class="btn btn-primary" id="btnActivateAnyway">Ya, Aktifkan / Yes, Activate</button>
       </div>
     </div>
   </div>

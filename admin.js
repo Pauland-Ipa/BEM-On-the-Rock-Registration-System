@@ -273,16 +273,61 @@ document.getElementById("closeActivateModal").addEventListener("click", () => {
 });
 document.getElementById("confirmActivateBtn").addEventListener("click", async () => {
   if (!pendingActivateId) return;
+  const reg = registrations.find(r => r.id === pendingActivateId);
   const chosenDate = document.getElementById("activateDate").value;
-  // Convert chosen date string to Firestore Timestamp-compatible value
   const approvedAt = chosenDate ? new Date(chosenDate) : new Date();
+
+  // ── Check for unpaid fees ──
+  if (reg) {
+    const pendingFees = calculateAdminPendingFees(reg, approvedAt);
+    if (pendingFees > 0) {
+      document.getElementById("activateModal").style.display = "none";
+      // Show unpaid warning
+      document.getElementById("unpaidWarningName").textContent =
+        reg.name || reg.sectionA?.fullName || "—";
+      document.getElementById("unpaidWarningAmount").textContent =
+        `RM ${(pendingFees * 10).toFixed(2)}`;
+      document.getElementById("unpaidWarningModal").style.display = "flex";
+      return;
+    }
+  }
+
+  await doActivate(pendingActivateId, approvedAt);
+  document.getElementById("activateModal").style.display = "none";
+  pendingActivateId = null;
+});
+
+function calculateAdminPendingFees(reg, approvedAt) {
+  const currentYear = new Date().getFullYear();
+  const approvedYear = approvedAt.getFullYear();
+  const paidYears   = reg.paidYears || [];
+  let unpaid = 0;
+  for (let y = approvedYear; y <= currentYear; y++) {
+    if (!paidYears.includes(y)) unpaid++;
+  }
+  return unpaid;
+}
+
+async function doActivate(id, approvedAt) {
   try {
-    await db.collection("registrations").doc(pendingActivateId).update({
+    await db.collection("registrations").doc(id).update({
       approved:   true,
       approvedAt: firebase.firestore.Timestamp.fromDate(approvedAt)
     });
   } catch(e) { alert("Ralat / Error: " + e.message); }
-  document.getElementById("activateModal").style.display = "none";
+}
+
+// Unpaid warning — confirm anyway
+document.getElementById("btnActivateAnyway")?.addEventListener("click", async () => {
+  document.getElementById("unpaidWarningModal").style.display = "none";
+  const chosenDate = document.getElementById("activateDate").value;
+  const approvedAt = chosenDate ? new Date(chosenDate) : new Date();
+  await doActivate(pendingActivateId, approvedAt);
+  pendingActivateId = null;
+});
+
+document.getElementById("btnCancelUnpaid")?.addEventListener("click", () => {
+  document.getElementById("unpaidWarningModal").style.display = "none";
   pendingActivateId = null;
 });
 

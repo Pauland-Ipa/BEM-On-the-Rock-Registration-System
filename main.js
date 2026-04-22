@@ -123,8 +123,18 @@ const VALID_CELL_CODES = (() => {
   return codes;
 })();
 
+// ── Normalise a komsel code for comparison ──
+// Strips spaces, hyphens, uppercases, and removes leading zeros from the number
+// e.g. "ZT 06", "ZT-06", "ZT06", "zt6" all → "ZT6"
 function normaliseKomsel(val) {
-  return val.toUpperCase().replace(/\s+/g, "");
+  // 1. Uppercase, remove spaces and hyphens
+  const clean = val.toUpperCase().replace(/[\s\-]/g, "");
+  // 2. Split into letter prefix and numeric suffix
+  const match = clean.match(/^([A-Z]+)(\d+)$/);
+  if (!match) return clean; // can't parse — return as-is
+  const prefix = match[1];
+  const num    = parseInt(match[2], 10); // parseInt strips leading zeros
+  return prefix + num; // e.g. "ZT" + 6 = "ZT6"
 }
 
 function isValidKomsel(val) {

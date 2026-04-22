@@ -210,3 +210,50 @@
   .home-btn-spacer     { display: none; }
   .home-welcome-card   { padding: 1.8rem 1.2rem; }
 }
+
+/* ── Floating Payment Button ── */
+.payment-fab {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: 9000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  background: linear-gradient(135deg, var(--marigold), var(--marigold-dim));
+  color: #000;
+  text-decoration: none;
+  border-radius: 16px;
+  padding: 0.75rem 1.1rem;
+  box-shadow:
+    0 0 0 3px rgba(0,0,0,0.5),
+    0 6px 20px rgba(255,140,0,0.45);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  min-width: 72px;
+}
+
+.payment-fab:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 0 0 3px rgba(0,0,0,0.5),
+    0 10px 28px rgba(255,140,0,0.55);
+}
+
+.payment-fab-icon { font-size: 1.6rem; line-height: 1; }
+
+.payment-fab-label {
+  font-family: var(--font-display);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-align: center;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+  .payment-fab { bottom: 1.2rem; right: 1.2rem; padding: 0.65rem 0.9rem; }
+  .payment-fab-icon { font-size: 1.4rem; }
+  .payment-fab-label { font-size: 0.58rem; }
+}
