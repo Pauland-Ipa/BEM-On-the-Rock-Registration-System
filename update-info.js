@@ -14,9 +14,9 @@ let editChildren = []; // working copy of children array
 const VALID_CELL_CODES = (() => {
   const codes = [];
   const add = (prefix, max) => { for (let i=1;i<=max;i++) codes.push(prefix+i); };
-  add("SN",15); add("ZV",13); add("ZPA",7); add("ZPB",8);
-  add("ZPC",5);  add("ZPD",9); add("ZT",15); add("SA",10);
-  add("SB",9);   add("ZC",5);
+  add("ZSN",15); add("ZV",13); add("ZPA",7); add("ZPB",8);
+  add("ZPC",5);  add("ZPD",9); add("ZT",15); add("ZSA",10);
+  add("ZSB",9);  add("ZC",5);
   return codes;
 })();
 
@@ -62,8 +62,13 @@ function formatPhone(v) {
 }
 
 // ── Komsel validation ──
-function normaliseKomsel(v) { return v.toUpperCase().replace(/\s+/g,""); }
-function isValidKomsel(v)   { const n=normaliseKomsel(v); return VALID_CELL_CODES.some(c=>normaliseKomsel(c)===n); }
+function normaliseKomsel(v) {
+  const clean = v.toUpperCase().replace(/[\s\-]/g, "");
+  const match = clean.match(/^([A-Z]+)(\d+)$/);
+  if (!match) return clean;
+  return match[1] + parseInt(match[2], 10);
+}
+function isValidKomsel(v) { const n=normaliseKomsel(v); return VALID_CELL_CODES.some(c=>normaliseKomsel(c)===n); }
 
 // ═══════════════════════════════════════════════
 // SCREEN 1 — Verify IC

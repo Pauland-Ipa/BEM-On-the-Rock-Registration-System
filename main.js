@@ -117,9 +117,9 @@ const VALID_CELL_CODES = (() => {
   const add = (prefix, max) => {
     for (let i = 1; i <= max; i++) codes.push(prefix + i);
   };
-  add("SN", 15); add("ZV", 13); add("ZPA", 7); add("ZPB", 8);
-  add("ZPC", 5); add("ZPD", 9); add("ZT", 15); add("SA", 10);
-  add("SB", 9);  add("ZC", 5);
+  add("ZSN", 15); add("ZV", 13); add("ZPA", 7); add("ZPB", 8);
+  add("ZPC", 5);  add("ZPD", 9); add("ZT", 15); add("ZSA", 10);
+  add("ZSB", 9);  add("ZC", 5);
   return codes;
 })();
 
