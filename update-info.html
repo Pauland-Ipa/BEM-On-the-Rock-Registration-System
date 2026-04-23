@@ -15,7 +15,7 @@
     <div class="header-inner">
       <div class="logo-wrap"><img src="Images/logo.jpg" alt="BEM On The Rock" class="logo-img"/></div>
       <div class="header-text">
-        <h1 class="church-name">BEM On The Rock</h1>
+        <h1 class="church-name"><span class="church-name-bem">BEM</span> <span class="church-name-rock">On the ROCK</span></h1>
         <p class="church-subtitle">Kemas Kini Maklumat / Update Your Information</p>
       </div>
       <div class="logo-wrap logo-wrap-right"><img src="Images/logo_bem_sib.png" alt="B.E.M" class="logo-img logo-bem"/></div>
@@ -31,18 +31,26 @@
         <div class="section-badge">1</div>
         <div>
           <h2 class="section-title">Pengesahan Identiti / Identity Verification</h2>
-          <p class="section-subtitle">Masukkan No. KP anda untuk mengakses maklumat anda.</p>
-          <p class="section-subtitle">Enter your IC No. to access your information.</p>
+          <p class="section-subtitle">Masukkan Nombor ID Unik anda untuk mengakses maklumat anda.</p>
+          <p class="section-subtitle">Enter your Unique ID number to access your information.</p>
         </div>
       </div>
       <div class="form-grid">
         <div class="form-group full-width">
-          <label class="form-label" for="verifyIC">No. KP / IC No. <span class="required">*</span></label>
-          <input type="text" id="verifyIC" class="form-input" placeholder="cth/e.g. 901231-14-5678" maxlength="14"/>
-          <span class="error-msg" id="err-verifyIC"></span>
+          <label class="form-label" for="verifyUID">ID Unik / Unique ID <span class="required">*</span></label>
+          <input type="text" id="verifyUID" class="form-input"
+            placeholder="cth/e.g. PIP-0607-16"
+            style="text-transform:uppercase;"/>
+          <span class="error-msg" id="err-verifyUID"></span>
+          <p class="field-hint" style="margin-top:0.5rem;">
+            Jika anda tidak tahu nombor ID anda, sila kembali ke halaman rumah dan tekan seksyen
+            <strong>'Paparkan Kad Keanggotaan Saya'</strong>. /
+            If you don't know your ID number, head back to the home page and click on
+            <strong>'View My Membership Card'</strong>.
+          </p>
         </div>
       </div>
-      <div class="form-actions">
+      <div class="form-actions form-actions--end">
         <button class="btn btn-primary" id="btnVerify">Semak / Verify &rarr;</button>
       </div>
       <div class="draft-notice" id="verifyNotice"></div>

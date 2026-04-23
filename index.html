@@ -844,6 +844,29 @@
 
   </main>
 
+  <!-- ═══ AFFILIATED AUTOFILL MODAL ═══ -->
+  <div class="modal-overlay" id="affiliatedAutofillModal" style="display:none;">
+    <div class="modal-card modal-card--sm">
+      <div class="modal-header">
+        <h3 class="modal-title">🤲 Jemaat Bersekutu Dikesan / Affiliated Member Detected</h3>
+        <button class="modal-close" id="closeAffiliatedModal">&times;</button>
+      </div>
+      <div class="modal-body" style="text-align:center;">
+        <div style="font-size:2rem;margin-bottom:0.8rem;">📋</div>
+        <p style="font-size:0.97rem;color:var(--text-primary);line-height:1.7;margin-bottom:0.5rem;">
+          Anda merupakan jemaat bersekutu di gereja BEM On the Rock. Adakah anda ingin sistem keanggotaan ini mengisi maklumat anda secara automatik?
+        </p>
+        <p style="font-size:0.83rem;color:var(--text-muted);font-style:italic;line-height:1.6;">
+          You were an affiliated member of BEM On the Rock church. Would you like the registration system to autofill the rest of your information for you?
+        </p>
+      </div>
+      <div class="modal-footer" style="justify-content:center;gap:1rem;">
+        <button class="btn btn-secondary" id="btnAffiliatedNo">Tidak / No</button>
+        <button class="btn btn-primary" id="btnAffiliatedYes">Ya, Isi Automatik / Yes, Autofill</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ═══ IC DUPLICATE MODAL ═══ -->
   <div class="modal-overlay" id="duplicateModal" style="display:none;">
     <div class="modal-card modal-card--sm">

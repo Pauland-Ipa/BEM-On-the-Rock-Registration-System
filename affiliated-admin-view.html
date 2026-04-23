@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8"/>
+  <link rel="icon" type="image/png" href="Images/bemotr_favicon.png"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>BEM On The Rock — Senarai Jemaat Bersekutu</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link rel="stylesheet" href="admin.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet"/>
+</head>
+<body class="admin-body">
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="logo-wrap"><img src="Images/logo.jpg" alt="Logo" class="logo-img"/></div>
+      <div class="header-text">
+        <h1 class="church-name"><span class="church-name-bem">BEM</span> <span class="church-name-rock">On the ROCK</span></h1>
+        <p class="church-subtitle">Senarai Jemaat Bersekutu / Affiliated Members List</p>
+      </div>
+      <div class="logo-wrap logo-wrap-right"><img src="Images/logo_bem_sib.png" alt="BEM" class="logo-img logo-bem"/></div>
+    </div>
+  </header>
+
+  <main class="admin-main">
+    <div class="admin-content-card">
+      <div class="admin-topbar" style="margin-bottom:1.2rem;">
+        <div class="admin-topbar-left">
+          <h2 class="admin-section-title">🤲 Jemaat Bersekutu <span>/ Affiliated Members</span></h2>
+        </div>
+        <div class="admin-topbar-right">
+          <a href="admin.html" class="btn btn-secondary" style="text-decoration:none;">&larr; Kembali / Back</a>
+        </div>
+      </div>
+
+      <!-- Search + Sort -->
+      <div class="admin-controls" style="margin-bottom:1rem;">
+        <input type="text" id="affSearch" class="form-input admin-search-input"
+          placeholder="🔍 Cari nama, No. KP / Search name, IC..."/>
+        <div class="admin-sort-row">
+          <div class="admin-sort-group">
+            <label class="admin-control-label">Susun / Sort:</label>
+            <select id="affSort" class="form-input form-select admin-select">
+              <option value="name">Nama / Name</option>
+              <option value="date">Tarikh Daftar / Date Registered</option>
+            </select>
+          </div>
+          <div class="admin-sort-group">
+            <label class="admin-control-label">Tertib / Order:</label>
+            <select id="affOrder" class="form-input form-select admin-select">
+              <option value="asc">Menaik / Ascending</option>
+              <option value="desc">Menurun / Descending</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead><tr>
+            <th class="col-num">Bil.<br/><em class="th-en">No.</em></th>
+            <th>Nama<br/><em class="th-en">Name</em></th>
+            <th>No. KP<br/><em class="th-en">IC Num.</em></th>
+            <th>No. Telefon<br/><em class="th-en">Phone No.</em></th>
+            <th class="col-action">Tindakan<br/><em class="th-en">Action</em></th>
+          </tr></thead>
+          <tbody id="affTableBody"></tbody>
+        </table>
+        <div class="admin-empty" id="affEmpty" style="display:none;">
+          <p>Tiada rekod jemaat bersekutu. / No affiliated members found.</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Action Modal -->
+  <div class="modal-overlay" id="affActionModal" style="display:none;">
+    <div class="modal-card modal-card--sm">
+      <div class="modal-header">
+        <h3 class="modal-title" id="affActionModalTitle">Tindakan / Action</h3>
+        <button class="modal-close" onclick="document.getElementById('affActionModal').style.display='none'">&times;</button>
+      </div>
+      <div class="modal-body" style="display:flex;flex-direction:column;gap:0.5rem;padding:1rem 1.5rem;">
+        <button class="action-dropdown-item" id="affBtnView"   style="width:100%;text-align:left;"><span class="action-icon">📄</span> Lihat / View</button>
+        <button class="action-dropdown-item" id="affBtnPrint"  style="width:100%;text-align:left;"><span class="action-icon">🖨️</span> Cetak / Print</button>
+        <button class="action-dropdown-item delete" id="affBtnDelete" style="width:100%;text-align:left;"><span class="action-icon">🗑️</span> Padam / Delete</button>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="document.getElementById('affActionModal').style.display='none'">Batal / Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- View Modal -->
+  <div class="modal-overlay" id="affViewModal" style="display:none;">
+    <div class="modal-card modal-card--lg">
+      <div class="modal-header">
+        <h3 class="modal-title">📄 Maklumat Jemaat Bersekutu / Affiliated Member Info</h3>
+        <button class="modal-close" onclick="document.getElementById('affViewModal').style.display='none'">&times;</button>
+      </div>
+      <div class="modal-body" id="affViewBody" style="overflow-y:auto;max-height:65vh;"></div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="document.getElementById('affViewModal').style.display='none'">Tutup / Close</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <p>&copy; <span id="affFooterYear"></span> BEM On The Rock.</p>
+  </footer>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="theme.js"></script>
+  <script src="affiliated-admin-view.js"></script>
+</body>
+</html>

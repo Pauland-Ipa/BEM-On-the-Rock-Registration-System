@@ -187,15 +187,8 @@ function renderTable() {
       <td>${reg.sectionA?.komselCode||"—"}</td>
       <td>${formatDate(reg.submittedAt || reg.dateApplied)}</td>
       <td class="col-memberstatus">${statusHTML}</td>
-      <td class="action-cell" id="action-cell-${reg.id}">
+      <td class="action-cell">
         <button class="btn-action-dots" data-id="${reg.id}">•••</button>
-        <div class="action-dropdown" id="dropdown-${reg.id}">
-          <button class="action-dropdown-item view-btn" data-id="${reg.id}"><span class="action-icon">📄</span> Lihat / View</button>
-          <button class="action-dropdown-item print-btn" data-id="${reg.id}"><span class="action-icon">🖨️</span> Cetak / Print</button>
-          ${activateBtn}
-          <button class="action-dropdown-item membership-card-btn" data-id="${reg.id}"><span class="action-icon">🪪</span> Kad Ahli / Membership Card</button>
-          <button class="action-dropdown-item delete delete-btn" data-id="${reg.id}"><span class="action-icon">🗑️</span> Padam / Delete</button>
-        </div>
       </td>`;
     tbody.appendChild(tr);
   });
@@ -203,55 +196,108 @@ function renderTable() {
 }
 
 // ── Table Events ──
+let currentActionId = null;
+
 function bindTableEvents() {
-  // Three-dot dropdown with fixed positioning
   document.querySelectorAll(".btn-action-dots").forEach(btn => {
     btn.addEventListener("click", function(e) {
       e.stopPropagation();
-      const id = this.dataset.id;
-      document.querySelectorAll(".action-dropdown").forEach(d => {
-        if (d.id !== `dropdown-${id}`) { d.classList.remove("open"); }
-      });
-      const dropdown = document.getElementById(`dropdown-${id}`);
-      const rect = this.getBoundingClientRect();
-      dropdown.style.top  = (rect.bottom + 6) + "px";
-      dropdown.style.left = (rect.left + rect.width/2 - 85) + "px";
-      dropdown.classList.toggle("open");
-    });
-  });
+      currentActionId = this.dataset.id;
+      const reg = registrations.find(r => r.id === currentActionId);
+      if (!reg) return;
 
-  document.addEventListener("click", () =>
-    document.querySelectorAll(".action-dropdown").forEach(d => d.classList.remove("open"))
-  );
-  document.addEventListener("scroll", () =>
-    document.querySelectorAll(".action-dropdown").forEach(d => d.classList.remove("open")), true
-  );
+      // Set modal title to member name
+      document.getElementById("actionModalName").textContent =
+        (reg.name || reg.sectionA?.fullName || "—").toUpperCase();
 
-  document.querySelectorAll(".view-btn").forEach(b =>
-    b.addEventListener("click", () => openViewModal(b.dataset.id))
-  );
-  document.querySelectorAll(".print-btn").forEach(b =>
-    b.addEventListener("click", () => printRecord(b.dataset.id))
-  );
-  document.querySelectorAll(".activate-btn").forEach(b =>
-    b.addEventListener("click", () => openActivateModal(b.dataset.id, b.dataset.name))
-  );
-  document.querySelectorAll(".deactivate-btn").forEach(b =>
-    b.addEventListener("click", () => openDeactivateModal(b.dataset.id, b.dataset.name))
-  );
-  document.querySelectorAll(".membership-card-btn").forEach(b =>
-    b.addEventListener("click", () => openMembershipCardModal(b.dataset.id))
-  );
-  document.querySelectorAll(".cancel-transfer-btn").forEach(b =>
-    b.addEventListener("click", () => cancelTransfer(b.dataset.id, b.dataset.name))
-  );
-  document.querySelectorAll(".delete-btn").forEach(b => {
-    b.addEventListener("click", () => {
-      pendingDeleteId = b.dataset.id;
-      document.getElementById("deleteModal").style.display = "flex";
+      // Set status button label dynamically
+      const statusBtn = document.getElementById("actionBtnStatus");
+      if (reg.transferred) {
+        statusBtn.innerHTML = `<span class="action-icon">↩️</span> Batal Pindah / Cancel Transfer`;
+      } else if (reg.approved) {
+        statusBtn.innerHTML = `<span class="action-icon">🔴</span> Nyahaktifkan / Deactivate`;
+      } else {
+        statusBtn.innerHTML = `<span class="action-icon">🟢</span> Aktifkan / Activate`;
+      }
+
+      document.getElementById("actionModal").style.display = "flex";
     });
   });
 }
+
+// Action modal button wiring
+document.getElementById("closeActionModal")?.addEventListener("click", () => {
+  document.getElementById("actionModal").style.display = "none"; currentActionId = null;
+});
+document.getElementById("closeActionModalBtn")?.addEventListener("click", () => {
+  document.getElementById("actionModal").style.display = "none"; currentActionId = null;
+});
+
+document.getElementById("actionBtnView")?.addEventListener("click", () => {
+  document.getElementById("actionModal").style.display = "none";
+  openViewModal(currentActionId);
+});
+document.getElementById("actionBtnPrint")?.addEventListener("click", () => {
+  document.getElementById("actionModal").style.display = "none";
+  printRecord(currentActionId);
+});
+document.getElementById("actionBtnStatus")?.addEventListener("click", () => {
+  document.getElementById("actionModal").style.display = "none";
+  const reg = registrations.find(r => r.id === currentActionId);
+  if (!reg) return;
+  if (reg.transferred) cancelTransfer(currentActionId, reg.name);
+  else if (reg.approved) openDeactivateModal(currentActionId, reg.name);
+  else openActivateModal(currentActionId, reg.name);
+});
+document.getElementById("actionBtnCard")?.addEventListener("click", () => {
+  document.getElementById("actionModal").style.display = "none";
+  openMembershipCardModal(currentActionId);
+});
+document.getElementById("actionBtnDelete")?.addEventListener("click", () => {
+  document.getElementById("actionModal").style.display = "none";
+  pendingDeleteId = currentActionId;
+  document.getElementById("deleteModal").style.display = "flex";
+});
+
+// ── XLSX Download ──
+document.getElementById("btnDownloadXLSX")?.addEventListener("click", () => {
+  const rows = registrations.map(reg => {
+    const a = reg.sectionA || {};
+    const b = reg.sectionB || {};
+    const c = reg.sectionC || {};
+    const services = b.services || {};
+    const involved    = Object.entries(services).filter(([,v])=>v?.current).map(([k])=>k).join(", ");
+    const wantToJoin  = Object.entries(services).filter(([,v])=>v?.join).map(([k])=>k).join(", ");
+    const children    = (c.children||[]).filter(ch=>ch.name?.trim()&&ch.gender).length;
+    return {
+      "Nama / Name":              (a.fullName||reg.name||"").toUpperCase(),
+      "ID Unik / Unique ID":      reg.uniqueID||"",
+      "No. KP / IC No.":          a.icNo||reg.icNo||"",
+      "No. Telefon / Phone":      a.phoneNumber||"",
+      "Jantina / Gender":         a.gender||"",
+      "Tarikh Lahir / DOB":       a.dob||"",
+      "Bangsa / Race":             a.race||"",
+      "Pekerjaan / Occupation":   a.occupation||"",
+      "Status Perkahwinan / Marital": a.maritalStatus||"",
+      "Status Pembaptisan / Baptism": a.baptismStatus||"",
+      "Tahun Pembaptisan / Year Baptised": a.baptismYear||"",
+      "Warganegara / Citizenship": a.citizenship||"",
+      "Gereja Asal / Original Church": a.originalChurch||"",
+      "Tahun Menyertai OTR / Year Joining": a.yearJoining||"",
+      "Jawatan Komsel / Cell Role": a.memberRole||"",
+      "Kod Komsel / Cell Code":    a.komselCode||"",
+      "Alamat / Address":          a.currentAddress||"",
+      "Perkhidmatan Semasa / Current Services": involved,
+      "Ingin Sertai / Want To Join": wantToJoin,
+      "Bilangan Anak / No. Children": children,
+      "Status Keanggotaan / Status": reg.approved ? "Aktif" : reg.transferred ? "Berpindah" : "Tidak Aktif",
+    };
+  });
+  const ws  = XLSX.utils.json_to_sheet(rows);
+  const wb  = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Senarai Ahli");
+  XLSX.writeFile(wb, `BEM_OTR_Senarai_Ahli_${new Date().toISOString().split("T")[0]}.xlsx`);
+});
 
 // ── Activate Modal ──
 function openActivateModal(id, name) {

@@ -71,32 +71,31 @@ function normaliseKomsel(v) {
 function isValidKomsel(v) { const n=normaliseKomsel(v); return VALID_CELL_CODES.some(c=>normaliseKomsel(c)===n); }
 
 // ═══════════════════════════════════════════════
-// SCREEN 1 — Verify IC
+// SCREEN 1 — Verify by Unique ID
 // ═══════════════════════════════════════════════
-document.getElementById("verifyIC").addEventListener("input", function() {
-  this.value = formatIC(this.value);
+document.getElementById("verifyUID").addEventListener("input", function() {
+  this.value = this.value.toUpperCase();
 });
 
 document.getElementById("btnVerify").addEventListener("click", async () => {
-  const ic     = document.getElementById("verifyIC").value.replace(/-/g,"");
-  const errEl  = document.getElementById("err-verifyIC");
+  const uid    = document.getElementById("verifyUID").value.trim().toUpperCase();
+  const errEl  = document.getElementById("err-verifyUID");
   const notice = document.getElementById("verifyNotice");
   errEl.textContent = "";
 
-  if (ic.length !== 12) {
-    errEl.textContent = "Sila masukkan No. KP yang sah / Please enter a valid IC No.";
+  if (!uid || uid.length < 5) {
+    errEl.textContent = "Sila masukkan ID Unik yang sah / Please enter a valid Unique ID.";
     return;
   }
 
   notice.textContent = "Menyemak... / Checking...";
   try {
     const snap = await db.collection("registrations")
-      .where("icNo","==",ic)
-      .where("approved","==",true)
+      .where("uniqueID","==",uid)
       .get();
 
     if (snap.empty) {
-      errEl.textContent = "Tiada rekod ahli aktif dengan No. KP ini. / No active member found with this IC No.";
+      errEl.textContent = "Tiada rekod dijumpai dengan ID ini. / No record found with this ID.";
       notice.textContent = "";
       return;
     }
@@ -257,26 +256,48 @@ function populateSubScreen(screen) {
 // ═══════════════════════════════════════════════
 let updatePhotoDataURL = null;
 
+// ── Client-side image compression (shared) ──
+function compressImage(file, callback) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      const size = Math.min(img.width, img.height);
+      const sx   = (img.width  - size) / 2;
+      const sy   = (img.height - size) / 2;
+      const canvas = document.createElement("canvas");
+      canvas.width = 300; canvas.height = 400;
+      canvas.getContext("2d").drawImage(img, sx, sy, size, size, 0, 0, 300, 400);
+      canvas.toBlob((blob) => {
+        const r = new FileReader();
+        r.onload = (ev) => callback(ev.target.result);
+        r.readAsDataURL(blob);
+      }, "image/jpeg", 0.6);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
 document.getElementById("updatePhotoInput")?.addEventListener("change", function() {
   const file = this.files[0];
   if (!file) return;
   const errEl = document.getElementById("err-updatePhoto");
-  if (file.size > 2 * 1024 * 1024) {
-    errEl.textContent = "Saiz fail melebihi 2MB / File size exceeds 2MB";
+  if (file.size > 4 * 1024 * 1024) {
+    errEl.textContent = "Saiz fail melebihi 4MB / File size exceeds 4MB";
     return;
   }
-  errEl.textContent = "";
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    updatePhotoDataURL = e.target.result;
+  errEl.textContent = "Memproses... / Processing...";
+  compressImage(file, (dataURL) => {
+    updatePhotoDataURL = dataURL;
     const previewImg  = document.getElementById("updatePhotoPreviewImg");
     const previewWrap = document.getElementById("updatePhotoPreviewWrap");
     previewImg.src    = updatePhotoDataURL;
     previewWrap.classList.add("visible");
     document.getElementById("updatePhotoLabel").style.display = "none";
     document.getElementById("btnSavePhoto").disabled = false;
-  };
-  reader.readAsDataURL(file);
+    errEl.textContent = "";
+  });
 });
 
 document.getElementById("updatePhotoChangeBtn")?.addEventListener("click", () => {

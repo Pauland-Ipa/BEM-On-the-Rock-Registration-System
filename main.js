@@ -15,6 +15,22 @@ document.addEventListener("DOMContentLoaded", () => {
   bindMaritalStatus();
   bindKomselValidation();
   initBehalfMode();
+  initAffiliatedMode();
+
+  // Affiliated autofill modal buttons
+  document.getElementById("btnAffiliatedYes")?.addEventListener("click", () => {
+    if (affiliatedFoundData) applyAffiliatedAutofill(affiliatedFoundData);
+    document.getElementById("affiliatedAutofillModal").style.display = "none";
+    affiliatedFoundData = null;
+  });
+  document.getElementById("btnAffiliatedNo")?.addEventListener("click", () => {
+    document.getElementById("affiliatedAutofillModal").style.display = "none";
+    affiliatedFoundData = null;
+  });
+  document.getElementById("closeAffiliatedModal")?.addEventListener("click", () => {
+    document.getElementById("affiliatedAutofillModal").style.display = "none";
+    affiliatedFoundData = null;
+  });
 });
 
 // ═══════════════════════════════════════════════
@@ -53,32 +69,63 @@ function setFooterYear() {
 // ═══════════════════════════════════════════════
 let photoDataURL = null;
 
+// ── Client-side image compression: center crop + 60% JPEG quality ──
+function compressImage(file, callback) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      // Center crop to square
+      const size = Math.min(img.width, img.height);
+      const sx   = (img.width  - size) / 2;
+      const sy   = (img.height - size) / 2;
+
+      // Target output size (passport photo ratio 3:4 — scale to 300×400)
+      const OUT_W = 300, OUT_H = 400;
+
+      const canvas = document.createElement("canvas");
+      canvas.width  = OUT_W;
+      canvas.height = OUT_H;
+      const ctx = canvas.getContext("2d");
+      // Draw center-cropped, scaled
+      ctx.drawImage(img, sx, sy, size, size, 0, 0, OUT_W, OUT_H);
+
+      canvas.toBlob((blob) => {
+        const compressedReader = new FileReader();
+        compressedReader.onload = (ev) => callback(ev.target.result);
+        compressedReader.readAsDataURL(blob);
+      }, "image/jpeg", 0.6); // 60% quality
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
 function bindPhotoUpload() {
-  const input   = document.getElementById("photoUpload");
-  const preview = document.getElementById("photoPreviewImg");
-  const previewWrap = document.getElementById("photoPreviewWrap");
-  const label   = document.getElementById("photoUploadLabel");
-  const changeBtn = document.getElementById("photoChangeBtn");
-  const errEl   = document.getElementById("err-photo");
+  const input      = document.getElementById("photoUpload");
+  const preview    = document.getElementById("photoPreviewImg");
+  const previewWrap= document.getElementById("photoPreviewWrap");
+  const label      = document.getElementById("photoUploadLabel");
+  const changeBtn  = document.getElementById("photoChangeBtn");
+  const errEl      = document.getElementById("err-photo");
   if (!input) return;
 
   input.addEventListener("change", function() {
     const file = this.files[0];
     if (!file) return;
-    if (file.size > 2 * 1024 * 1024) {
-      errEl.textContent = "Saiz fail melebihi 2MB / File size exceeds 2MB";
+    if (file.size > 4 * 1024 * 1024) {
+      errEl.textContent = "Saiz fail melebihi 4MB / File size exceeds 4MB";
       return;
     }
-    errEl.textContent = "";
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      photoDataURL = e.target.result;
+    errEl.textContent = "Memproses gambar... / Processing image...";
+    compressImage(file, (dataURL) => {
+      photoDataURL = dataURL;
       preview.src  = photoDataURL;
       previewWrap.classList.add("visible");
       label.style.display = "none";
+      errEl.textContent = "";
       saveDraft();
-    };
-    reader.readAsDataURL(file);
+    });
   });
 
   changeBtn?.addEventListener("click", () => {
@@ -178,7 +225,78 @@ function generateUniqueID(fullName, icNo, yearJoining) {
 // ═══════════════════════════════════════════════
 // 1h. BEHALF MODE — conditional rendering
 // ═══════════════════════════════════════════════
-const IS_BEHALF_MODE = new URLSearchParams(window.location.search).get("mode") === "behalf";
+const IS_BEHALF_MODE    = new URLSearchParams(window.location.search).get("mode") === "behalf";
+const IS_AFFILIATED_MODE = new URLSearchParams(window.location.search).get("mode") === "affiliated";
+
+// ═══════════════════════════════════════════════
+// 1j. AFFILIATED MEMBER AUTOFILL (for main registration)
+// ═══════════════════════════════════════════════
+let affiliatedFoundData = null;
+
+async function checkAffiliatedMatch(type, value) {
+  if (IS_AFFILIATED_MODE) return; // don't check when already in affiliated mode
+  try {
+    let snap;
+    if (type === "ic") {
+      snap = await db.collection("affiliatedMembers").where("icNo","==",value).limit(1).get();
+    } else {
+      snap = await db.collection("affiliatedMembers")
+        .where("name","==",value.toUpperCase()).limit(1).get();
+    }
+    if (snap && !snap.empty) {
+      affiliatedFoundData = snap.docs[0].data();
+      document.getElementById("affiliatedAutofillModal").style.display = "flex";
+    }
+  } catch(e) { /* silent */ }
+}
+
+function applyAffiliatedAutofill(data) {
+  const a = data.sectionA || {};
+  const setVal = (id, v) => { const el = document.getElementById(id); if (el && v) el.value = v; };
+  setVal("fullName",      a.fullName);
+  setVal("icNo",          a.icNo ? a.icNo.replace(/(\d{6})(\d{2})(\d{4})/,"$1-$2-$3") : "");
+  setVal("phoneNumber",   a.phoneNumber);
+  setVal("occupation",    a.occupation);
+  setVal("dob",           a.dob);
+  setVal("race",          a.race);
+  setVal("currentAddress",a.currentAddress);
+  setVal("originalChurch",a.originalChurch);
+  if (a.yearJoining) setVal("yearJoining", a.yearJoining);
+
+  // Gender
+  if (a.gender) {
+    const gEl = document.querySelector(`input[name="gender"][value="${a.gender}"]`);
+    if (gEl) gEl.checked = true;
+  }
+  // Marital status
+  if (a.maritalStatus) {
+    const msEl = document.getElementById("maritalStatus");
+    if (msEl) { msEl.value = a.maritalStatus; msEl.dispatchEvent(new Event("change")); }
+  }
+  // Baptism
+  if (a.baptismStatus) {
+    const bEl = document.querySelector(`input[name="baptismStatus"][value="${a.baptismStatus}"]`);
+    if (bEl) { bEl.checked = true; bEl.dispatchEvent(new Event("change")); }
+    if (a.baptismYear) setVal("baptismYear", a.baptismYear);
+  }
+  // Citizenship
+  if (a.citizenship) {
+    const cEl = document.querySelector(`input[name="citizenship"][value="${a.citizenship}"]`);
+    if (cEl) { cEl.checked = true; cEl.dispatchEvent(new Event("change")); }
+  }
+  // Photo
+  if (data.photoURL) {
+    photoDataURL = data.photoURL;
+    const preview = document.getElementById("photoPreviewImg");
+    const wrap    = document.getElementById("photoPreviewWrap");
+    const label   = document.getElementById("photoUploadLabel");
+    if (preview) preview.src = data.photoURL;
+    if (wrap)    wrap.classList.add("visible");
+    if (label)   label.style.display = "none";
+  }
+  saveDraft();
+  checkNextButton();
+}
 
 function initBehalfMode() {
   if (!IS_BEHALF_MODE) return;
@@ -213,6 +331,148 @@ function initBehalfMode() {
       }
     });
   });
+}
+
+// ═══════════════════════════════════════════════
+// 1i. AFFILIATED MODE
+// Sections A–C only, hide role/komsel fields,
+// show alternate success message
+// ═══════════════════════════════════════════════
+function initAffiliatedMode() {
+  if (!IS_AFFILIATED_MODE) return;
+
+  // Update page subtitle
+  const subtitle = document.querySelector(".church-subtitle");
+  if (subtitle) subtitle.textContent = "Pendaftaran Jemaat Bersekutu / Affiliated Member Registration";
+
+  // Hide member role (position) section
+  const roleBox = document.querySelector(".member-role-box");
+  if (roleBox) roleBox.style.display = "none";
+
+  // Hide cell group code field
+  const komselGroup = document.getElementById("komselCode")?.closest(".form-group");
+  if (komselGroup) komselGroup.style.display = "none";
+  const komselBadge = document.getElementById("komselValidBadge");
+  if (komselBadge) komselBadge.style.display = "none";
+
+  // Hide Sections D and E nav steps + sections
+  const stepD = document.querySelector('.step[data-section="d"]');
+  const stepE = document.querySelector('.step[data-section="e"]');
+  if (stepD) stepD.style.display = "none";
+  if (stepE) stepE.style.display = "none";
+
+  const sectionD = document.getElementById("section-d");
+  const sectionE = document.getElementById("section-e");
+  if (sectionD) sectionD.style.display = "none";
+  if (sectionE) sectionE.style.display = "none";
+
+  // Update eligibility notice
+  const eligBm = document.querySelector(".eligibility-bm strong");
+  const eligEn = document.querySelector(".eligibility-en strong");
+  if (eligBm) eligBm.textContent = "Nota: Borang ini adalah untuk Jemaat Bersekutu;";
+  if (eligEn) eligEn.textContent = "Note: This form is for Affiliated Church Members;";
+
+  // Update Next C → submit directly (skip D & E)
+  const btnNextC = document.getElementById("btnNextC");
+  if (btnNextC) {
+    btnNextC.textContent = "Hantar / Submit →";
+    btnNextC.onclick = async (e) => {
+      e.preventDefault();
+      await submitAffiliatedForm();
+    };
+  }
+}
+
+async function submitAffiliatedForm() {
+  const btn = document.getElementById("btnNextC");
+  if (btn) { btn.disabled = true; btn.textContent = "Menghantar... / Submitting..."; }
+
+  try {
+    const sectionADraft = JSON.parse(localStorage.getItem("bem_otr_draft_sectionA") || "{}");
+    const sectionBDraft = JSON.parse(localStorage.getItem("bem_otr_draft_sectionB") || "{}");
+    const sectionCDraft = JSON.parse(localStorage.getItem("bem_otr_draft_sectionC") || "{}");
+    const icVal = (sectionADraft.icNo || "").replace(/-/g,"");
+
+    // IC duplicate check
+    const snap = await db.collection("affiliatedMembers").where("icNo","==",icVal).get();
+    if (!snap.empty) {
+      alert("No. KP ini sudah berdaftar. / This IC is already registered.");
+      if (btn) { btn.disabled=false; btn.textContent="Hantar / Submit →"; }
+      return;
+    }
+
+    const uid = generateUniqueID(sectionADraft.fullName, icVal, sectionADraft.yearJoining);
+
+    const data = {
+      name:        (sectionADraft.fullName || "").toUpperCase(),
+      icNo:        icVal,
+      uniqueID:    uid,
+      memberType:  "affiliated",
+      photoURL:    photoDataURL || "",
+      sectionA: {
+        fullName:        (sectionADraft.fullName || "").toUpperCase(),
+        icNo:            icVal,
+        gender:          sectionADraft.gender || "",
+        dob:             sectionADraft.dob || "",
+        race:            sectionADraft.race || "",
+        maritalStatus:   sectionADraft.maritalStatus || "",
+        partnerName:     sectionADraft.partnerName || "",
+        latePartnerName: sectionADraft.latePartnerName || "",
+        baptismStatus:   sectionADraft.baptismStatus || "",
+        baptismYear:     sectionADraft.baptismYear || "",
+        citizenship:     sectionADraft.citizenship || "",
+        countryOfOrigin: sectionADraft.countryOfOrigin || "",
+        phoneNumber:     sectionADraft.phoneNumber || "",
+        occupation:      sectionADraft.occupation || "",
+        originalChurch:  sectionADraft.originalChurch || "",
+        yearJoining:     sectionADraft.yearJoining || "",
+        currentAddress:  sectionADraft.currentAddress || "",
+      },
+      sectionB: {
+        services:          sectionBDraft.services || {},
+        othersChecked:     sectionBDraft.othersChecked || false,
+        othersServiceName: sectionBDraft.othersServiceName || "",
+        othersInvolvement: sectionBDraft.othersInvolvement || "",
+      },
+      sectionC: { children: sectionCDraft.children || [] },
+      submittedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    };
+
+    await db.collection("affiliatedMembers").add(data);
+
+    // Clear drafts
+    ["bem_otr_draft_sectionA","bem_otr_draft_sectionB","bem_otr_draft_sectionC"]
+      .forEach(k => localStorage.removeItem(k));
+
+    showAffiliatedSuccessPage();
+
+  } catch(e) {
+    alert("Ralat / Error: " + e.message);
+    if (btn) { btn.disabled=false; btn.textContent="Hantar / Submit →"; }
+  }
+}
+
+function showAffiliatedSuccessPage() {
+  // Hide all sections
+  document.querySelectorAll(".form-section").forEach(s => s.style.display="none");
+  document.querySelector(".step-nav")?.style && (document.querySelector(".step-nav").style.display = "none");
+
+  const successDiv = document.getElementById("successPage");
+  if (successDiv) {
+    successDiv.style.display = "block";
+    // Replace title and message for affiliated
+    const title = successDiv.querySelector(".success-title");
+    const titleEn = successDiv.querySelector(".success-title-en");
+    const msg    = successDiv.querySelector(".success-msg");
+    const msgEn  = successDiv.querySelector(".success-msg-en");
+    if (title)   title.textContent   = "Maklumat Berjaya Direkodkan!";
+    if (titleEn) titleEn.textContent = "Successfully Recorded Your Information!";
+    if (msg)     msg.textContent     = "Maklumat anda telah berjaya direkodkan dalam pangkalan data gereja.";
+    if (msgEn)   msgEn.textContent   = "Your information has been successfully recorded into the church's database.";
+    // Remove payment reminder for affiliated members
+    const payReminder = successDiv.querySelector("div[style*='rgba(255,140,0']");
+    if (payReminder) payReminder.remove();
+  }
 }
 
 
@@ -253,7 +513,7 @@ function formatIC(value) {
 // ═══════════════════════════════════════════════
 function bindEvents() {
 
-  // ── IC Input: auto-format + DOB + gender auto-detect ──
+  // ── IC Input: auto-format + DOB + gender auto-detect + affiliated check ──
   const icInput = document.getElementById("icNo");
   if (icInput) {
     icInput.addEventListener("input", function () {
@@ -275,9 +535,21 @@ function bindEvents() {
           if (lastDigit % 2 !== 0) genderMale.checked   = true;
           else                      genderFemale.checked = true;
         }
+        // Check affiliated members DB
+        checkAffiliatedMatch("ic", clean);
       }
       saveDraft();
       checkNextButton();
+    });
+  }
+
+  // ── Full Name: check affiliated members on blur ──
+  const nameInput = document.getElementById("fullName");
+  if (nameInput) {
+    nameInput.addEventListener("blur", function () {
+      if (this.value.trim().length > 2 && !IS_AFFILIATED_MODE) {
+        checkAffiliatedMatch("name", this.value.trim());
+      }
     });
   }
 

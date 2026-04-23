@@ -181,37 +181,57 @@ document.querySelectorAll(".time-filter-btn").forEach(btn => {
   });
 });
 
+// ── Normalise race string for grouping ──
+function normaliseRace(raw) {
+  if (!raw || !raw.trim()) return "TIDAK DIKETAHUI / UNKNOWN";
+  // Take only the part before any slash (mixed race → first race only)
+  let r = raw.split("/")[0].trim();
+  // Remove all spaces for comparison key, uppercase
+  r = r.toUpperCase().replace(/\s+/g, "");
+  return r;
+}
+
+function displayRace(raw) {
+  if (!raw || !raw.trim()) return "TIDAK DIKETAHUI / UNKNOWN";
+  return raw.split("/")[0].trim().toUpperCase();
+}
+
 // ══════════════════════════════════════════════
 // RACE — Table with list modal
 // ══════════════════════════════════════════════
 function renderRaceTable() {
-  const map = {}; // race → [{ name, uid }]
+  const map = {}; // normalised key → { display, members[] }
   allData.forEach(r => {
-    const race = (r.sectionA?.race || "").trim() || "Tidak Diketahui / Unknown";
-    if (!map[race]) map[race] = [];
-    map[race].push({ name: (r.name || r.sectionA?.fullName || "—").toUpperCase(), uid: r.uniqueID || "—" });
+    const raw  = r.sectionA?.race || "";
+    const key  = normaliseRace(raw);
+    const disp = displayRace(raw);
+    if (!map[key]) map[key] = { display: disp, members: [] };
+    map[key].members.push({ name:(r.name||r.sectionA?.fullName||"—"), uid:r.uniqueID||"—" });
   });
-  const sorted = Object.entries(map).sort((a,b) => b[1].length - a[1].length);
-  const tbody = document.getElementById("raceTableBody");
+
+  const sorted = Object.entries(map).sort((a,b) => b[1].members.length - a[1].members.length);
+  const tbody  = document.getElementById("raceTableBody");
   if (!tbody) return;
 
-  tbody.innerHTML = sorted.map(([race, members]) => `
+  tbody.innerHTML = sorted.map(([key, {display, members}]) => `
     <tr>
-      <td>${race}</td>
+      <td style="font-weight:700;">${display}</td>
       <td style="text-align:center;font-weight:700;color:var(--marigold-bright)">${members.length}</td>
       <td style="text-align:center">
-        <button class="stats-view-btn" data-race="${encodeURIComponent(race)}">👁 Lihat / View</button>
+        <button class="stats-view-btn" data-race="${encodeURIComponent(key)}">👁 Lihat / View</button>
       </td>
     </tr>`).join("");
 
+  // Build lookup by key for modal
+  const lookup = {};
+  sorted.forEach(([key, val]) => { lookup[key] = val; });
+
   tbody.querySelectorAll(".stats-view-btn[data-race]").forEach(btn => {
     btn.addEventListener("click", () => {
-      const race    = decodeURIComponent(btn.dataset.race);
-      const members = map[race];
-      openListModal(
-        `Ahli Bangsa ${race} / Members of Race: ${race}`,
-        buildMemberListTable(members)
-      );
+      const key  = decodeURIComponent(btn.dataset.race);
+      const entry = lookup[key];
+      if (!entry) return;
+      openListModal(`Ahli Bangsa ${entry.display}`, buildMemberListTable(entry.members));
     });
   });
 }
@@ -220,11 +240,10 @@ function renderRaceTable() {
 // AGE GROUP — Doughnut
 // ══════════════════════════════════════════════
 function getAgeGroup(dob) {
-  if (!dob) return "Tidak Diketahui";
+  if (!dob) return "Tidak Diketahui / Unknown";
   const birth = new Date(dob);
-  if (isNaN(birth)) return "Tidak Diketahui";
+  if (isNaN(birth)) return "Tidak Diketahui / Unknown";
   const age = Math.floor((new Date()-birth)/(365.25*24*3600*1000));
-  if (age<13)  return "Kanak-kanak / Child (<13)";
   if (age<=17) return "Remaja / Teen (13–17)";
   if (age<=29) return "Dewasa Muda / Young Adult (18–29)";
   if (age<=59) return "Dewasa / Adult (30–59)";
@@ -233,14 +252,13 @@ function getAgeGroup(dob) {
 
 function renderAge() {
   const ORDER = [
-    "Kanak-kanak / Child (<13)",
     "Remaja / Teen (13–17)",
     "Dewasa Muda / Young Adult (18–29)",
     "Dewasa / Adult (30–59)",
     "Warga Emas / Senior (60+)",
     "Tidak Diketahui / Unknown"
   ];
-  const COLS = ["#FF6384","#36A2EB","#FFCE56","#4BC0C0","#9966FF","#aaaaaa"];
+  const COLS = ["#36A2EB","#FFCE56","#4BC0C0","#9966FF","#aaaaaa"];
   const counts = {};
   ORDER.forEach(k => counts[k]=0);
   allData.forEach(r => {
@@ -248,30 +266,18 @@ function renderAge() {
     counts[g] = (counts[g]||0)+1;
   });
 
-  // Show all groups (including zeros) so legends are always visible
-  const labels = ORDER;
-  const values = ORDER.map(k => counts[k]);
-  const colors = COLS;
-
   destroyChart("chartAge");
   const ctx = document.getElementById("chartAge")?.getContext("2d");
   if (!ctx) return;
   allCharts["chartAge"] = new Chart(ctx, {
     type: "doughnut",
-    data: { labels, datasets: [{ data: values, backgroundColor: colors, borderWidth:2, borderColor:"rgba(0,0,0,0.3)" }] },
+    data: { labels: ORDER, datasets: [{ data: ORDER.map(k=>counts[k]), backgroundColor: COLS, borderWidth:2, borderColor:"rgba(0,0,0,0.3)" }] },
     options: {
       cutout: "50%",
       plugins: {
         legend: {
-          display: true,
-          position: "right",
-          labels: {
-            color: chartText(),
-            font: { family:"Crimson Pro, serif", size:13 },
-            padding: 14,
-            // Show all labels even if value is 0
-            filter: () => true
-          }
+          display: true, position: "right",
+          labels: { color: chartText(), font:{ family:"Crimson Pro, serif", size:13 }, padding:14, filter:()=>true }
         }
       }
     }

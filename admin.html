@@ -69,8 +69,14 @@
             <h2 class="admin-section-title">Senarai Pendaftaran <span>/ Registration List</span></h2>
           </div>
           <div class="admin-topbar-right">
+            <a href="affiliated-admin-view.html" class="btn btn-secondary admin-stats-btn" style="text-decoration:none;">
+              🤲 Jemaat Bersekutu / Affiliated
+            </a>
+            <button class="btn btn-secondary admin-stats-btn" id="btnDownloadXLSX">
+              📥 Muat Turun .xlsx
+            </button>
             <a href="deceased-admin-view.html" class="btn btn-secondary admin-stats-btn" style="text-decoration:none;">
-              🕊️ Maklumat Kematian / Deceased
+              🕊️ Kematian / Deceased
             </a>
             <a href="stats.html" class="btn btn-secondary admin-stats-btn">
               📊 Statistik / Statistics
@@ -293,6 +299,26 @@
     </div>
   </div>
 
+  <!-- ═══ ACTION MODAL (replaces dropdown) ═══ -->
+  <div class="modal-overlay" id="actionModal" style="display:none;">
+    <div class="modal-card modal-card--sm">
+      <div class="modal-header">
+        <h3 class="modal-title" id="actionModalName">Tindakan / Action</h3>
+        <button class="modal-close" id="closeActionModal">&times;</button>
+      </div>
+      <div class="modal-body" style="display:flex;flex-direction:column;gap:0.5rem;padding:1rem 1.5rem;">
+        <button class="action-dropdown-item" id="actionBtnView"   style="width:100%;text-align:left;"><span class="action-icon">📄</span> Lihat / View</button>
+        <button class="action-dropdown-item" id="actionBtnPrint"  style="width:100%;text-align:left;"><span class="action-icon">🖨️</span> Cetak / Print</button>
+        <button class="action-dropdown-item" id="actionBtnStatus" style="width:100%;text-align:left;"><span class="action-icon">🔄</span> Tukar Status / Change Status</button>
+        <button class="action-dropdown-item" id="actionBtnCard"   style="width:100%;text-align:left;"><span class="action-icon">🪪</span> Kad Keanggotaan / Membership Card</button>
+        <button class="action-dropdown-item delete" id="actionBtnDelete" style="width:100%;text-align:left;"><span class="action-icon">🗑️</span> Padam / Delete</button>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="closeActionModalBtn">Batal / Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ═══ UNPAID FEES WARNING MODAL ═══ -->
   <div class="modal-overlay" id="unpaidWarningModal" style="display:none;">
     <div class="modal-card modal-card--sm">
@@ -326,6 +352,7 @@
   <script src="firebase-config.js"></script>
   <script src="theme.js"></script>
   <script src="language_strings.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="membership-card.js"></script>
   <script src="admin.js"></script>
 </body>
