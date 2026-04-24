@@ -435,45 +435,150 @@ function renderChildrenChart() {
 // ══════════════════════════════════════════════
 // CITY TABLE — 3 columns with modal
 // ══════════════════════════════════════════════
-function getCityFromAddress(addr) {
-  if (!addr) return "Tidak Diketahui / Unknown";
+// ── Malaysia postcode → city lookup ──
+// Postcodes grouped by first 2–3 digits for efficiency
+const MY_POSTCODE_CITIES = {
+  // Sarawak
+  93: "Kuching", 94: "Kuching", 95: "Kuching", 96: "Kuching",
+  97: "Bintulu", 98: "Miri",
+  91: "Tawau",   // actually Sabah but near border — leave as Tawau
+  99: "Keningau",
+  // Miri area
+  981: "Miri", 982: "Miri", 983: "Miri",
+  // Bintulu area
+  971: "Bintulu", 972: "Bintulu",
+  // Sibu area
+  961: "Sibu", 962: "Sibu", 963: "Sibu",
+  // Sri Aman
+  951: "Sri Aman", 952: "Sri Aman",
+  // Sarikei
+  941: "Sarikei", 942: "Sarikei",
+  // Kapit
+  964: "Kapit",
+  // Betong
+  953: "Betong",
+  // Limbang
+  984: "Limbang",
+  // Lawas
+  985: "Lawas",
+  // Mukah
+  966: "Mukah",
+  // Serian
+  931: "Serian",
+  // Kota Samarahan
+  942: "Kota Samarahan",
+  // Sabah
+  88: "Kota Kinabalu", 89: "Kota Kinabalu", 90: "Sandakan",
+  // Peninsular
+  10: "Pulau Pinang", 11: "Pulau Pinang",
+  41: "Kuala Lumpur", 50: "Kuala Lumpur", 51: "Kuala Lumpur",
+  52: "Kuala Lumpur", 53: "Kuala Lumpur", 54: "Kuala Lumpur",
+  55: "Kuala Lumpur", 56: "Kuala Lumpur", 57: "Kuala Lumpur",
+  58: "Kuala Lumpur", 59: "Kuala Lumpur",
+  68: "Ampang",       70: "Seremban",
+  80: "Johor Bahru",  81: "Johor Bahru",  83: "Batu Pahat",
+};
+
+function getCityFromAddress(reg) {
+  // Non-citizen → Luar Negara
+  if (reg.sectionA?.citizenship === "nonCitizen") return "__abroad__";
+
+  const addr = reg.sectionA?.currentAddress || "";
+
+  // Extract postcode — look for 5 consecutive digits
+  const postcodeMatch = addr.match(/\b(\d{5})\b/);
+  if (postcodeMatch) {
+    const pc  = postcodeMatch[1];
+    const pc3 = parseInt(pc.substring(0,3), 10);
+    const pc2 = parseInt(pc.substring(0,2), 10);
+    if (MY_POSTCODE_CITIES[pc3]) return MY_POSTCODE_CITIES[pc3];
+    if (MY_POSTCODE_CITIES[pc2]) return MY_POSTCODE_CITIES[pc2];
+  }
+
+  // Fallback: keyword scan
   const lower = addr.toLowerCase();
-  const cities = [
+  const keywords = [
     ["Kuching","kuching"],["Miri","miri"],["Sibu","sibu"],["Bintulu","bintulu"],
     ["Kota Samarahan","samarahan"],["Serian","serian"],["Sri Aman","sri aman"],
     ["Betong","betong"],["Sarikei","sarikei"],["Kapit","kapit"],["Limbang","limbang"],
-    ["Lawas","lawas"],["Mukah","mukah"],["Bau","bau"],["Kota Kinabalu","kinabalu"],
+    ["Lawas","lawas"],["Mukah","mukah"],["Kota Kinabalu","kinabalu"],
+    ["Kuala Lumpur","kuala lumpur"],["Johor Bahru","johor bahru"],
+    ["Penang","penang"],["Pulau Pinang","pulau pinang"],
   ];
-  for (const [name, key] of cities) { if (lower.includes(key)) return name; }
+  for (const [name, key] of keywords) {
+    if (lower.includes(key)) return name;
+  }
   return "Lain-lain / Others";
 }
 
 function renderCityTable() {
-  const map = {};
+  const map = {}; // city → [ {name,uid,country?} ]
   allData.forEach(r => {
-    const city = getCityFromAddress(r.sectionA?.currentAddress);
+    const city = getCityFromAddress(r);
     if (!map[city]) map[city] = [];
-    map[city].push({ name:(r.name||r.sectionA?.fullName||"—"), uid:r.uniqueID||"—" });
+    map[city].push({
+      name:    (r.name || r.sectionA?.fullName || "—"),
+      uid:     r.uniqueID || "—",
+      country: r.sectionA?.countryOfOrigin || "—",
+    });
   });
 
-  const sorted = Object.entries(map).sort((a,b) => b[1].length - a[1].length);
-  const tbody  = document.getElementById("cityTableBody");
+  // Sort cities by count descending, put Abroad and Others last
+  const sorted = Object.entries(map).sort((a,b) => {
+    if (a[0]==="__abroad__") return 1;
+    if (b[0]==="__abroad__") return -1;
+    if (a[0]==="Lain-lain / Others") return 1;
+    if (b[0]==="Lain-lain / Others") return -1;
+    return b[1].length - a[1].length;
+  });
+
+  const tbody = document.getElementById("cityTableBody");
   if (!tbody) return;
 
-  tbody.innerHTML = sorted.map(([city,members]) => `
-    <tr>
-      <td style="font-weight:700">${city}</td>
-      <td style="text-align:center">${members.length}</td>
-      <td style="text-align:center">
-        <button class="stats-view-btn" data-city="${encodeURIComponent(city)}">👁 Lihat / View</button>
+  tbody.innerHTML = sorted.map(([city, members]) => {
+    const displayCity = city === "__abroad__" ? "Luar Negara / Abroad" : city;
+    return `<tr>
+      <td style="font-weight:700;">${displayCity}</td>
+      <td style="text-align:center;">${members.length}</td>
+      <td style="text-align:center;">
+        <button class="stats-view-btn"
+          data-city="${encodeURIComponent(city)}"
+          data-abroad="${city==="__abroad__" ? "1" : "0"}">
+          👁 Lihat / View
+        </button>
       </td>
-    </tr>`).join("");
+    </tr>`;
+  }).join("");
 
   tbody.querySelectorAll(".stats-view-btn[data-city]").forEach(btn => {
     btn.addEventListener("click", () => {
       const city    = decodeURIComponent(btn.dataset.city);
       const members = map[city];
-      openListModal(`Ahli dari ${city} / Members from ${city}`, buildMemberListTable(members));
+      const isAbroad = btn.dataset.abroad === "1";
+
+      if (isAbroad) {
+        // Show Name | Unique ID | Country of Origin table
+        const tableHTML = `<table class="stats-modal-table">
+          <thead><tr>
+            <th>Nama / Name</th>
+            <th>ID Unik / Unique ID</th>
+            <th>Negara Asal / Country of Origin</th>
+          </tr></thead>
+          <tbody>${members.map(m => `
+            <tr>
+              <td>${(m.name||"—").toUpperCase()}</td>
+              <td style="color:var(--marigold);font-family:var(--font-display);font-size:0.85rem;">${m.uid||"—"}</td>
+              <td>${m.country||"—"}</td>
+            </tr>`).join("")}
+          </tbody>
+        </table>`;
+        openListModal("Luar Negara / Abroad", tableHTML);
+      } else {
+        openListModal(
+          `Ahli dari ${city === "__abroad__" ? "Luar Negara" : city}`,
+          buildMemberListTable(members)
+        );
+      }
     });
   });
 }

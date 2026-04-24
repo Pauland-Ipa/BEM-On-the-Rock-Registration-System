@@ -519,7 +519,9 @@ function buildViewHTML(reg) {
     <div class="vf-grid">
       ${vRow("ID Unik / Unique ID", `<strong style="color:var(--marigold)">${uid}</strong>`)}
       ${vRow("Nama Penuh / Full Name", `<strong>${(a.fullName||"—")}</strong>`)}
-      ${vRow("No. KP / IC No.", a.icNo || reg.icNo)}
+      ${vRow("No. KP / IC No.", a.citizenship === "nonCitizen"
+        ? "<em style='color:var(--text-muted);font-size:0.85rem;'>Tiada kaitan kerana anggota bukan warga Malaysia / Irrelevant since member is not Malaysian</em>"
+        : (a.icNo || reg.icNo || "—"))}
       ${vRow("Jantina / Gender", genderMap[a.gender])}
       ${vRow("Tarikh Lahir / Date of Birth", a.dob)}
       ${vRow("Bangsa / Race", a.race)}

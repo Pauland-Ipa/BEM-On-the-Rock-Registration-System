@@ -242,14 +242,17 @@
           </div>
 
           <!-- 2. IC No -->
-          <div class="form-group">
+          <div class="form-group" id="icNoGroup">
             <label class="form-label" for="icNo">
               No. KP <span class="label-en">/ IC No.</span>
-              <span class="required">*</span>
+              <span class="required" id="icNoRequired">*</span>
             </label>
             <input type="text" id="icNo" name="icNo"
               class="form-input" placeholder="cth/e.g. 901231-14-5678"
               maxlength="14" autocomplete="off" />
+            <span class="field-hint" id="icNoNonCitizenHint" style="display:none;color:var(--text-muted);font-style:italic;">
+              Tidak berkaitan — anggota bukan warganegara Malaysia / Not applicable — member is not a Malaysian citizen
+            </span>
             <span class="error-msg" id="err-icNo"></span>
           </div>
 

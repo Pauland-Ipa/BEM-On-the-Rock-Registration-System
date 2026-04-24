@@ -166,7 +166,7 @@ const VALID_CELL_CODES = (() => {
   };
   add("ZSN", 15); add("ZV", 13); add("ZPA", 7); add("ZPB", 8);
   add("ZPC", 5);  add("ZPD", 9); add("ZT", 15); add("ZSA", 10);
-  add("ZSB", 9);  add("ZC", 5); add("ZTC", 15); add("ZSC", 15);
+  add("ZSB", 9);  add("ZC", 5);
   return codes;
 })();
 
@@ -553,7 +553,39 @@ function bindEvents() {
     });
   }
 
-  // ── Phone: auto-insert dash after first 3 digits ──
+  // ── Citizenship: grey out IC field for non-citizens ──
+  document.querySelectorAll('input[name="citizenship"]').forEach(radio => {
+    radio.addEventListener("change", function() {
+      const isNonCitizen = this.value === "nonCitizen";
+      const icInput      = document.getElementById("icNo");
+      const icHint       = document.getElementById("icNoNonCitizenHint");
+      const icRequired   = document.getElementById("icNoRequired");
+      const countryField = document.getElementById("countryField");
+
+      if (isNonCitizen) {
+        // Grey out and disable IC field
+        icInput.disabled    = true;
+        icInput.value       = "";
+        icInput.style.opacity = "0.4";
+        icInput.style.cursor  = "not-allowed";
+        if (icHint)     icHint.style.display     = "";
+        if (icRequired) icRequired.style.display = "none";
+        // Show country of origin
+        if (countryField) countryField.classList.add("visible");
+      } else {
+        // Re-enable IC field
+        icInput.disabled      = false;
+        icInput.style.opacity = "";
+        icInput.style.cursor  = "";
+        if (icHint)     icHint.style.display     = "none";
+        if (icRequired) icRequired.style.display = "";
+        // Hide country of origin
+        if (countryField) countryField.classList.remove("visible");
+      }
+      saveDraft();
+      checkNextButton();
+    });
+  });
   const phoneInput = document.getElementById("phoneNumber");
   if (phoneInput) {
     phoneInput.addEventListener("input", function () {
@@ -588,23 +620,6 @@ function bindEvents() {
   });
 
   // ── Citizenship: show/hide country field ──
-  const citizenshipRadios = document.querySelectorAll('input[name="citizenship"]');
-  citizenshipRadios.forEach(radio => {
-    radio.addEventListener("change", function () {
-      const countryField = document.getElementById("countryField");
-      if (this.value === "nonCitizen") {
-        countryField.classList.add("visible");
-      } else {
-        countryField.classList.remove("visible");
-        const co = document.getElementById("countryOfOrigin");
-        if (co) co.value = "";
-        clearError("countryOfOrigin");
-      }
-      saveDraft();
-      checkNextButton();
-    });
-  });
-
   // ── Auto-save on any section-a input ──
   const allInputs = document.querySelectorAll("#section-a input, #section-a select, #section-a textarea");
   allInputs.forEach(input => {
