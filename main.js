@@ -16,6 +16,7 @@ document.addEventListener("DOMContentLoaded", () => {
   bindKomselValidation();
   initBehalfMode();
   initAffiliatedMode();
+  initPartnerAddressModal();
 
   // Affiliated autofill modal buttons
   document.getElementById("btnAffiliatedYes")?.addEventListener("click", () => {
@@ -157,6 +158,121 @@ function bindMaritalStatus() {
 }
 
 // ═══════════════════════════════════════════════
+// PARTNER AUTO-FILL SYSTEM
+// When person B fills the form:
+// 1. Scan registrations for a record whose partnerName matches person B's name or IC
+// 2. If found, auto-fill marital status + partner name
+// 3. When address field is focused, ask if they share the same address
+// ═══════════════════════════════════════════════
+let partnerFoundData  = null; // the partner's registration data
+let partnerAddressPending = false;
+
+async function checkPartnerMatch(type, value) {
+  if (!value || value.length < 2) return;
+  try {
+    // Search registrations where sectionA.partnerName matches this person's name/IC
+    let snap;
+    if (type === "name") {
+      const upper = value.toUpperCase();
+      snap = await db.collection("registrations")
+        .where("sectionA.partnerName", "==", upper)
+        .limit(1).get();
+    } else {
+      // IC — search by partnerIC if stored, or cross-reference icNo
+      snap = await db.collection("registrations")
+        .where("sectionA.partnerName", "!=", "")
+        .limit(50).get();
+      // Filter manually for IC match since partnerName is stored as name not IC
+      const cleanIC = value.replace(/-/g,"");
+      const match   = snap.docs.find(d => {
+        const ic = (d.data().icNo||"").replace(/-/g,"");
+        return ic === cleanIC; // same IC means same person — skip, we want their partner
+      });
+      snap = null; // reset — IC approach: find whose partner this person IS
+      // Alternative: search anyone whose partnerName === current fullName in form
+      // Fall through to name check on blur of fullName instead
+      return;
+    }
+
+    if (!snap || snap.empty) return;
+
+    const doc = snap.docs[0];
+    const reg = doc.data();
+    // Only trigger for engaged/married statuses
+    const ms = reg.sectionA?.maritalStatus;
+    if (ms !== "engaged" && ms !== "married") return;
+
+    partnerFoundData = { ...reg.sectionA, docId: doc.id, memberName: reg.name };
+    applyPartnerAutofill();
+  } catch(e) { /* silent */ }
+}
+
+function applyPartnerAutofill() {
+  if (!partnerFoundData) return;
+  const ms = partnerFoundData.maritalStatus;
+  if (ms !== "engaged" && ms !== "married") return;
+
+  // Set marital status
+  const msEl = document.getElementById("maritalStatus");
+  if (msEl) {
+    msEl.value = ms;
+    msEl.dispatchEvent(new Event("change"));
+  }
+
+  // Set partner name (which is the person who already registered)
+  const pnEl = document.getElementById("partnerName");
+  if (pnEl) {
+    pnEl.value = (partnerFoundData.fullName || partnerFoundData.memberName || "").toUpperCase();
+  }
+
+  saveDraft();
+  checkNextButton();
+}
+
+function showPartnerAddressModal() {
+  if (!partnerFoundData) return;
+  document.getElementById("partnerModalName").textContent =
+    (partnerFoundData.fullName || partnerFoundData.memberName || "—").toUpperCase();
+  document.getElementById("partnerModalAddress").textContent =
+    partnerFoundData.currentAddress || "—";
+  document.getElementById("partnerAddressModal").style.display = "flex";
+}
+
+function initPartnerAddressModal() {
+  document.getElementById("btnPartnerAddressYes")?.addEventListener("click", () => {
+    if (partnerFoundData?.currentAddress) {
+      const addrEl = document.getElementById("currentAddress");
+      if (addrEl) {
+        addrEl.value = partnerFoundData.currentAddress;
+        addrEl.dispatchEvent(new Event("input"));
+      }
+    }
+    document.getElementById("partnerAddressModal").style.display = "none";
+    partnerAddressPending = false;
+    saveDraft();
+    checkNextButton();
+  });
+
+  document.getElementById("btnPartnerAddressNo")?.addEventListener("click", () => {
+    document.getElementById("partnerAddressModal").style.display = "none";
+    partnerAddressPending = false;
+  });
+
+  document.getElementById("closePartnerAddressModal")?.addEventListener("click", () => {
+    document.getElementById("partnerAddressModal").style.display = "none";
+    partnerAddressPending = false;
+  });
+
+  // Show address modal when currentAddress is focused (only once after partner found)
+  document.getElementById("currentAddress")?.addEventListener("focus", function() {
+    if (partnerFoundData && !partnerAddressPending && !this.value.trim()) {
+      partnerAddressPending = true;
+      showPartnerAddressModal();
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════
 // 1f. VALID CELL GROUP CODES
 // ═══════════════════════════════════════════════
 const VALID_CELL_CODES = (() => {
@@ -166,7 +282,7 @@ const VALID_CELL_CODES = (() => {
   };
   add("ZSN", 15); add("ZV", 13); add("ZPA", 7); add("ZPB", 8);
   add("ZPC", 5);  add("ZPD", 9); add("ZT", 15); add("ZSA", 10);
-  add("ZSB", 9);  add("ZC", 5);
+  add("ZSB", 9);  add("ZC", 5);  add("ZTC", 15); add("ZSC", 15);
   return codes;
 })();
 
@@ -543,12 +659,14 @@ function bindEvents() {
     });
   }
 
-  // ── Full Name: check affiliated members on blur ──
+  // ── Full Name: check affiliated members + partner match on blur ──
   const nameInput = document.getElementById("fullName");
   if (nameInput) {
     nameInput.addEventListener("blur", function () {
-      if (this.value.trim().length > 2 && !IS_AFFILIATED_MODE) {
-        checkAffiliatedMatch("name", this.value.trim());
+      const val = this.value.trim();
+      if (val.length > 2 && !IS_AFFILIATED_MODE) {
+        checkAffiliatedMatch("name", val);
+        checkPartnerMatch("name", val);
       }
     });
   }
@@ -671,8 +789,8 @@ function collectSectionAData() {
     dob:             document.getElementById("dob")?.value || "",
     race:            document.getElementById("race")?.value || "",
     maritalStatus:   document.getElementById("maritalStatus")?.value || "",
-    partnerName:     document.getElementById("partnerName")?.value || "",
-    latePartnerName: document.getElementById("latePartnerName")?.value || "",
+    partnerName:     (document.getElementById("partnerName")?.value || "").toUpperCase(),
+    latePartnerName: (document.getElementById("latePartnerName")?.value || "").toUpperCase(),
     baptismStatus:   document.querySelector('input[name="baptismStatus"]:checked')?.value || "",
     baptismYear:     document.getElementById("baptismYear")?.value || "",
     citizenship:     document.querySelector('input[name="citizenship"]:checked')?.value || "",
