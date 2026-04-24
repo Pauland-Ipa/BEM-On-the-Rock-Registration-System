@@ -530,7 +530,9 @@ function buildViewHTML(reg) {
       ${a.latePartnerName ? vRow("Nama Pasangan Meninggal / Late Partner", a.latePartnerName) : ""}
       ${vRow("Status Pembaptisan / Baptism Status", baptismMap[a.baptismStatus])}
       ${a.baptismYear ? vRow("Tahun Pembaptisan / Year of Baptism", a.baptismYear) : ""}
-      ${vRow("Warganegara / Citizenship", a.citizenship==="citizen" ? "Warganegara Malaysia" : (a.countryOfOrigin||"—"))}
+      ${vRow("Warganegara / Citizenship", a.citizenship==="citizen" ? "Warganegara Malaysia / Malaysian" : "Bukan Warganegara / Non-Malaysian")}
+      ${a.citizenship !== "citizen" ? vRow("Negara Asal / Country of Origin", a.countryOfOrigin) : ""}
+      ${a.citizenship !== "citizen" ? vRow("Nombor ID / ID Number", a.foreignID || "—") : ""}
       ${vRow("Nombor Telefon / Telephone No.", a.phoneNumber)}
       ${vRow("Pekerjaan / Occupation", a.occupation || "Tiada Maklumat / No Information")}
       ${vRow("Gereja Asal / Original Church", a.originalChurch || "Tiada Maklumat / No Information")}
@@ -681,7 +683,9 @@ function printRecord(id) {
   <div class="row"><span class="lbl">Bangsa / Race:</span><span>${a.race||"—"}</span></div>
   <div class="row"><span class="lbl">Status Perkahwinan / Marital Status:</span><span>${maritalMap[a.maritalStatus]||"—"}${a.partnerName?" — "+a.partnerName:""}${a.latePartnerName?" — "+a.latePartnerName:""}</span></div>
   <div class="row"><span class="lbl">Status Pembaptisan / Baptism:</span><span>${baptismMap[a.baptismStatus]||"—"}${a.baptismYear?" ("+a.baptismYear+")":""}</span></div>
-  <div class="row"><span class="lbl">Warganegara / Citizenship:</span><span>${a.citizenship==="citizen"?"Warganegara Malaysia":(a.countryOfOrigin||"—")}</span></div>
+  <div class="row"><span class="lbl">Warganegara / Citizenship:</span><span>${a.citizenship==="citizen"?"Warganegara Malaysia / Malaysian":"Bukan Warganegara / Non-Malaysian"}</span></div>
+  ${a.citizenship !== "citizen" ? `<div class="row"><span class="lbl">Negara Asal / Country of Origin:</span><span>${a.countryOfOrigin||"—"}</span></div>` : ""}
+  ${a.citizenship !== "citizen" ? `<div class="row"><span class="lbl">Nombor ID / ID Number:</span><span>${a.foreignID||"—"}</span></div>` : ""}
   <div class="row"><span class="lbl">Nombor Telefon / Phone:</span><span>${a.phoneNumber||"—"}</span></div>
   <div class="row"><span class="lbl">Pekerjaan / Occupation:</span><span>${a.occupation||"Tiada Maklumat / No Information"}</span></div>
   <div class="row"><span class="lbl">Gereja Asal / Original Church:</span><span>${a.originalChurch||"Tiada Maklumat / No Information"}</span></div>

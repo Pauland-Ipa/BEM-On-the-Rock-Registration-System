@@ -543,6 +543,7 @@ async function submitAffiliatedForm() {
         baptismYear:     sectionADraft.baptismYear || "",
         citizenship:     sectionADraft.citizenship || "",
         countryOfOrigin: sectionADraft.countryOfOrigin || "",
+        foreignID:       sectionADraft.foreignID       || "",
         phoneNumber:     sectionADraft.phoneNumber || "",
         occupation:      sectionADraft.occupation || "",
         originalChurch:  sectionADraft.originalChurch || "",
@@ -800,6 +801,7 @@ function collectSectionAData() {
     baptismYear:     document.getElementById("baptismYear")?.value || "",
     citizenship:     document.querySelector('input[name="citizenship"]:checked')?.value || "",
     countryOfOrigin: document.getElementById("countryOfOrigin")?.value || "",
+    foreignID:       document.getElementById("foreignID")?.value.trim() || "",
     originalChurch:  document.getElementById("originalChurch")?.value || "",
     yearJoining:     document.getElementById("yearJoining")?.value || "",
     komselCode:      document.getElementById("komselCode")?.value || "",
@@ -826,7 +828,7 @@ function loadDraft() {
     // Simple text/select fields
     const fieldMap = [
       "fullName", "icNo", "dob", "race",
-      "maritalStatus", "baptismDate", "countryOfOrigin",
+      "maritalStatus", "baptismDate", "countryOfOrigin", "foreignID",
       "originalChurch", "yearJoining", "komselCode",
       "occupation", "phoneNumber", "currentAddress"
     ];
@@ -969,6 +971,11 @@ function validateSectionA() {
     const country = document.getElementById("countryOfOrigin");
     if (!country.value.trim()) {
       showError("countryOfOrigin", STRINGS.requiredField);
+      isValid = false;
+    }
+    const fid = document.getElementById("foreignID");
+    if (fid && !fid.value.trim()) {
+      showError("foreignID", STRINGS.requiredField);
       isValid = false;
     }
   }
@@ -1599,6 +1606,7 @@ function initSectionE() {
           baptismYear:     sectionADraft.baptismYear     || "",
           citizenship:     sectionADraft.citizenship     || "",
           countryOfOrigin: sectionADraft.countryOfOrigin || "",
+          foreignID:       sectionADraft.foreignID       || "",
           phoneNumber:     sectionADraft.phoneNumber     || "",
           occupation:      sectionADraft.occupation      || "",
           originalChurch:  sectionADraft.originalChurch  || "",
