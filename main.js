@@ -334,11 +334,13 @@ function bindKomselValidation() {
 // 1g. UNIQUE ID GENERATION
 // Format: Initials-Last4IC-YearJoinedShort
 // ═══════════════════════════════════════════════
-function generateUniqueID(fullName, icNo, yearJoining) {
+function generateUniqueID(fullName, icNo, yearJoining, foreignID) {
   const names    = (fullName || "").trim().split(/\s+/).filter(Boolean);
   const initials = names.map(n => n[0].toUpperCase()).join("");
   const ic       = (icNo || "").replace(/-/g, "");
-  const last4    = ic.length >= 4 ? ic.slice(-4) : ic.padStart(4, "0");
+  // For non-citizens with no IC, use last 4 chars of foreignID instead
+  const idSource = ic.length >= 4 ? ic : (foreignID || "").replace(/\s+/g,"");
+  const last4    = idSource.length >= 4 ? idSource.slice(-4) : idSource.padStart(4, "0");
   const yr       = String(yearJoining || "").slice(-2);
   return `${initials}-${last4}-${yr}`;
 }
@@ -513,16 +515,19 @@ async function submitAffiliatedForm() {
     const sectionBDraft = JSON.parse(localStorage.getItem("bem_otr_draft_sectionB") || "{}");
     const sectionCDraft = JSON.parse(localStorage.getItem("bem_otr_draft_sectionC") || "{}");
     const icVal = (sectionADraft.icNo || "").replace(/-/g,"");
+    const isNonCitizen = sectionADraft.citizenship === "nonCitizen";
 
-    // IC duplicate check
-    const snap = await db.collection("affiliatedMembers").where("icNo","==",icVal).get();
-    if (!snap.empty) {
-      alert("No. KP ini sudah berdaftar. / This IC is already registered.");
-      if (btn) { btn.disabled=false; btn.textContent="Hantar / Submit →"; }
-      return;
+    // IC duplicate check — skip for non-citizens
+    if (!isNonCitizen && icVal) {
+      const snap = await db.collection("affiliatedMembers").where("icNo","==",icVal).get();
+      if (!snap.empty) {
+        alert("No. KP ini sudah berdaftar. / This IC is already registered.");
+        if (btn) { btn.disabled=false; btn.textContent="Hantar / Submit →"; }
+        return;
+      }
     }
 
-    const uid = generateUniqueID(sectionADraft.fullName, icVal, sectionADraft.yearJoining);
+    const uid = generateUniqueID(sectionADraft.fullName, icVal, sectionADraft.yearJoining, sectionADraft.foreignID);
 
     const data = {
       name:        (sectionADraft.fullName || "").toUpperCase(),
@@ -1552,16 +1557,37 @@ function initSectionE() {
     btn.textContent = "Menyemak... / Checking...";
 
     try {
-      // ── IC Duplicate Check against Firestore ──
-      const snapshot = await db.collection("registrations")
-        .where("icNo", "==", icVal)
-        .get();
+      const sectionADraftPre = JSON.parse(localStorage.getItem("bem_otr_draft_sectionA") || "{}");
+      const isNonCitizen = sectionADraftPre.citizenship === "nonCitizen";
 
-      if (!snapshot.empty) {
-        document.getElementById("duplicateModal").style.display = "flex";
-        btn.disabled = false;
-        btn.innerHTML = "Hantar / Submit &rarr;";
-        return;
+      // ── Duplicate Check ──
+      if (isNonCitizen) {
+        // For non-citizens: check foreignID uniqueness instead of IC
+        const foreignIDVal = (sectionADraftPre.foreignID || "").trim();
+        if (foreignIDVal) {
+          const snapForeign = await db.collection("registrations")
+            .where("sectionA.foreignID", "==", foreignIDVal)
+            .get();
+          if (!snapForeign.empty) {
+            document.getElementById("duplicateModal").style.display = "flex";
+            btn.disabled = false;
+            btn.innerHTML = "Hantar / Submit &rarr;";
+            return;
+          }
+        }
+        // Non-citizen: clear icNo so it isn't stored as empty string
+        icVal = "";
+      } else {
+        // Malaysian citizen: check IC duplicate as normal
+        const snapshot = await db.collection("registrations")
+          .where("icNo", "==", icVal)
+          .get();
+        if (!snapshot.empty) {
+          document.getElementById("duplicateModal").style.display = "flex";
+          btn.disabled = false;
+          btn.innerHTML = "Hantar / Submit &rarr;";
+          return;
+        }
       }
 
       // ── Collect all section data ──
@@ -1579,7 +1605,7 @@ function initSectionE() {
         icNo:        icVal,
         dateApplied: new Date().toISOString().split("T")[0],
         approved:    false,
-        uniqueID:    generateUniqueID(sectionADraft.fullName, icVal, sectionADraft.yearJoining),
+        uniqueID:    generateUniqueID(sectionADraft.fullName, icVal, sectionADraft.yearJoining, sectionADraft.foreignID),
         memberRole:  sectionADraft.memberRole || "",
         photoURL:    photoDataURL || "",
 

@@ -183,7 +183,9 @@ function renderTable() {
         <div class="admin-name-bold">${(reg.name||"—")}</div>
         <div class="admin-uid-tag">${uid}</div>
       </td>
-      <td>${reg.icNo||"—"}</td>
+      <td>${reg.sectionA?.citizenship === "nonCitizen"
+        ? (reg.sectionA?.foreignID || "—")
+        : (reg.icNo || "—")}</td>
       <td>${reg.sectionA?.komselCode||"—"}</td>
       <td>${formatDate(reg.submittedAt || reg.dateApplied)}</td>
       <td class="col-memberstatus">${statusHTML}</td>
@@ -677,7 +679,7 @@ function printRecord(id) {
   <h3>A. Maklumat Peribadi / Personal Information</h3>
   ${photoSection}
   <div class="row"><span class="lbl">Nama Penuh / Full Name:</span><span style="font-weight:bold;text-transform:uppercase">${a.fullName||"—"}</span></div>
-  <div class="row"><span class="lbl">No. KP / IC No.:</span><span>${reg.icNo||"—"}</span></div>
+  <div class="row"><span class="lbl">No. KP / IC No.:</span><span>${reg.sectionA?.citizenship === "nonCitizen" ? (reg.sectionA?.foreignID || "—") : (reg.icNo||"—")}</span></div>
   <div class="row"><span class="lbl">Jantina / Gender:</span><span>${genderMap[a.gender]||"—"}</span></div>
   <div class="row"><span class="lbl">Tarikh Lahir / Date of Birth:</span><span>${a.dob||"—"}</span></div>
   <div class="row"><span class="lbl">Bangsa / Race:</span><span>${a.race||"—"}</span></div>
