@@ -545,7 +545,15 @@ function buildViewHTML(reg) {
       ${vRow("Ingin Terlibat / Would Like to Be Involved",  wantList.length ? wantList.join(", ") : "—")}
     </div>
 
-    <div class="vf-section-title">C. Maklumat Kanak-kanak / Children Information</div>
+    <div class="vf-section-title">C. Maklumat Kanak-kanak / Children Information
+      ${reg.sectionC?.syncedFromPartner
+        ? `<span style="font-size:0.72rem;font-family:var(--font-body);color:var(--marigold);
+            background:rgba(255,140,0,0.1);border:1px solid rgba(255,140,0,0.25);
+            border-radius:999px;padding:2px 8px;margin-left:8px;font-weight:400;letter-spacing:0.03em;">
+            🔗 Disegerakkan dari pasangan / Synced from partner (${reg.sectionC?.syncedFromPartnerUID||"—"})
+           </span>`
+        : ""}
+    </div>
     <div class="vf-grid">
       ${children.length
         ? children.map((c,i) => vRow(`Anak ${i+1} / Child ${i+1}`, `${c.name||"—"} (${genderMap[c.gender]||"—"}) — MyKid: ${c.myKid||"—"}`)).join("")

@@ -170,7 +170,6 @@ let partnerAddressPending = false;
 async function checkPartnerMatch(type, value) {
   if (!value || value.length < 2) return;
   try {
-    // Search registrations where sectionA.partnerName matches this person's name/IC
     let snap;
     if (type === "name") {
       const upper = value.toUpperCase();
@@ -178,31 +177,25 @@ async function checkPartnerMatch(type, value) {
         .where("sectionA.partnerName", "==", upper)
         .limit(1).get();
     } else {
-      // IC — search by partnerIC if stored, or cross-reference icNo
-      snap = await db.collection("registrations")
-        .where("sectionA.partnerName", "!=", "")
-        .limit(50).get();
-      // Filter manually for IC match since partnerName is stored as name not IC
-      const cleanIC = value.replace(/-/g,"");
-      const match   = snap.docs.find(d => {
-        const ic = (d.data().icNo||"").replace(/-/g,"");
-        return ic === cleanIC; // same IC means same person — skip, we want their partner
-      });
-      snap = null; // reset — IC approach: find whose partner this person IS
-      // Alternative: search anyone whose partnerName === current fullName in form
-      // Fall through to name check on blur of fullName instead
-      return;
+      return; // IC approach handled via name blur
     }
 
     if (!snap || snap.empty) return;
 
     const doc = snap.docs[0];
     const reg = doc.data();
-    // Only trigger for engaged/married statuses
-    const ms = reg.sectionA?.maritalStatus;
+    const ms  = reg.sectionA?.maritalStatus;
     if (ms !== "engaged" && ms !== "married") return;
 
-    partnerFoundData = { ...reg.sectionA, docId: doc.id, memberName: reg.name };
+    // Include sectionC children from the matched partner
+    const partnerChildren = (reg.sectionC?.children || []).filter(c => c.name?.trim() && c.gender);
+
+    partnerFoundData = {
+      ...reg.sectionA,
+      docId:           doc.id,
+      memberName:      reg.name,
+      sectionCChildren: partnerChildren,
+    };
     applyPartnerAutofill();
   } catch(e) { /* silent */ }
 }
@@ -223,6 +216,18 @@ function applyPartnerAutofill() {
   const pnEl = document.getElementById("partnerName");
   if (pnEl) {
     pnEl.value = (partnerFoundData.fullName || partnerFoundData.memberName || "").toUpperCase();
+  }
+
+  // Pre-fill Section C children if partner has children and current draft is empty
+  const existingDraft = JSON.parse(localStorage.getItem("bem_otr_draft_sectionC") || "{}");
+  const existingKids  = (existingDraft.children || []).filter(c => c.name?.trim() && c.gender);
+
+  if (existingKids.length === 0 && partnerFoundData.sectionCChildren?.length > 0) {
+    // Store in draft so Section C renders them when user navigates there
+    const childDraft = { children: partnerFoundData.sectionCChildren };
+    localStorage.setItem("bem_otr_draft_sectionC", JSON.stringify(childDraft));
+    // If Section C is already rendered, re-render it
+    if (typeof renderChildCards === "function") renderChildCards(partnerFoundData.sectionCChildren);
   }
 
   saveDraft();
@@ -1229,6 +1234,25 @@ document.addEventListener("DOMContentLoaded", () => {
 let childCount = 0;
 const DRAFT_KEY_C = "bem_otr_draft_sectionC";
 
+// Re-render Section C child cards from an array (used by partner autofill)
+function renderChildCards(children) {
+  if (!children || !children.length) return;
+  const container = document.getElementById("childrenContainer");
+  if (!container) return; // Section C not rendered yet — draft already saved, will load on nav
+  // Clear existing empty cards
+  container.innerHTML = "";
+  let num = 0;
+  children.forEach(child => {
+    if (child.name?.trim() && child.gender) {
+      num++;
+      addChild({ ...child }, num);
+    }
+  });
+  // Update count display if present
+  const countEl = document.getElementById("childCount");
+  if (countEl) countEl.textContent = num;
+}
+
 function createChildCard(num, data = {}) {
   const card = document.createElement("div");
   card.className = "child-card";
@@ -1601,7 +1625,35 @@ function initSectionE() {
       };
 
       // ── Save to Firestore ──
-      await db.collection("registrations").add(registrationData);
+      const newDocRef = await db.collection("registrations").add(registrationData);
+
+      // ── Sync children to partner's record if partner was matched ──
+      if (partnerFoundData?.docId) {
+        const children = sectionCDraft.children || [];
+        const validChildren = children.filter(c => c.name?.trim() && c.gender);
+        if (validChildren.length > 0) {
+          try {
+            // Fetch partner's current record
+            const partnerDoc = await db.collection("registrations").doc(partnerFoundData.docId).get();
+            if (partnerDoc.exists) {
+              const partnerCurrentChildren = partnerDoc.data().sectionC?.children || [];
+              const partnerValidChildren   = partnerCurrentChildren.filter(c => c.name?.trim() && c.gender);
+              // Only update if partner has no children recorded yet
+              if (partnerValidChildren.length === 0) {
+                await db.collection("registrations").doc(partnerFoundData.docId).update({
+                  "sectionC.children": validChildren,
+                  "sectionC.syncedFromPartner": true,
+                  "sectionC.syncedFromPartnerUID": registrationData.uniqueID || "",
+                  lastUpdated: firebase.firestore.FieldValue.serverTimestamp(),
+                });
+              }
+            }
+          } catch(syncErr) {
+            console.warn("Partner children sync failed (non-critical):", syncErr.message);
+            // Non-critical — don't block the main submission
+          }
+        }
+      }
 
       // ── Clear local drafts ──
       ["bem_otr_draft_sectionA","bem_otr_draft_sectionB","bem_otr_draft_sectionC",
