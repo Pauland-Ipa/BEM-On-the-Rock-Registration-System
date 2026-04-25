@@ -7,7 +7,6 @@
   <title>BEM On The Rock — Kemas Kini Maklumat</title>
   <link rel="stylesheet" href="style.css"/>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="update-info.css"/>
 </head>
 <body>
 
@@ -23,355 +22,126 @@
   </header>
 
   <main class="form-main">
-    <a href="home.html" class="back-home-btn" id="backHomeBtn">&#8592; Kembali ke Halaman Rumah / Back to Home Page</a>
+    <a href="home.html" class="back-home-btn">&#8592; Kembali ke Halaman Rumah / Back to Home Page</a>
 
-    <!-- ══ SCREEN 1: IC Verification ══ -->
+    <!-- ══ SCREEN 1: Verify IC ══ -->
     <section class="form-section active" id="screen-verify">
       <div class="section-header">
-        <div class="section-badge">1</div>
+        <div class="section-badge">🔍</div>
         <div>
           <h2 class="section-title">Pengesahan Identiti / Identity Verification</h2>
-          <p class="section-subtitle">Masukkan Nombor ID Unik anda untuk mengakses maklumat anda.</p>
-          <p class="section-subtitle">Enter your Unique ID number to access your information.</p>
+          <p class="section-subtitle">Masukkan No. KP anda untuk meneruskan.</p>
+          <p class="section-subtitle">Enter your IC No. to proceed.</p>
         </div>
       </div>
       <div class="form-grid">
         <div class="form-group full-width">
-          <label class="form-label" for="verifyUID">ID Unik / Unique ID <span class="required">*</span></label>
-          <input type="text" id="verifyUID" class="form-input"
-            placeholder="cth/e.g. PIP-0607-16"
-            style="text-transform:uppercase;"/>
-          <span class="error-msg" id="err-verifyUID"></span>
-          <p class="field-hint" style="margin-top:0.5rem;">
-            Jika anda tidak tahu nombor ID anda, sila kembali ke halaman rumah dan tekan seksyen
-            <strong>'Paparkan Kad Keanggotaan Saya'</strong>. /
-            If you don't know your ID number, head back to the home page and click on
-            <strong>'View My Membership Card'</strong>.
-          </p>
+          <label class="form-label" for="verifyIC">No. KP / IC No. <span class="required">*</span></label>
+          <input type="text" id="verifyIC" class="form-input" placeholder="cth/e.g. 901231-14-5678" maxlength="14"/>
+          <span class="error-msg" id="err-verifyIC"></span>
         </div>
       </div>
       <div class="form-actions form-actions--end">
-        <button class="btn btn-primary" id="btnVerify">Semak / Verify &rarr;</button>
+        <button class="btn btn-primary" id="btnVerifyIC">Semak / Verify &rarr;</button>
       </div>
       <div class="draft-notice" id="verifyNotice"></div>
     </section>
 
-    <!-- ══ SCREEN 2: Choose What to Update ══ -->
-    <section class="form-section" id="screen-menu">
-      <div class="section-header">
-        <div class="section-badge">2</div>
-        <div>
-          <h2 class="section-title">Pilih Maklumat untuk Dikemas Kini</h2>
-          <p class="section-subtitle">Which information would you like to update?</p>
+    <!-- ══ SCREEN 2: Edit Form (index.html content injected here) ══ -->
+    <section class="form-section" id="screen-edit" style="display:none;">
+      <!-- Step nav -->
+      <div class="step-nav" id="editStepNav">
+        <div class="step active" data-section="a">
+          <div class="step-circle">A</div>
+          <div class="step-label">Peribadi<br/><em>Personal</em></div>
+        </div>
+        <div class="step-line"></div>
+        <div class="step" data-section="b">
+          <div class="step-circle">B</div>
+          <div class="step-label">Pelayanan<br/><em>Service</em></div>
+        </div>
+        <div class="step-line"></div>
+        <div class="step" data-section="c">
+          <div class="step-circle">C</div>
+          <div class="step-label">Kanak-kanak<br/><em>Children</em></div>
+        </div>
+        <div class="step-line"></div>
+        <div class="step" data-section="d">
+          <div class="step-circle">D</div>
+          <div class="step-label">Ikrar<br/><em>Pledge</em></div>
+        </div>
+        <div class="step-line"></div>
+        <div class="step" data-section="e">
+          <div class="step-circle">E</div>
+          <div class="step-label">Pengakuan<br/><em>Confession</em></div>
         </div>
       </div>
 
-      <!-- Success notice (shown after save) -->
-      <div class="update-success-notice" id="updateSuccessNotice" style="display:none;">
-        <span class="update-success-icon">✅</span>
-        <span id="updateSuccessText"></span>
-      </div>
+      <!-- Edit sections rendered by JS -->
+      <div id="editSectionsWrap"></div>
 
-      <!-- Member banner -->
-      <div class="member-banner" id="memberBanner">
-        <div class="member-banner-photo" id="bannerPhoto"></div>
-        <div class="member-banner-info">
-          <div class="member-banner-name" id="bannerName"></div>
-          <div class="member-banner-id" id="bannerUID"></div>
-          <div class="member-banner-komsel" id="bannerKomsel"></div>
-        </div>
-      </div>
-
-      <div class="update-menu-grid">
-        <button class="update-menu-btn" data-screen="photo">
-          <span class="update-menu-icon">📷</span>
-          <span class="update-menu-bm">Kemas Kini Gambar Anda</span>
-          <span class="update-menu-en">Update Your Picture</span>
-        </button>
-        <button class="update-menu-btn" data-screen="phone">
-          <span class="update-menu-icon">📞</span>
-          <span class="update-menu-bm">Tukar Nombor Telefon</span>
-          <span class="update-menu-en">Change Phone Number</span>
-        </button>
-        <button class="update-menu-btn" data-screen="occupation">
-          <span class="update-menu-icon">💼</span>
-          <span class="update-menu-bm">Kemas Kini Pekerjaan</span>
-          <span class="update-menu-en">Update Occupation</span>
-        </button>
-        <button class="update-menu-btn" data-screen="marital">
-          <span class="update-menu-icon">💍</span>
-          <span class="update-menu-bm">Kemas Kini Status Perkahwinan</span>
-          <span class="update-menu-en">Update Marital Status</span>
-        </button>
-        <button class="update-menu-btn" id="btnBaptismMenu" data-screen="baptism">
-          <span class="update-menu-icon">✝️</span>
-          <span class="update-menu-bm">Ubah Status Pembaptisan</span>
-          <span class="update-menu-en">Change Baptism Status</span>
-        </button>
-        <button class="update-menu-btn" data-screen="komsel">
-          <span class="update-menu-icon">👥</span>
-          <span class="update-menu-bm">Ubah Kod Komsel</span>
-          <span class="update-menu-en">Change Cell Group Code</span>
-        </button>
-        <button class="update-menu-btn" data-screen="children">
-          <span class="update-menu-icon">👶</span>
-          <span class="update-menu-bm">Kemas Kini Maklumat Anak atau Tambah Anak</span>
-          <span class="update-menu-en">Update Child's Information or Add Child</span>
-        </button>
+      <div class="form-actions" id="editNavActions" style="margin-top:1.5rem;">
+        <button class="btn btn-secondary" id="btnEditBack">&larr; Kembali / Back</button>
+        <button class="btn btn-primary" id="btnEditNext">Seterusnya / Next &rarr;</button>
       </div>
     </section>
 
-    <!-- ══ SCREEN 3: Phone Number ══ -->
-    <section class="form-section" id="screen-phone">
-      <div class="section-header">
-        <div class="section-badge">📞</div>
-        <div>
-          <h2 class="section-title">Tukar Nombor Telefon</h2>
-          <p class="section-subtitle">Change Phone Number</p>
-        </div>
+    <!-- ══ SCREEN 3: Success ══ -->
+    <div id="screen-success" style="display:none;">
+      <div class="success-card">
+        <div class="success-icon">✅</div>
+        <h2 class="success-title">Informasi Anda Berjaya Dikemas Kini!</h2>
+        <p class="success-title-en">Successfully Updated Your Information!</p>
+        <a href="home.html" class="btn btn-primary success-back-btn">&#8592; Kembali ke Halaman Rumah / Back to Home Page</a>
       </div>
-      <div class="current-value-card">
-        <span class="current-value-label">Nombor semasa / Current number:</span>
-        <span class="current-value-text" id="currentPhone"></span>
-      </div>
-      <div class="form-grid">
-        <div class="form-group full-width">
-          <label class="form-label" for="newPhone">Nombor Baharu / New Phone Number <span class="required">*</span></label>
-          <input type="tel" id="newPhone" class="form-input" placeholder="cth/e.g. 011-12345678"/>
-          <span class="error-msg" id="err-newPhone"></span>
-        </div>
-      </div>
-      <div class="form-actions">
-        <button class="btn btn-secondary back-to-menu">&#8592; Kembali / Back</button>
-        <button class="btn btn-primary" id="btnSavePhone" disabled>
-          💾 Simpan Nombor Baharu / Save New Phone Number
-        </button>
-      </div>
-    </section>
-
-    <!-- ══ SCREEN 4: Occupation ══ -->
-    <section class="form-section" id="screen-occupation">
-      <div class="section-header">
-        <div class="section-badge">💼</div>
-        <div>
-          <h2 class="section-title">Kemas Kini Pekerjaan</h2>
-          <p class="section-subtitle">Update Occupation</p>
-        </div>
-      </div>
-      <div class="current-value-card">
-        <span class="current-value-label">Pekerjaan semasa / Current occupation:</span>
-        <span class="current-value-text" id="currentOccupation"></span>
-      </div>
-      <div class="form-grid">
-        <div class="form-group full-width">
-          <label class="form-label" for="newOccupation">Pekerjaan Baharu / New Occupation <span class="required">*</span></label>
-          <input type="text" id="newOccupation" class="form-input" placeholder="cth/e.g. Guru, Jurutera, Pelajar..."/>
-          <span class="error-msg" id="err-newOccupation"></span>
-        </div>
-      </div>
-      <div class="form-actions">
-        <button class="btn btn-secondary back-to-menu">&#8592; Kembali / Back</button>
-        <button class="btn btn-primary" id="btnSaveOccupation" disabled>
-          💾 Simpan Pekerjaan Baharu / Save New Occupation
-        </button>
-      </div>
-    </section>
-
-    <!-- ══ SCREEN 5: Marital Status ══ -->
-    <section class="form-section" id="screen-marital">
-      <div class="section-header">
-        <div class="section-badge">💍</div>
-        <div>
-          <h2 class="section-title">Kemas Kini Status Perkahwinan</h2>
-          <p class="section-subtitle">Update Marital Status</p>
-        </div>
-      </div>
-      <div class="current-value-card" id="currentMaritalCard">
-        <span class="current-value-label">Status semasa / Current status:</span>
-        <span class="current-value-text" id="currentMarital"></span>
-      </div>
-      <div class="form-grid">
-        <div class="form-group full-width">
-          <label class="form-label" for="newMarital">Status Baharu / New Status <span class="required">*</span></label>
-          <select id="newMarital" class="form-input form-select">
-            <option value="">-- Pilih / Select --</option>
-          </select>
-          <span class="error-msg" id="err-newMarital"></span>
-        </div>
-        <!-- Conditional: Partner name -->
-        <div class="form-group full-width conditional-field" id="partnerNameField">
-          <label class="form-label" for="newPartnerName">
-            Nama Pasangan / Partner's Name <span class="required">*</span>
-          </label>
-          <input type="text" id="newPartnerName" class="form-input" placeholder="Masukkan nama pasangan / Enter partner's name"/>
-          <span class="error-msg" id="err-newPartnerName"></span>
-        </div>
-      </div>
-      <div class="form-actions">
-        <button class="btn btn-secondary back-to-menu">&#8592; Kembali / Back</button>
-        <button class="btn btn-primary" id="btnSaveMarital" disabled>
-          💾 Simpan Status Baharu / Save New Status
-        </button>
-      </div>
-    </section>
-
-    <!-- ══ SCREEN 6: Baptism Status ══ -->
-    <section class="form-section" id="screen-baptism">
-      <div class="section-header">
-        <div class="section-badge">✝️</div>
-        <div>
-          <h2 class="section-title">Ubah Status Pembaptisan</h2>
-          <p class="section-subtitle">Change Baptism Status</p>
-        </div>
-      </div>
-      <div class="current-value-card">
-        <span class="current-value-label">Status semasa / Current status:</span>
-        <span class="current-value-text">Belum Dibaptis / Not Yet Baptised</span>
-      </div>
-      <p class="form-label" style="margin-bottom:1rem;">
-        Adakah anda sudah dibaptis sekarang? / Are you now already baptised?
-      </p>
-      <div class="checkbox-group" style="margin-bottom:1.5rem;">
-        <label class="checkbox-label" id="baptismYesLabel">
-          <input type="radio" name="baptismAnswer" value="yes" id="baptismYes"/>
-          <span class="custom-radio"></span>
-          Ya / Yes
-        </label>
-        <label class="checkbox-label">
-          <input type="radio" name="baptismAnswer" value="no" id="baptismNo"/>
-          <span class="custom-radio"></span>
-          Tidak / No
-        </label>
-      </div>
-      <!-- Conditional: baptism year input -->
-      <div class="conditional-field" id="baptismYearSection">
-        <div class="form-group">
-          <label class="form-label" for="newBaptismYear">
-            Tahun Pembaptisan / Year of Baptism <span class="required">*</span>
-          </label>
-          <input type="number" id="newBaptismYear" class="form-input"
-            min="1920" placeholder="cth/e.g. 2023"/>
-          <span class="error-msg" id="err-newBaptismYear"></span>
-        </div>
-      </div>
-      <div class="form-actions">
-        <button class="btn btn-secondary back-to-menu">&#8592; Kembali / Back</button>
-        <button class="btn btn-primary" id="btnSaveBaptism" disabled>
-          💾 Simpan Status Pembaptisan / Save Baptism Status
-        </button>
-      </div>
-    </section>
-
-    <!-- ══ SCREEN 7: Cell Group Code ══ -->
-    <section class="form-section" id="screen-komsel">
-      <div class="section-header">
-        <div class="section-badge">👥</div>
-        <div>
-          <h2 class="section-title">Ubah Kod Komsel</h2>
-          <p class="section-subtitle">Change Cell Group Code</p>
-        </div>
-      </div>
-      <div class="current-value-card">
-        <span class="current-value-label">Kod semasa / Current code:</span>
-        <span class="current-value-text" id="currentKomsel"></span>
-      </div>
-      <div class="form-grid">
-        <div class="form-group full-width">
-          <label class="form-label" for="newKomsel">Kod Baharu / New Cell Group Code <span class="required">*</span></label>
-          <input type="text" id="newKomsel" class="form-input"
-            placeholder="cth/e.g. SN 1, ZV 3..." style="text-transform:uppercase;"/>
-          <span class="komsel-valid-badge" id="komselUpdateBadge"></span>
-          <span class="error-msg" id="err-newKomsel"></span>
-        </div>
-      </div>
-      <div class="form-actions">
-        <button class="btn btn-secondary back-to-menu">&#8592; Kembali / Back</button>
-        <button class="btn btn-primary" id="btnSaveKomsel" disabled>
-          💾 Simpan Kod Baharu / Save New Code
-        </button>
-      </div>
-    </section>
-
-    <!-- ══ SCREEN 8: Children ══ -->
-    <section class="form-section" id="screen-children">
-      <div class="section-header">
-        <div class="section-badge">👶</div>
-        <div>
-          <h2 class="section-title">Kemas Kini Maklumat Anak</h2>
-          <p class="section-subtitle">Update Child's Information or Add Child</p>
-        </div>
-      </div>
-      <div id="childrenEditList"></div>
-      <button type="button" class="btn btn-add-child" id="btnAddChildUpdate">
-        <span class="add-icon">＋</span> Tambah Anak / Add Child
-      </button>
-      <div class="form-actions" style="margin-top:1.5rem;">
-        <button class="btn btn-secondary back-to-menu">&#8592; Kembali / Back</button>
-        <button class="btn btn-primary" id="btnSaveChildren">
-          💾 Simpan / Save Children
-        </button>
-      </div>
-    </section>
-
-    <!-- ══ SCREEN: Update Photo ══ -->
-    <section class="form-section" id="screen-photo">
-      <div class="section-header">
-        <div class="section-badge">📷</div>
-        <div>
-          <h2 class="section-title">Kemas Kini Gambar Anda</h2>
-          <p class="section-subtitle">Update Your Profile Picture</p>
-        </div>
-      </div>
-
-      <!-- Current photo -->
-      <div class="current-value-card" style="align-items:center;flex-direction:row;gap:1rem;">
-        <div id="currentPhotoPreview" style="width:80px;height:100px;border-radius:6px;border:2px solid var(--marigold-dim);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--bg-input);font-size:2rem;">👤</div>
-        <div>
-          <span class="current-value-label">Gambar semasa / Current photo</span>
-          <span class="current-value-text" style="font-size:0.9rem;">Muat naik gambar baharu di bawah untuk menggantikannya.</span>
-          <span class="current-value-text" style="font-size:0.82rem;font-weight:400;font-style:italic;color:var(--text-muted);">Upload a new photo below to replace it.</span>
-        </div>
-      </div>
-
-      <!-- Upload area -->
-      <div class="photo-upload-wrap" style="margin-top:1rem;">
-        <label class="photo-upload-label" id="updatePhotoLabel">
-          <input type="file" id="updatePhotoInput" accept=".jpg,.jpeg,.png,.webp"/>
-          <span class="photo-upload-icon">📷</span>
-          <span class="photo-upload-text-bm">Sila muat naik gambar terkini berukuran pasport rasmi. Saiz maksimum 2MB.</span>
-          <span class="photo-upload-text-en">Please upload a recent, formal passport-sized photo. Maximum 2MB.</span>
-          <span class="photo-upload-text-en">Format: JPG, JPEG, PNG, WEBP</span>
-        </label>
-        <div class="photo-preview-wrap" id="updatePhotoPreviewWrap">
-          <img src="" alt="Preview" class="photo-preview-img" id="updatePhotoPreviewImg"/>
-          <button type="button" class="photo-change-btn" id="updatePhotoChangeBtn">✎ Tukar / Change</button>
-        </div>
-        <span class="error-msg" id="err-updatePhoto"></span>
-      </div>
-
-      <div class="form-actions" style="margin-top:1.5rem;">
-        <button class="btn btn-secondary back-to-menu">&#8592; Kembali / Back</button>
-        <button class="btn btn-primary" id="btnSavePhoto" disabled>
-          💾 Simpan Gambar Baharu / Save New Photo
-        </button>
-      </div>
-    </section>
-
+    </div>
   </main>
 
-  <!-- Baptism "not yet" dialog -->
-  <div class="modal-overlay" id="baptismNotYetModal" style="display:none;">
-    <div class="modal-card modal-card--sm">
-      <div class="modal-body" style="text-align:center;padding:2rem 1.5rem;">
-        <p style="font-size:1.05rem;line-height:1.7;color:var(--text-primary);">
-          Sila sertai pembaptisan terlebih dahulu sebelum mengubah status pembaptisan anda.
-        </p>
-        <p style="font-size:0.9rem;font-style:italic;color:var(--text-muted);margin-top:0.5rem;">
-          Please get baptised first before changing your baptism status.
-        </p>
+  <!-- ══ PREVIEW MODAL ══ -->
+  <div class="modal-overlay" id="previewModal" style="display:none;">
+    <div class="modal-card modal-card--lg">
+      <div class="modal-header">
+        <h3 class="modal-title" id="previewModalName">📋 Maklumat Semasa / Current Information</h3>
       </div>
-      <div class="modal-footer" style="justify-content:center;">
-        <button class="btn btn-primary" id="closeBaptismNotYet">OK</button>
+      <div class="modal-body" id="previewModalBody" style="overflow-y:auto;max-height:65vh;"></div>
+      <div class="modal-footer" style="justify-content:space-between;">
+        <button class="btn btn-secondary" id="btnPreviewBack">&larr; Kembali / Back</button>
+        <button class="btn btn-primary" id="btnPreviewEdit">✏️ Edit</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ CHANGES CONFIRMATION MODAL ══ -->
+  <div class="modal-overlay" id="changesModal" style="display:none;">
+    <div class="modal-card modal-card--lg">
+      <div class="modal-header">
+        <h3 class="modal-title">🔍 Semak Perubahan / Review Changes</h3>
+      </div>
+      <div class="modal-body" style="padding:1.2rem 1.5rem;">
+        <p style="font-size:0.88rem;color:var(--text-muted);font-style:italic;margin-bottom:1rem;line-height:1.6;">
+          Berikut merupakan semua perubahan yang anda telah kemas kini, sila semak sebelum tekan butang 'Simpan' /
+          The following are the changes you've made, please analyse carefully before pressing 'Save'.
+        </p>
+        <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
+          <table id="changesTable" style="width:100%;border-collapse:collapse;font-size:0.9rem;min-width:480px;">
+            <thead>
+              <tr style="background:var(--bg-header);">
+                <th style="padding:0.6rem 0.8rem;text-align:left;font-family:var(--font-display);font-size:0.75rem;letter-spacing:0.05em;color:var(--marigold-bright);border-bottom:2px solid var(--marigold-dim);white-space:nowrap;">Seksyen / Section</th>
+                <th style="padding:0.6rem 0.8rem;text-align:left;font-family:var(--font-display);font-size:0.75rem;letter-spacing:0.05em;color:var(--marigold-bright);border-bottom:2px solid var(--marigold-dim);white-space:nowrap;">Ruangan / Field</th>
+                <th style="padding:0.6rem 0.8rem;text-align:left;font-family:var(--font-display);font-size:0.75rem;letter-spacing:0.05em;color:var(--marigold-bright);border-bottom:2px solid var(--marigold-dim);white-space:nowrap;">Sebelum / Before</th>
+                <th style="padding:0.6rem 0.8rem;text-align:left;font-family:var(--font-display);font-size:0.75rem;letter-spacing:0.05em;color:var(--marigold-bright);border-bottom:2px solid var(--marigold-dim);white-space:nowrap;">Selepas / After</th>
+              </tr>
+            </thead>
+            <tbody id="changesTableBody"></tbody>
+          </table>
+        </div>
+        <div id="noChangesMsg" style="display:none;text-align:center;padding:1.5rem;color:var(--text-muted);font-style:italic;">
+          Tiada perubahan dibuat. / No changes were made.
+        </div>
+      </div>
+      <div class="modal-footer" style="justify-content:space-between;">
+        <button class="btn btn-secondary" id="btnBackToEdit">✏️ Kembali Mengemas Kini / Back to Editing</button>
+        <button class="btn btn-primary" id="btnSaveChanges">💾 Simpan / Save</button>
       </div>
     </div>
   </div>

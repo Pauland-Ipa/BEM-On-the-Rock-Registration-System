@@ -459,7 +459,17 @@ document.getElementById("closeMCModalBtn")?.addEventListener("click", () => docu
   document.head.appendChild(style);
 })();
 
-// ── Cancel Transfer ──
+// ── Edit button in view modal — opens update-info page with IC pre-filled ──
+document.getElementById("editModalBtn")?.addEventListener("click", () => {
+  const reg = registrations.find(r => r.id === currentActionId);
+  if (!reg) return;
+  const ic = reg.icNo || reg.sectionA?.icNo || "";
+  if (ic) {
+    window.location.href = `update-info.html?ic=${encodeURIComponent(ic)}`;
+  } else {
+    window.location.href = "update-info.html";
+  }
+});
 async function cancelTransfer(id, name) {
   if (!confirm(`Batal pemindahan ${name}?\nCancel transfer for ${name}?`)) return;
   try {

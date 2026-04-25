@@ -1,51 +1,38 @@
 "use strict";
 /* ═══════════════════════════════════════════════
-   BEM On The Rock — update-info.js
+   BEM On The Rock — update-info.js (full rework)
 ═══════════════════════════════════════════════ */
 
 document.getElementById("updateFooterYear").textContent = new Date().getFullYear();
 
-// ── State ──
-let memberDocId  = null;
-let memberData   = null;
-let editChildren = []; // working copy of children array
-
-// ── Valid Komsel Codes ──
-const VALID_CELL_CODES = (() => {
-  const codes = [];
-  const add = (prefix, max) => { for (let i=1;i<=max;i++) codes.push(prefix+i); };
-  add("ZSN",15); add("ZV",13); add("ZPA",7); add("ZPB",8);
-  add("ZPC",5);  add("ZPD",9); add("ZT",15); add("ZSA",10);
-  add("ZSB",9);  add("ZC",5);  add("ZTC",15); add("ZSC",15);
-  return codes;
+// ── Auto-verify if IC passed via URL (admin edit flow) ──
+(async function checkURLParam() {
+  const params = new URLSearchParams(window.location.search);
+  const icParam = params.get("ic");
+  if (!icParam) return;
+  // Small delay to let Firebase init
+  await new Promise(r => setTimeout(r, 600));
+  try {
+    const ic   = icParam.replace(/-/g,"");
+    const snap = await db.collection("registrations").where("icNo","==",ic).limit(1).get();
+    if (!snap.empty) {
+      memberDocId = snap.docs[0].id;
+      memberData  = snap.docs[0].data();
+      // Fill IC field for visual reference
+      const icEl = document.getElementById("verifyIC");
+      if (icEl) icEl.value = icParam;
+      showPreviewModal();
+    }
+  } catch(e) { /* silent — admin falls back to manual entry */ }
 })();
 
-const MARITAL_MAP = {
-  single:  "Bujang / Single",
-  engaged: "Bertunang / Engaged",
-  married: "Berkahwin / Married",
-  divorced:"Bercerai / Divorced",
-  widowed: "Balu/Duda [Pasangan meninggal] / Widowed"
-};
+let memberDocId     = null;
+let memberData      = null;
+let currentStep     = "a";
+let newPhotoDataURL = null;
 
-// ── Screen management ──
-const screens = [
-  "screen-verify","screen-menu","screen-phone","screen-occupation",
-  "screen-marital","screen-baptism","screen-komsel","screen-children","screen-photo"
-];
+const STEPS = ["a","b","c","d","e"];
 
-function showScreen(id) {
-  screens.forEach(s => {
-    const el = document.getElementById(s);
-    if (el) el.classList.toggle("active", s === id);
-  });
-  window.scrollTo({ top:0, behavior:"smooth" });
-  // Hide back-to-home on sub-screens (not verify/menu)
-  const backHome = document.getElementById("backHomeBtn");
-  if (backHome) backHome.style.display = (id==="screen-verify"||id==="screen-menu") ? "" : "none";
-}
-
-// ── IC Format ──
 function formatIC(v) {
   const d = v.replace(/\D/g,"");
   let f = d;
@@ -54,552 +41,651 @@ function formatIC(v) {
   return f.substring(0,14);
 }
 
-// ── Phone Format ──
-function formatPhone(v) {
-  const d = v.replace(/\D/g,"");
-  if (d.length>3) return d.substring(0,3)+"-"+d.substring(3,10);
-  return d;
+function escHtml(s) {
+  return String(s||"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 }
 
-// ── Komsel validation ──
-function normaliseKomsel(v) {
-  const clean = v.toUpperCase().replace(/[\s\-]/g, "");
-  const match = clean.match(/^([A-Z]+)(\d+)$/);
-  if (!match) return clean;
-  return match[1] + parseInt(match[2], 10);
+function showScreen(id) {
+  ["screen-verify","screen-edit"].forEach(s => {
+    const el = document.getElementById(s);
+    if (!el) return;
+    el.style.display = s===id ? "" : "none";
+    el.classList.toggle("active", s===id);
+  });
+  window.scrollTo({top:0,behavior:"smooth"});
 }
-function isValidKomsel(v) { const n=normaliseKomsel(v); return VALID_CELL_CODES.some(c=>normaliseKomsel(c)===n); }
 
-// ═══════════════════════════════════════════════
-// SCREEN 1 — Verify by Unique ID
-// ═══════════════════════════════════════════════
-document.getElementById("verifyUID").addEventListener("input", function() {
-  this.value = this.value.toUpperCase();
+// ══════════════════════════════════════════════
+// VERIFY — IC lookup
+// ══════════════════════════════════════════════
+document.getElementById("verifyIC").addEventListener("input", function() {
+  this.value = formatIC(this.value);
 });
 
-document.getElementById("btnVerify").addEventListener("click", async () => {
-  const uid    = document.getElementById("verifyUID").value.trim().toUpperCase();
-  const errEl  = document.getElementById("err-verifyUID");
-  const notice = document.getElementById("verifyNotice");
+document.getElementById("btnVerifyIC").addEventListener("click", async () => {
+  const ic    = document.getElementById("verifyIC").value.replace(/-/g,"");
+  const errEl = document.getElementById("err-verifyIC");
+  const notice= document.getElementById("verifyNotice");
   errEl.textContent = "";
 
-  if (!uid || uid.length < 5) {
-    errEl.textContent = "Sila masukkan ID Unik yang sah / Please enter a valid Unique ID.";
+  if (ic.length !== 12) {
+    errEl.textContent = "Sila masukkan No. KP yang sah / Please enter a valid IC No.";
     return;
   }
 
   notice.textContent = "Menyemak... / Checking...";
   try {
-    const snap = await db.collection("registrations")
-      .where("uniqueID","==",uid)
-      .get();
-
+    const snap = await db.collection("registrations").where("icNo","==",ic).limit(1).get();
     if (snap.empty) {
-      errEl.textContent = "Tiada rekod dijumpai dengan ID ini. / No record found with this ID.";
+      errEl.textContent = "Tiada rekod dijumpai / No record found.";
       notice.textContent = "";
       return;
     }
-
     memberDocId = snap.docs[0].id;
     memberData  = snap.docs[0].data();
     notice.textContent = "";
-    populateMenu();
-    showScreen("screen-menu");
-
+    showPreviewModal();
   } catch(e) {
-    errEl.textContent = "Ralat sistem / System error. Please try again.";
+    errEl.textContent = "Ralat sistem / System error.";
     notice.textContent = "";
   }
 });
 
-// ═══════════════════════════════════════════════
-// SCREEN 2 — Menu
-// ═══════════════════════════════════════════════
-function populateMenu() {
-  const a = memberData.sectionA || {};
-
-  // Photo
-  const photoWrap = document.getElementById("bannerPhoto");
-  photoWrap.innerHTML = memberData.photoURL
-    ? `<img src="${memberData.photoURL}" alt="Photo"/>`
-    : `<div class="member-banner-photo-placeholder">👤</div>`;
-
-  document.getElementById("bannerName").textContent   = (a.fullName || memberData.name || "—").toUpperCase();
-  document.getElementById("bannerUID").textContent    = `ID: ${memberData.uniqueID || "—"}`;
-  document.getElementById("bannerKomsel").textContent = `Kod Komsel / Cell Group: ${a.komselCode || "—"}`;
-
-  // Disable baptism option if already baptised
-  const baptismBtn = document.getElementById("btnBaptismMenu");
-  if (a.baptismStatus === "baptised") {
-    baptismBtn.disabled = true;
-    baptismBtn.title = "Anda sudah dibaptis / You are already baptised";
-    const note = document.createElement("span");
-    note.style.cssText = "font-size:0.7rem;color:var(--text-muted);font-style:italic;";
-    note.textContent = "(Sudah dibaptis / Already baptised)";
-    baptismBtn.appendChild(note);
-  }
-
-  // Hide success notice when re-entering menu
-  // (will be shown by individual save handlers)
+// ══════════════════════════════════════════════
+// PREVIEW MODAL
+// ══════════════════════════════════════════════
+function vRow(label, value) {
+  return `<div class="vf-row"><span class="vf-label">${label}:</span><span class="vf-value">${value||"—"}</span></div>`;
 }
 
-// Menu button clicks → navigate to sub-screen
-document.querySelectorAll(".update-menu-btn").forEach(btn => {
-  btn.addEventListener("click", function() {
-    if (this.disabled) return;
-    const target = this.dataset.screen;
-    populateSubScreen(target);
-    showScreen(`screen-${target}`);
-    // Hide success notice when navigating away
-    document.getElementById("updateSuccessNotice").style.display = "none";
+function showPreviewModal() {
+  const a = memberData.sectionA || {};
+  const b = memberData.sectionB || {};
+  const c = memberData.sectionC || {};
+  const d = memberData.sectionD || {};
+  const e = memberData.sectionE || {};
+  const gMap  = { male:"Lelaki / Male", female:"Perempuan / Female" };
+  const msMap = { single:"Bujang",engaged:"Bertunang",married:"Berkahwin",divorced:"Bercerai",widowed:"Balu/Duda" };
+  const kids  = (c.children||[]).filter(k=>k.name?.trim()&&k.gender);
+  const svcs  = b.services || {};
+  const active= Object.entries(svcs).filter(([,v])=>v?.current).map(([k])=>k).join(", ")||"—";
+
+  document.getElementById("previewModalName").textContent =
+    `📋 ${(a.fullName||memberData.name||"—").toUpperCase()}`;
+
+  document.getElementById("previewModalBody").innerHTML = `
+    ${memberData.photoURL?`<div style="text-align:center;margin-bottom:1rem;">
+      <img src="${memberData.photoURL}" style="width:72px;height:90px;object-fit:cover;border-radius:6px;border:2px solid var(--marigold-dim);"/></div>`:""}
+    <div class="vf-section-title">A. Maklumat Peribadi / Personal Information</div>
+    <div class="vf-grid">
+      ${vRow("Nama / Name",         (a.fullName||"—").toUpperCase())}
+      ${vRow("No. KP / ID",          a.citizenship==="nonCitizen"?(a.foreignID||"—"):(a.icNo||"—"))}
+      ${vRow("Jantina / Gender",     gMap[a.gender]||"—")}
+      ${vRow("Tarikh Lahir / DOB",   a.dob||"—")}
+      ${vRow("Bangsa / Race",        a.race||"—")}
+      ${vRow("Status Perkahwinan",   msMap[a.maritalStatus]||"—")}
+      ${a.partnerName?vRow("Nama Pasangan",a.partnerName):""}
+      ${vRow("Status Pembaptisan",   a.baptismStatus||"—")}
+      ${a.baptismYear?vRow("Tahun Pembaptisan",a.baptismYear):""}
+      ${vRow("Warganegara",          a.citizenship==="nonCitizen"?"Bukan Warganegara":"Warganegara Malaysia")}
+      ${a.citizenship==="nonCitizen"?vRow("Negara Asal",a.countryOfOrigin||"—"):""}
+      ${vRow("No. Telefon",          a.phoneNumber||"—")}
+      ${vRow("Pekerjaan",            a.occupation||"—")}
+      ${vRow("Gereja Asal",          a.originalChurch||"—")}
+      ${vRow("Tahun Menyertai OTR",  a.yearJoining||"—")}
+      ${vRow("Jawatan Komsel",       a.memberRole||"—")}
+      ${vRow("Kod Komsel",           a.komselCode||"—")}
+      ${vRow("Alamat",               a.currentAddress||"—")}
+    </div>
+    <div class="vf-section-title">B. Pelayanan / Services</div>
+    <div class="vf-grid">${vRow("Pelayanan Semasa",active)}</div>
+    <div class="vf-section-title">C. Kanak-kanak / Children</div>
+    <div class="vf-grid">${kids.length?kids.map((k,i)=>vRow(`Anak ${i+1}`,`${k.name} (${gMap[k.gender]||"—"})`)).join(""):vRow("Kanak-kanak","Tiada / None")}</div>
+    <div class="vf-section-title" style="color:var(--text-muted);">D &amp; E — Tidak boleh diedit / Not editable</div>
+    <div class="vf-grid">
+      ${vRow("Ikrar Dipersetujui",d.pledgeAgreed?"Ya":"—")}
+      ${vRow("Kod Komsel (E)",e.komsel||"—")}
+    </div>`;
+
+  document.getElementById("previewModal").style.display = "flex";
+}
+
+document.getElementById("btnPreviewBack").addEventListener("click", () => {
+  document.getElementById("previewModal").style.display = "none";
+  document.getElementById("verifyIC").value = "";
+  memberDocId = null; memberData = null;
+});
+
+document.getElementById("btnPreviewEdit").addEventListener("click", () => {
+  document.getElementById("previewModal").style.display = "none";
+  newPhotoDataURL = null;
+  currentStep = "a";
+  document.getElementById("screen-verify").style.display = "none";
+  document.getElementById("screen-verify").classList.remove("active");
+  document.getElementById("screen-edit").style.display = "";
+  renderStep("a");
+  window.scrollTo({top:0,behavior:"smooth"});
+});
+
+// ══════════════════════════════════════════════
+// STEP RENDERING
+// ══════════════════════════════════════════════
+function renderStep(step) {
+  currentStep = step;
+  const a=memberData.sectionA||{}, b=memberData.sectionB||{},
+        c=memberData.sectionC||{}, d=memberData.sectionD||{}, e=memberData.sectionE||{};
+
+  const wrap = document.getElementById("editSectionsWrap");
+  if (step==="a") { wrap.innerHTML = buildSectionA(a); wireSectionAEvents(); }
+  if (step==="b") { wrap.innerHTML = buildSectionB(b); }
+  if (step==="c") { wrap.innerHTML = buildSectionC(c); wireSectionCEvents(); }
+  if (step==="d") { wrap.innerHTML = buildSectionD(d); }
+  if (step==="e") { wrap.innerHTML = buildSectionE(e); }
+
+  const idx = STEPS.indexOf(step);
+  document.getElementById("btnEditBack").textContent = idx===0 ? "↩ Lihat Semula / Preview" : "← Kembali / Back";
+  document.getElementById("btnEditNext").textContent = idx===STEPS.length-1 ? "Semak Perubahan / Review →" : "Seterusnya / Next →";
+  updateStepNav(step);
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+function updateStepNav(step) {
+  document.querySelectorAll(".step[data-section]").forEach(el => {
+    const s = el.dataset.section;
+    el.classList.remove("active","completed");
+    if (s===step) el.classList.add("active");
+    else if (STEPS.indexOf(s)<STEPS.indexOf(step)) el.classList.add("completed");
   });
+}
+
+document.getElementById("btnEditBack").addEventListener("click", () => {
+  const idx = STEPS.indexOf(currentStep);
+  if (idx===0) {
+    document.getElementById("screen-edit").style.display = "none";
+    showPreviewModal();
+  } else {
+    renderStep(STEPS[idx-1]);
+  }
 });
 
-// ── Back to menu buttons ──
-document.querySelectorAll(".back-to-menu").forEach(btn => {
-  btn.addEventListener("click", () => showScreen("screen-menu"));
+document.getElementById("btnEditNext").addEventListener("click", () => {
+  const idx = STEPS.indexOf(currentStep);
+  if (idx===STEPS.length-1) { showChangesModal(); }
+  else { renderStep(STEPS[idx+1]); }
 });
 
-// ═══════════════════════════════════════════════
-// POPULATE SUB-SCREENS with current data
-// ═══════════════════════════════════════════════
-function populateSubScreen(screen) {
-  const a = memberData.sectionA || {};
+// ══════════════════════════════════════════════
+// SECTION A
+// ══════════════════════════════════════════════
+function buildSectionA(a) {
+  const nc = a.citizenship==="nonCitizen";
+  const icFmt = a.icNo?a.icNo.replace(/(\d{6})(\d{2})(\d{4})/,"$1-$2-$3"):"";
+  const msOpts = ["single","engaged","married","divorced","widowed"]
+    .map(v=>`<option value="${v}" ${a.maritalStatus===v?"selected":""}>${
+      {single:"Bujang",engaged:"Bertunang",married:"Berkahwin",divorced:"Bercerai",widowed:"Balu/Duda"}[v]
+    }</option>`).join("");
 
-  if (screen === "phone") {
-    document.getElementById("currentPhone").textContent =
-      a.phoneNumber || "Tiada data / No data";
-    const inp = document.getElementById("newPhone");
-    inp.value = "";
-    document.getElementById("btnSavePhone").disabled = true;
-    document.getElementById("err-newPhone").textContent = "";
-  }
+  return `<div class="section-header"><div class="section-badge">A</div>
+    <div><h2 class="section-title">Maklumat Peribadi / Personal Information</h2></div></div>
 
-  if (screen === "occupation") {
-    document.getElementById("currentOccupation").textContent =
-      a.occupation || "Tiada data berkenaan pekerjaan lama wujud / No occupation data available";
-    const inp = document.getElementById("newOccupation");
-    inp.value = "";
-    document.getElementById("btnSaveOccupation").disabled = true;
-    document.getElementById("err-newOccupation").textContent = "";
-  }
+  <div class="form-group full-width" style="margin-bottom:1rem;">
+    <label class="form-label">Gambar / Photo</label>
+    <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+      <div style="width:60px;height:75px;border-radius:6px;border:2px solid var(--marigold-dim);overflow:hidden;flex-shrink:0;background:var(--bg-input);display:flex;align-items:center;justify-content:center;font-size:1.5rem;">
+        ${memberData.photoURL?`<img src="${memberData.photoURL}" style="width:100%;height:100%;object-fit:cover;"/>`: "👤"}
+      </div>
+      <div>
+        <label style="display:inline-flex;align-items:center;gap:0.4rem;background:rgba(255,140,0,0.08);
+          border:1px solid var(--marigold-dim);border-radius:var(--radius);padding:0.4rem 1rem;
+          font-family:var(--font-display);font-size:0.78rem;cursor:pointer;letter-spacing:0.04em;">
+          <input type="file" id="editPhotoInput" accept=".jpg,.jpeg,.png,.webp" style="display:none;"/>
+          📷 Tukar / Change
+        </label>
+        <div id="editPhotoPreviewWrap" style="display:none;margin-top:0.5rem;display:flex;align-items:center;gap:0.5rem;">
+          <img id="editPhotoPreviewImg" src="" style="width:60px;height:75px;object-fit:cover;border-radius:6px;border:2px solid var(--marigold);"/>
+          <button type="button" id="editPhotoCancelBtn" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1.1rem;">✖</button>
+        </div>
+        <p class="field-hint" style="margin-top:0.3rem;">JPG/PNG/WEBP, maks 4MB</p>
+        <span class="error-msg" id="err-editPhoto"></span>
+      </div>
+    </div>
+  </div>
 
-  if (screen === "marital") {
-    const current = a.maritalStatus;
-    let displayText = MARITAL_MAP[current] || "—";
-    if ((current==="engaged"||current==="married") && a.partnerName) {
-      displayText += ` — ${a.partnerName}`;
-    }
-    document.getElementById("currentMarital").textContent = displayText;
+  <div class="form-grid">
+    <div class="form-group full-width">
+      <label class="form-label">Nama Penuh / Full Name <span class="required">*</span></label>
+      <input type="text" id="ea-fullName" class="form-input" value="${escHtml(a.fullName||"")}"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">No. KP / IC No.</label>
+      <input type="text" id="ea-icNo" class="form-input" value="${escHtml(icFmt)}" maxlength="14"
+        ${nc?'disabled style="opacity:0.4;cursor:not-allowed;"':""}/>
+      ${nc?`<span class="field-hint" style="font-style:italic;">Tidak berkaitan / Not applicable</span>`:""}
+    </div>
+    <div class="form-group">
+      <label class="form-label">Jantina / Gender</label>
+      <div class="checkbox-group">
+        <label class="checkbox-label"><input type="radio" name="ea-gender" value="male" ${a.gender==="male"?"checked":""}/><span class="custom-radio"></span>Lelaki / Male</label>
+        <label class="checkbox-label"><input type="radio" name="ea-gender" value="female" ${a.gender==="female"?"checked":""}/><span class="custom-radio"></span>Perempuan / Female</label>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Tarikh Lahir / DOB</label>
+      <input type="date" id="ea-dob" class="form-input" value="${escHtml(a.dob||"")}"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Bangsa / Race</label>
+      <input type="text" id="ea-race" class="form-input" value="${escHtml(a.race||"")}"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">No. Telefon / Phone</label>
+      <input type="tel" id="ea-phoneNumber" class="form-input" value="${escHtml(a.phoneNumber||"")}"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Pekerjaan / Occupation</label>
+      <input type="text" id="ea-occupation" class="form-input" value="${escHtml(a.occupation||"")}"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Status Perkahwinan / Marital Status</label>
+      <select id="ea-maritalStatus" class="form-input form-select">${msOpts}</select>
+    </div>
+    <div class="form-group" id="ea-partnerGroup" style="${(a.maritalStatus==="engaged"||a.maritalStatus==="married")?"":"display:none"}">
+      <label class="form-label">Nama Pasangan / Partner Name</label>
+      <input type="text" id="ea-partnerName" class="form-input" value="${escHtml(a.partnerName||"")}"/>
+    </div>
+    <div class="form-group" id="ea-latePartnerGroup" style="${a.maritalStatus==="widowed"?"":"display:none"}">
+      <label class="form-label">Nama Allahyarham</label>
+      <input type="text" id="ea-latePartnerName" class="form-input" value="${escHtml(a.latePartnerName||"")}"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Status Pembaptisan / Baptism</label>
+      <div class="checkbox-group">
+        <label class="checkbox-label"><input type="radio" name="ea-baptism" value="baptised" ${a.baptismStatus==="baptised"?"checked":""}/><span class="custom-radio"></span>Sudah Dibaptis</label>
+        <label class="checkbox-label"><input type="radio" name="ea-baptism" value="notBaptised" ${a.baptismStatus==="notBaptised"?"checked":""}/><span class="custom-radio"></span>Belum Dibaptis</label>
+      </div>
+    </div>
+    <div class="form-group" id="ea-baptismYrGroup" style="${a.baptismStatus==="baptised"?"":"display:none"}">
+      <label class="form-label">Tahun Pembaptisan</label>
+      <input type="number" id="ea-baptismYear" class="form-input" value="${escHtml(a.baptismYear||"")}" min="1920" max="2099" style="max-width:140px;" oninput="this.value=this.value.replace(/[^0-9]/g,'').substring(0,4)"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Warganegara / Citizenship</label>
+      <div class="checkbox-group">
+        <label class="checkbox-label"><input type="radio" name="ea-citizenship" value="citizen" ${!nc?"checked":""}/><span class="custom-radio"></span>Warganegara Malaysia</label>
+        <label class="checkbox-label"><input type="radio" name="ea-citizenship" value="nonCitizen" ${nc?"checked":""}/><span class="custom-radio"></span>Bukan Warganegara</label>
+      </div>
+    </div>
+    <div class="form-group" id="ea-countryGroup" style="${nc?"":"display:none"}">
+      <label class="form-label">Negara Asal / Country of Origin</label>
+      <input type="text" id="ea-countryOfOrigin" class="form-input" value="${escHtml(a.countryOfOrigin||"")}"/>
+    </div>
+    <div class="form-group" id="ea-foreignIDGroup" style="${nc?"":"display:none"}">
+      <label class="form-label">Nombor ID / ID Number</label>
+      <input type="text" id="ea-foreignID" class="form-input" value="${escHtml(a.foreignID||"")}"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Gereja Asal / Original Church</label>
+      <input type="text" id="ea-originalChurch" class="form-input" value="${escHtml(a.originalChurch||"")}"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Tahun Menyertai OTR</label>
+      <input type="text" id="ea-yearJoining" class="form-input" value="${escHtml(a.yearJoining||"")}"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Jawatan Dalam Komsel</label>
+      <div style="display:flex;flex-direction:column;gap:0.35rem;">
+        ${["Pastoral","Ketua Zon","Ketua Komsel","Ahli Komsel"].map(r=>`
+          <label class="checkbox-label"><input type="radio" name="ea-memberRole" value="${r}" ${a.memberRole===r?"checked":""}/>
+          <span class="custom-radio"></span>${r}</label>`).join("")}
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Kod Komsel / Cell Code</label>
+      <input type="text" id="ea-komselCode" class="form-input" value="${escHtml(a.komselCode||"")}" style="text-transform:uppercase;"/>
+    </div>
+    <div class="form-group full-width">
+      <label class="form-label">Alamat / Address</label>
+      <textarea id="ea-currentAddress" class="form-input form-textarea" rows="3">${escHtml(a.currentAddress||"")}</textarea>
+    </div>
+  </div>`;
+}
 
-    // Populate dropdown excluding current status
-    const sel = document.getElementById("newMarital");
-    sel.innerHTML = `<option value="">-- Pilih / Select --</option>`;
-    Object.entries(MARITAL_MAP).forEach(([val,label]) => {
-      if (val !== current) {
-        const opt = document.createElement("option");
-        opt.value = val; opt.textContent = label;
-        sel.appendChild(opt);
-      }
+function wireSectionAEvents() {
+  // Marital toggle
+  document.getElementById("ea-maritalStatus")?.addEventListener("change", function() {
+    const pg = document.getElementById("ea-partnerGroup");
+    const lg = document.getElementById("ea-latePartnerGroup");
+    if (pg) pg.style.display = (this.value==="engaged"||this.value==="married")?"":"none";
+    if (lg) lg.style.display = this.value==="widowed"?"":"none";
+  });
+  // Baptism toggle
+  document.querySelectorAll('input[name="ea-baptism"]').forEach(r =>
+    r.addEventListener("change", function() {
+      const bg = document.getElementById("ea-baptismYrGroup");
+      if (bg) bg.style.display = this.value==="baptised"?"":"none";
+    })
+  );
+  // Citizenship toggle
+  document.querySelectorAll('input[name="ea-citizenship"]').forEach(r =>
+    r.addEventListener("change", function() {
+      const nc = this.value==="nonCitizen";
+      const icEl = document.getElementById("ea-icNo");
+      document.getElementById("ea-countryGroup").style.display  = nc?"":"none";
+      document.getElementById("ea-foreignIDGroup").style.display= nc?"":"none";
+      if (icEl) { icEl.disabled=nc; icEl.style.opacity=nc?"0.4":""; icEl.style.cursor=nc?"not-allowed":""; }
+    })
+  );
+  // IC format
+  document.getElementById("ea-icNo")?.addEventListener("input", function() { this.value=formatIC(this.value); });
+  // Photo
+  document.getElementById("editPhotoInput")?.addEventListener("change", function() {
+    const file = this.files[0]; if (!file) return;
+    const errEl = document.getElementById("err-editPhoto");
+    if (file.size>4*1024*1024) { errEl.textContent="Saiz fail melebihi 4MB"; return; }
+    errEl.textContent="Memproses...";
+    compressImage(file, (dataURL) => {
+      newPhotoDataURL = dataURL;
+      document.getElementById("editPhotoPreviewImg").src = dataURL;
+      document.getElementById("editPhotoPreviewWrap").style.display="flex";
+      errEl.textContent="";
     });
-    document.getElementById("partnerNameField").classList.remove("visible");
-    document.getElementById("newPartnerName").value = "";
-    document.getElementById("btnSaveMarital").disabled = true;
-    document.getElementById("err-newMarital").textContent = "";
-    document.getElementById("err-newPartnerName").textContent = "";
-  }
+  });
+  document.getElementById("editPhotoCancelBtn")?.addEventListener("click", () => {
+    newPhotoDataURL=null;
+    document.getElementById("editPhotoPreviewWrap").style.display="none";
+    document.getElementById("editPhotoInput").value="";
+  });
+}
 
-  if (screen === "baptism") {
-    // Reset
-    document.querySelectorAll('input[name="baptismAnswer"]').forEach(r => r.checked=false);
-    document.getElementById("baptismYearSection").classList.remove("visible");
-    document.getElementById("newBaptismYear").value = "";
-    document.getElementById("btnSaveBaptism").disabled = true;
-    document.getElementById("err-newBaptismYear").textContent = "";
-  }
+// ══════════════════════════════════════════════
+// SECTION B — Services
+// ══════════════════════════════════════════════
+const SERVICE_LIST=[
+  ["worship","Pujian & Penyembahan / Worship & Praise"],
+  ["prayer","Tim Doa / Prayer Team"],
+  ["multimedia","Multimedia"],
+  ["hospitality","Hospitaliti / Hospitality"],
+  ["children","Pelayan Kanak-kanak / Children's Ministry"],
+  ["youth","Pelayanan Remaja / Youth Ministry"],
+  ["evangelism","Penjangkauan / Evangelism"],
+  ["transport","Pengangkutan / Transport"],
+  ["music","Muzik / Music"],
+  ["ushering","Penyambut Tetamu / Ushering"],
+  ["sound","Jurusuara / Sound System"],
+  ["cleaning","Kebersihan / Cleaning"],
+  ["finance","Kewangan / Finance"],
+  ["pastoral","Pembantu Peribadi Pastor & Penceramah"],
+  ["security","Keselamatan / Security"],
+  ["photography","Fotografi / Photography"],
+  ["decoration","Hiasan / Decoration"],
+  ["it","IT & Teknologi"],
+  ["catering","Katering / Catering"],
+  ["counselling","Kaunseling / Counselling"],
+  ["administration","Pentadbiran / Administration"],
+  ["drama","Drama & Seni / Drama & Arts"],
+  ["others","Lain-lain / Others"],
+];
 
-  if (screen === "komsel") {
-    document.getElementById("currentKomsel").textContent =
-      a.komselCode || "Tiada data / No data";
-    const inp = document.getElementById("newKomsel");
-    inp.value = "";
-    document.getElementById("komselUpdateBadge").className = "komsel-valid-badge";
-    document.getElementById("btnSaveKomsel").disabled = true;
-    document.getElementById("err-newKomsel").textContent = "";
-  }
+function buildSectionB(b) {
+  const svcs = b.services||{};
+  return `<div class="section-header"><div class="section-badge">B</div>
+    <div><h2 class="section-title">Pelayanan / Services</h2></div></div>
+  <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
+    <table style="width:100%;border-collapse:collapse;min-width:360px;">
+      <thead><tr style="background:var(--bg-header);">
+        <th style="padding:0.6rem 0.8rem;text-align:left;font-family:var(--font-display);font-size:0.75rem;color:var(--marigold-bright);">Pelayanan / Service</th>
+        <th style="padding:0.6rem;text-align:center;font-family:var(--font-display);font-size:0.7rem;color:var(--marigold-bright);">Terlibat<br/><em>Involved</em></th>
+        <th style="padding:0.6rem;text-align:center;font-family:var(--font-display);font-size:0.7rem;color:var(--marigold-bright);">Ingin Sertai<br/><em>Want to Join</em></th>
+      </tr></thead>
+      <tbody>${SERVICE_LIST.map(([key,label])=>{
+        const sv=svcs[key]||{};
+        return `<tr style="border-bottom:1px solid var(--border-card);">
+          <td style="padding:0.5rem 0.8rem;font-size:0.9rem;color:var(--text-primary);">${label}</td>
+          <td style="text-align:center;"><input type="checkbox" class="svc-current" data-key="${key}" ${sv.current?"checked":""}/></td>
+          <td style="text-align:center;"><input type="checkbox" class="svc-join" data-key="${key}" ${sv.join?"checked":""}/></td>
+        </tr>`;
+      }).join("")}</tbody>
+    </table>
+  </div>`;
+}
 
-  if (screen === "children") {
-    editChildren = JSON.parse(JSON.stringify(memberData.sectionC?.children || []));
-    renderChildrenEdit();
-  }
+// ══════════════════════════════════════════════
+// SECTION C — Children
+// ══════════════════════════════════════════════
+function buildSectionC(c) {
+  const kids = (c.children||[]).filter(k=>k.name?.trim()&&k.gender);
+  return `<div class="section-header"><div class="section-badge">C</div>
+    <div><h2 class="section-title">Kanak-kanak / Children (≤12 tahun)</h2></div></div>
+  <div id="ec-childList" style="display:flex;flex-direction:column;gap:0.8rem;margin-bottom:1rem;">
+    ${kids.map((k,i)=>childRowHTML(i,k)).join("")}
+  </div>
+  <button type="button" class="btn btn-secondary" id="ec-addChild" style="font-size:0.85rem;">+ Tambah Anak / Add Child</button>`;
+}
 
-  if (screen === "photo") {
-    // Show current photo if available
-    const preview = document.getElementById("currentPhotoPreview");
-    if (memberData.photoURL) {
-      preview.innerHTML = `<img src="${memberData.photoURL}" style="width:100%;height:100%;object-fit:cover;" alt="Current photo"/>`;
-    } else {
-      preview.innerHTML = "👤";
-    }
-    // Reset upload UI
-    updatePhotoDataURL = null;
-    document.getElementById("updatePhotoPreviewWrap").classList.remove("visible");
-    document.getElementById("updatePhotoLabel").style.display = "";
-    document.getElementById("updatePhotoInput").value = "";
-    document.getElementById("btnSavePhoto").disabled = true;
-    document.getElementById("err-updatePhoto").textContent = "";
+function childRowHTML(i, k) {
+  return `<div class="child-card" data-idx="${i}" style="background:var(--bg-card);border:1px solid var(--border-card);border-radius:var(--radius);padding:0.8rem;display:flex;gap:0.8rem;align-items:center;flex-wrap:wrap;">
+    <input type="text" class="form-input ec-childName" data-idx="${i}" value="${escHtml(k?.name||"")}" placeholder="Nama anak / Child's name" style="flex:1;min-width:130px;"/>
+    <div style="display:flex;gap:0.5rem;">
+      <label class="checkbox-label"><input type="radio" name="ec-g-${i}" value="male" ${k?.gender==="male"?"checked":""}/><span class="custom-radio"></span>L</label>
+      <label class="checkbox-label"><input type="radio" name="ec-g-${i}" value="female" ${k?.gender==="female"?"checked":""}/><span class="custom-radio"></span>P</label>
+    </div>
+    <button type="button" class="ec-remove" data-idx="${i}" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1.1rem;padding:0 0.2rem;">✖</button>
+  </div>`;
+}
+
+function wireSectionCEvents() {
+  const list = document.getElementById("ec-childList");
+  document.getElementById("ec-addChild")?.addEventListener("click", () => {
+    const idx = list.querySelectorAll(".child-card").length;
+    list.insertAdjacentHTML("beforeend", childRowHTML(idx,{}));
+    bindRemoveButtons();
+  });
+  bindRemoveButtons();
+
+  function bindRemoveButtons() {
+    document.querySelectorAll(".ec-remove").forEach(btn => {
+      btn.onclick = () => { btn.closest(".child-card").remove(); reIndex(); };
+    });
+  }
+  function reIndex() {
+    document.querySelectorAll(".child-card").forEach((card,i) => {
+      card.dataset.idx=i;
+      card.querySelector(".ec-childName").dataset.idx=i;
+      card.querySelector(".ec-remove").dataset.idx=i;
+      card.querySelectorAll("input[type=radio]").forEach(r => r.name=`ec-g-${i}`);
+    });
   }
 }
 
-// ═══════════════════════════════════════════════
-// PHOTO UPDATE
-// ═══════════════════════════════════════════════
-let updatePhotoDataURL = null;
+// ══════════════════════════════════════════════
+// SECTION D & E — View only
+// ══════════════════════════════════════════════
+function buildSectionD(d) {
+  const pledges=["Saya menyokong visi gereja BEM On The Rock.","Saya mendokong & terlibat dalam pelayanan yang dipercayakan kepada saya.","Saya akan menghadiri ibadah secara konsisten.","Saya akan menyertai kumpulan sel (KOMSEL).","Saya akan mendukung gereja secara kewangan.","Saya akan hidup dalam kekudusan.","Saya akan menjadi saksi bagi Kristus.","Saya akan patuh kepada kepimpinan gereja."];
+  return `<div class="section-header"><div class="section-badge">D</div>
+    <div><h2 class="section-title">Ikrar / Pledge</h2>
+    <p class="section-subtitle" style="color:var(--text-muted);font-style:italic;">Tidak boleh diedit / Not editable</p></div></div>
+  <div style="background:rgba(255,140,0,0.04);border:1px solid rgba(255,140,0,0.15);border-radius:var(--radius);padding:1rem 1.2rem;opacity:0.75;">
+    ${pledges.map((p,i)=>`<div style="display:flex;gap:0.6rem;margin-bottom:0.5rem;">
+      <span style="color:var(--marigold);font-weight:700;min-width:18px;">${i+1}.</span>
+      <span style="font-size:0.9rem;color:var(--text-primary);">${p}</span>
+    </div>`).join("")}
+    <p style="font-size:0.85rem;color:var(--text-muted);margin-top:0.8rem;font-style:italic;">Ikrar dipersetujui: ${d.pledgeAgreed?"Ya / Yes":"—"}</p>
+  </div>`;
+}
 
-// ── Client-side image compression (shared) ──
-function compressImage(file, callback) {
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    const img = new Image();
-    img.onload = () => {
-      const size = Math.min(img.width, img.height);
-      const sx   = (img.width  - size) / 2;
-      const sy   = (img.height - size) / 2;
-      const canvas = document.createElement("canvas");
-      canvas.width = 300; canvas.height = 400;
-      canvas.getContext("2d").drawImage(img, sx, sy, size, size, 0, 0, 300, 400);
-      canvas.toBlob((blob) => {
-        const r = new FileReader();
-        r.onload = (ev) => callback(ev.target.result);
-        r.readAsDataURL(blob);
-      }, "image/jpeg", 0.6);
+function buildSectionE(e) {
+  return `<div class="section-header"><div class="section-badge">E</div>
+    <div><h2 class="section-title">Pengakuan / Confession</h2>
+    <p class="section-subtitle" style="color:var(--text-muted);font-style:italic;">Tidak boleh diedit / Not editable</p></div></div>
+  <div style="background:rgba(255,140,0,0.04);border:1px solid rgba(255,140,0,0.15);border-radius:var(--radius);padding:1rem 1.2rem;opacity:0.75;">
+    ${[["Kod Komsel",e.komsel],["Sejak",e.since],["Ketua Komsel",e.leader],["Nama",e.name],["Tarikh",e.date]]
+      .map(([l,v])=>`<div style="display:flex;gap:0.6rem;margin-bottom:0.4rem;font-size:0.9rem;">
+        <span style="color:var(--marigold);min-width:160px;">${l}:</span>
+        <span style="color:var(--text-primary);">${v||"—"}</span>
+      </div>`).join("")}
+  </div>`;
+}
+
+// ══════════════════════════════════════════════
+// COLLECT EDITS
+// ══════════════════════════════════════════════
+const FIELD_LABELS={
+  fullName:"Nama Penuh",icNo:"No. KP",gender:"Jantina",dob:"Tarikh Lahir",
+  race:"Bangsa",phoneNumber:"No. Telefon",occupation:"Pekerjaan",
+  maritalStatus:"Status Perkahwinan",partnerName:"Nama Pasangan",
+  latePartnerName:"Nama Allahyarham",baptismStatus:"Status Pembaptisan",
+  baptismYear:"Tahun Pembaptisan",citizenship:"Warganegara",
+  countryOfOrigin:"Negara Asal",foreignID:"Nombor ID",
+  originalChurch:"Gereja Asal",yearJoining:"Tahun Menyertai",
+  memberRole:"Jawatan Komsel",komselCode:"Kod Komsel",currentAddress:"Alamat",
+};
+
+function collectEdits() {
+  const a = memberData.sectionA||{};
+  const newA = {
+    fullName:       (document.getElementById("ea-fullName")?.value||"").trim().toUpperCase()||a.fullName||"",
+    icNo:           document.getElementById("ea-icNo")?.value?.replace(/-/g,"")||a.icNo||"",
+    gender:         document.querySelector('input[name="ea-gender"]:checked')?.value||a.gender||"",
+    dob:            document.getElementById("ea-dob")?.value||a.dob||"",
+    race:           document.getElementById("ea-race")?.value||a.race||"",
+    phoneNumber:    document.getElementById("ea-phoneNumber")?.value||a.phoneNumber||"",
+    occupation:     document.getElementById("ea-occupation")?.value||a.occupation||"",
+    maritalStatus:  document.getElementById("ea-maritalStatus")?.value||a.maritalStatus||"",
+    partnerName:    (document.getElementById("ea-partnerName")?.value||"").toUpperCase()||a.partnerName||"",
+    latePartnerName:(document.getElementById("ea-latePartnerName")?.value||"").toUpperCase()||a.latePartnerName||"",
+    baptismStatus:  document.querySelector('input[name="ea-baptism"]:checked')?.value||a.baptismStatus||"",
+    baptismYear:    document.getElementById("ea-baptismYear")?.value||a.baptismYear||"",
+    citizenship:    document.querySelector('input[name="ea-citizenship"]:checked')?.value||a.citizenship||"",
+    countryOfOrigin:document.getElementById("ea-countryOfOrigin")?.value||a.countryOfOrigin||"",
+    foreignID:      document.getElementById("ea-foreignID")?.value||a.foreignID||"",
+    originalChurch: document.getElementById("ea-originalChurch")?.value||a.originalChurch||"",
+    yearJoining:    document.getElementById("ea-yearJoining")?.value||a.yearJoining||"",
+    memberRole:     document.querySelector('input[name="ea-memberRole"]:checked')?.value||a.memberRole||"",
+    komselCode:     (document.getElementById("ea-komselCode")?.value||"").toUpperCase()||a.komselCode||"",
+    currentAddress: document.getElementById("ea-currentAddress")?.value||a.currentAddress||"",
+  };
+
+  const newServices = JSON.parse(JSON.stringify((memberData.sectionB||{}).services||{}));
+  document.querySelectorAll(".svc-current").forEach(cb => {
+    const k=cb.dataset.key; if(!newServices[k]) newServices[k]={};
+    newServices[k].current=cb.checked;
+  });
+  document.querySelectorAll(".svc-join").forEach(cb => {
+    const k=cb.dataset.key; if(!newServices[k]) newServices[k]={};
+    newServices[k].join=cb.checked;
+  });
+
+  const newChildren=[];
+  document.querySelectorAll(".child-card").forEach(card=>{
+    const idx=card.dataset.idx;
+    const name=(card.querySelector(".ec-childName")?.value||"").trim();
+    const gender=card.querySelector(`input[name="ec-g-${idx}"]:checked`)?.value||"";
+    if(name&&gender) newChildren.push({name,gender});
+  });
+
+  return { newA, newServices, newChildren };
+}
+
+// ══════════════════════════════════════════════
+// CHANGES MODAL
+// ══════════════════════════════════════════════
+function showChangesModal() {
+  const { newA, newServices, newChildren } = collectEdits();
+  const oldA = memberData.sectionA||{};
+  const rows = [];
+
+  Object.keys(FIELD_LABELS).forEach(key => {
+    const before=String(oldA[key]||"").trim();
+    const after =String(newA[key]||"").trim();
+    if(before!==after) rows.push({section:"A — Peribadi",field:FIELD_LABELS[key],before:before||"—",after:after||"—"});
+  });
+
+  const oldSvcs=(memberData.sectionB||{}).services||{};
+  SERVICE_LIST.forEach(([key,label])=>{
+    const oc=!!(oldSvcs[key]?.current), nc=!!(newServices[key]?.current);
+    const oj=!!(oldSvcs[key]?.join),    nj=!!(newServices[key]?.join);
+    if(oc!==nc) rows.push({section:"B — Pelayanan",field:`${label} (Terlibat)`,before:oc?"Ya":"Tidak",after:nc?"Ya":"Tidak"});
+    if(oj!==nj) rows.push({section:"B — Pelayanan",field:`${label} (Ingin Sertai)`,before:oj?"Ya":"Tidak",after:nj?"Ya":"Tidak"});
+  });
+
+  const gMap={male:"Lelaki",female:"Perempuan"};
+  const oldKids=(memberData.sectionC?.children||[]).filter(k=>k.name?.trim()&&k.gender);
+  if(JSON.stringify(oldKids.map(k=>({n:k.name,g:k.gender})))!==JSON.stringify(newChildren.map(k=>({n:k.name,g:k.gender})))){
+    const fmt=kids=>kids.length?kids.map(k=>`${k.name} (${gMap[k.gender]||"—"})`).join(", "):"Tiada";
+    rows.push({section:"C — Kanak-kanak",field:"Senarai Anak",before:fmt(oldKids),after:fmt(newChildren)});
+  }
+
+  if(newPhotoDataURL) rows.push({section:"A — Peribadi",field:"Gambar / Photo",before:"(gambar lama)",after:"(gambar baru)"});
+
+  const tbody=document.getElementById("changesTableBody");
+  const noMsg=document.getElementById("noChangesMsg");
+  const table=document.getElementById("changesTable");
+
+  if(!rows.length){
+    tbody.innerHTML=""; table.style.display="none"; noMsg.style.display="";
+  } else {
+    table.style.display=""; noMsg.style.display="none";
+    tbody.innerHTML=rows.map(r=>`<tr style="border-bottom:1px solid var(--border-card);">
+      <td style="padding:0.5rem 0.7rem;font-size:0.8rem;color:var(--text-muted);white-space:nowrap;">${r.section}</td>
+      <td style="padding:0.5rem 0.7rem;font-size:0.88rem;font-weight:600;color:var(--text-primary);">${r.field}</td>
+      <td style="padding:0.5rem 0.7rem;font-size:0.85rem;color:#E05555;">${r.before}</td>
+      <td style="padding:0.5rem 0.7rem;font-size:0.85rem;color:#4CAF7D;">${r.after}</td>
+    </tr>`).join("");
+  }
+
+  window._pendingEdits = { newA, newServices, newChildren };
+  document.getElementById("changesModal").style.display = "flex";
+}
+
+document.getElementById("btnBackToEdit").addEventListener("click", () => {
+  document.getElementById("changesModal").style.display="none";
+});
+
+document.getElementById("btnSaveChanges").addEventListener("click", async () => {
+  const btn=document.getElementById("btnSaveChanges");
+  btn.disabled=true; btn.textContent="Menyimpan... / Saving...";
+  try {
+    const {newA,newServices,newChildren}=window._pendingEdits;
+    const payload={
+      name:              newA.fullName,
+      sectionA:          newA,
+      "sectionB.services": newServices,
+      "sectionC.children": newChildren,
+      lastUpdated: firebase.firestore.FieldValue.serverTimestamp(),
     };
-    img.src = e.target.result;
+    if(newPhotoDataURL) payload.photoURL=newPhotoDataURL;
+    await db.collection("registrations").doc(memberDocId).update(payload);
+    document.getElementById("changesModal").style.display="none";
+    document.getElementById("screen-edit").style.display="none";
+    document.getElementById("screen-success").style.display="block";
+    window.scrollTo({top:0,behavior:"smooth"});
+  } catch(e) {
+    alert("Ralat menyimpan / Save error: "+e.message);
+    btn.disabled=false; btn.textContent="💾 Simpan / Save";
+  }
+});
+
+// ══════════════════════════════════════════════
+// IMAGE COMPRESSION
+// ══════════════════════════════════════════════
+function compressImage(file, callback) {
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const img=new Image();
+    img.onload=()=>{
+      const size=Math.min(img.width,img.height);
+      const sx=(img.width-size)/2, sy=(img.height-size)/2;
+      const canvas=document.createElement("canvas");
+      canvas.width=300; canvas.height=400;
+      canvas.getContext("2d").drawImage(img,sx,sy,size,size,0,0,300,400);
+      canvas.toBlob(blob=>{
+        const r2=new FileReader();
+        r2.onload=ev=>callback(ev.target.result);
+        r2.readAsDataURL(blob);
+      },"image/jpeg",0.6);
+    };
+    img.src=e.target.result;
   };
   reader.readAsDataURL(file);
-}
-
-document.getElementById("updatePhotoInput")?.addEventListener("change", function() {
-  const file = this.files[0];
-  if (!file) return;
-  const errEl = document.getElementById("err-updatePhoto");
-  if (file.size > 4 * 1024 * 1024) {
-    errEl.textContent = "Saiz fail melebihi 4MB / File size exceeds 4MB";
-    return;
-  }
-  errEl.textContent = "Memproses... / Processing...";
-  compressImage(file, (dataURL) => {
-    updatePhotoDataURL = dataURL;
-    const previewImg  = document.getElementById("updatePhotoPreviewImg");
-    const previewWrap = document.getElementById("updatePhotoPreviewWrap");
-    previewImg.src    = updatePhotoDataURL;
-    previewWrap.classList.add("visible");
-    document.getElementById("updatePhotoLabel").style.display = "none";
-    document.getElementById("btnSavePhoto").disabled = false;
-    errEl.textContent = "";
-  });
-});
-
-document.getElementById("updatePhotoChangeBtn")?.addEventListener("click", () => {
-  updatePhotoDataURL = null;
-  document.getElementById("updatePhotoPreviewImg").src = "";
-  document.getElementById("updatePhotoPreviewWrap").classList.remove("visible");
-  document.getElementById("updatePhotoLabel").style.display = "";
-  document.getElementById("updatePhotoInput").value = "";
-  document.getElementById("btnSavePhoto").disabled = true;
-});
-
-document.getElementById("btnSavePhoto")?.addEventListener("click", async () => {
-  if (!updatePhotoDataURL || !memberDocId) return;
-  const btn = document.getElementById("btnSavePhoto");
-  btn.disabled = true; btn.textContent = "Menyimpan... / Saving...";
-  try {
-    await db.collection("registrations").doc(memberDocId).update({
-      photoURL:    updatePhotoDataURL,
-      lastUpdated: firebase.firestore.FieldValue.serverTimestamp(),
-    });
-    const snap = await db.collection("registrations").doc(memberDocId).get();
-    memberData = snap.data();
-    showSuccessAndReturn("Gambar Profil / Profile Picture");
-  } catch(e) {
-    document.getElementById("err-updatePhoto").textContent = "Ralat / Error: " + e.message;
-    btn.disabled = false; btn.textContent = "💾 Simpan Gambar Baharu / Save New Photo";
-  }
-});
-document.getElementById("newPhone").addEventListener("input", function() {
-  this.value = formatPhone(this.value);
-  const valid = this.value.replace(/\D/g,"").length >= 9;
-  document.getElementById("btnSavePhone").disabled = !valid;
-});
-
-document.getElementById("btnSavePhone").addEventListener("click", async () => {
-  const val = document.getElementById("newPhone").value.trim();
-  await saveField("sectionA.phoneNumber", val,
-    "Nombor Telefon / Phone Number", "screen-phone", "err-newPhone");
-});
-
-// ═══════════════════════════════════════════════
-// OCCUPATION
-// ═══════════════════════════════════════════════
-document.getElementById("newOccupation").addEventListener("input", function() {
-  document.getElementById("btnSaveOccupation").disabled = !this.value.trim();
-});
-
-document.getElementById("btnSaveOccupation").addEventListener("click", async () => {
-  const val = document.getElementById("newOccupation").value.trim();
-  await saveField("sectionA.occupation", val,
-    "Pekerjaan / Occupation", "screen-occupation", "err-newOccupation");
-});
-
-// ═══════════════════════════════════════════════
-// MARITAL STATUS
-// ═══════════════════════════════════════════════
-document.getElementById("newMarital").addEventListener("change", function() {
-  const v = this.value;
-  const partnerField = document.getElementById("partnerNameField");
-  const partnerInput = document.getElementById("newPartnerName");
-  const a = memberData.sectionA || {};
-
-  if (v==="engaged" || v==="married") {
-    partnerField.classList.add("visible");
-    // Pre-fill with existing partner name if transitioning engaged→married
-    if (a.partnerName) partnerInput.value = a.partnerName;
-  } else if (v==="widowed") {
-    partnerField.classList.add("visible");
-    if (a.partnerName) partnerInput.value = a.partnerName;
-  } else {
-    partnerField.classList.remove("visible");
-    partnerInput.value = "";
-  }
-  updateMaritalSaveBtn();
-});
-
-document.getElementById("newPartnerName").addEventListener("input", updateMaritalSaveBtn);
-
-function updateMaritalSaveBtn() {
-  const v = document.getElementById("newMarital").value;
-  const p = document.getElementById("newPartnerName").value.trim();
-  const needsPartner = (v==="engaged"||v==="married"||v==="widowed");
-  document.getElementById("btnSaveMarital").disabled = !v || (needsPartner && !p);
-}
-
-document.getElementById("btnSaveMarital").addEventListener("click", async () => {
-  const v = document.getElementById("newMarital").value;
-  const p = document.getElementById("newPartnerName").value.trim();
-  if (!v) return;
-
-  const updates = { "sectionA.maritalStatus": v };
-  if (v==="engaged"||v==="married") { updates["sectionA.partnerName"]=""; updates["sectionA.partnerName"]=p; }
-  else if (v==="widowed") { updates["sectionA.latePartnerName"]=p; updates["sectionA.partnerName"]=""; }
-  else { updates["sectionA.partnerName"]=""; updates["sectionA.latePartnerName"]=""; }
-
-  try {
-    await db.collection("registrations").doc(memberDocId).update({
-      ...updates,
-      lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    // Refresh local data
-    const snap = await db.collection("registrations").doc(memberDocId).get();
-    memberData = snap.data();
-    showSuccessAndReturn("Status Perkahwinan / Marital Status");
-  } catch(e) {
-    document.getElementById("err-newMarital").textContent = "Ralat / Error: "+e.message;
-  }
-});
-
-// ═══════════════════════════════════════════════
-// BAPTISM
-// ═══════════════════════════════════════════════
-document.querySelectorAll('input[name="baptismAnswer"]').forEach(radio => {
-  radio.addEventListener("change", function() {
-    const yearSection = document.getElementById("baptismYearSection");
-    const saveBtn     = document.getElementById("btnSaveBaptism");
-    if (this.value==="yes") {
-      yearSection.classList.add("visible");
-      saveBtn.disabled = !document.getElementById("newBaptismYear").value;
-    } else {
-      yearSection.classList.remove("visible");
-      saveBtn.disabled = true;
-      // Show "not yet" dialog
-      document.getElementById("baptismNotYetModal").style.display = "flex";
-      this.checked = false;
-    }
-  });
-});
-
-document.getElementById("newBaptismYear").addEventListener("input", function() {
-  const yr = parseInt(this.value);
-  document.getElementById("btnSaveBaptism").disabled = !(yr>=1920 && yr<=new Date().getFullYear());
-});
-
-document.getElementById("btnSaveBaptism").addEventListener("click", async () => {
-  const yr = document.getElementById("newBaptismYear").value;
-  try {
-    await db.collection("registrations").doc(memberDocId).update({
-      "sectionA.baptismStatus": "baptised",
-      "sectionA.baptismYear":    yr,
-      lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    const snap = await db.collection("registrations").doc(memberDocId).get();
-    memberData = snap.data();
-    // Disable baptism button in menu since now baptised
-    const baptismBtn = document.getElementById("btnBaptismMenu");
-    if (baptismBtn) baptismBtn.disabled = true;
-    showSuccessAndReturn("Status Pembaptisan / Baptism Status");
-  } catch(e) {
-    document.getElementById("err-newBaptismYear").textContent = "Ralat / Error: "+e.message;
-  }
-});
-
-document.getElementById("closeBaptismNotYet").addEventListener("click", () => {
-  document.getElementById("baptismNotYetModal").style.display = "none";
-  showScreen("screen-menu");
-});
-
-// ═══════════════════════════════════════════════
-// KOMSEL
-// ═══════════════════════════════════════════════
-document.getElementById("newKomsel").addEventListener("input", function() {
-  this.value = this.value.toUpperCase();
-  const val   = this.value.trim();
-  const badge = document.getElementById("komselUpdateBadge");
-  if (!val) { badge.className="komsel-valid-badge"; document.getElementById("btnSaveKomsel").disabled=true; return; }
-  const valid = isValidKomsel(val);
-  badge.className = `komsel-valid-badge ${valid?"valid":"invalid"}`;
-  badge.textContent = valid ? "✓ Kod sah / Valid code" : "✗ Kod tidak sah / Invalid code";
-  document.getElementById("btnSaveKomsel").disabled = !valid;
-});
-
-document.getElementById("btnSaveKomsel").addEventListener("click", async () => {
-  const val = document.getElementById("newKomsel").value.trim().toUpperCase();
-  await saveField("sectionA.komselCode", val,
-    "Kod Komsel / Cell Group Code", "screen-komsel", "err-newKomsel");
-});
-
-// ═══════════════════════════════════════════════
-// CHILDREN
-// ═══════════════════════════════════════════════
-function renderChildrenEdit() {
-  const list = document.getElementById("childrenEditList");
-  list.innerHTML = "";
-
-  editChildren.forEach((child, i) => {
-    const card = document.createElement("div");
-    card.className = "child-edit-card";
-    const num = i + 1;
-    card.innerHTML = `
-      <div class="child-edit-header">
-        <span class="child-edit-title">Anak Ke-${num} / Child No. ${num}</span>
-        <button type="button" class="btn-remove-child" data-index="${i}">✕ Padam / Remove</button>
-      </div>
-      <div class="form-grid">
-        <div class="form-group full-width">
-          <label class="form-label">Nama Penuh Anak / Child's Full Name</label>
-          <input type="text" class="form-input child-name-input" data-index="${i}"
-            value="${child.name||""}" placeholder="Masukkan nama penuh / Enter full name"/>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Jantina / Gender</label>
-          <div class="checkbox-group">
-            <label class="checkbox-label">
-              <input type="radio" name="childGenderEdit-${i}" value="male" ${child.gender==="male"?"checked":""}/>
-              <span class="custom-radio"></span>
-              Lelaki <em>/ Boy</em>
-            </label>
-            <label class="checkbox-label">
-              <input type="radio" name="childGenderEdit-${i}" value="female" ${child.gender==="female"?"checked":""}/>
-              <span class="custom-radio"></span>
-              Perempuan <em>/ Girl</em>
-            </label>
-          </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">MyKid / MyKid</label>
-          <input type="text" class="form-input child-mykid-input" data-index="${i}"
-            value="${child.myKid||""}" placeholder="cth/e.g. 120131-14-1234"/>
-        </div>
-      </div>`;
-
-    // Remove child
-    card.querySelector(".btn-remove-child").addEventListener("click", () => {
-      editChildren.splice(i, 1);
-      renderChildrenEdit();
-    });
-
-    // Sync name
-    card.querySelector(".child-name-input").addEventListener("input", function() {
-      editChildren[parseInt(this.dataset.index)].name = this.value;
-    });
-
-    // Sync mykid
-    card.querySelector(".child-mykid-input").addEventListener("input", function() {
-      editChildren[parseInt(this.dataset.index)].myKid = this.value;
-    });
-
-    // Sync gender
-    card.querySelectorAll(`input[name="childGenderEdit-${i}"]`).forEach(r => {
-      r.addEventListener("change", function() {
-        editChildren[i].gender = this.value;
-      });
-    });
-
-    list.appendChild(card);
-  });
-}
-
-document.getElementById("btnAddChildUpdate").addEventListener("click", () => {
-  editChildren.push({ name:"", gender:"", myKid:"" });
-  renderChildrenEdit();
-});
-
-document.getElementById("btnSaveChildren").addEventListener("click", async () => {
-  try {
-    await db.collection("registrations").doc(memberDocId).update({
-      "sectionC.children": editChildren,
-      lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    const snap = await db.collection("registrations").doc(memberDocId).get();
-    memberData = snap.data();
-    showSuccessAndReturn("Maklumat Anak / Children's Information");
-  } catch(e) {
-    alert("Ralat menyimpan / Save error: " + e.message);
-  }
-});
-
-// ═══════════════════════════════════════════════
-// GENERIC FIELD SAVE HELPER
-// ═══════════════════════════════════════════════
-async function saveField(firestorePath, value, fieldLabel, sourceScreen, errId) {
-  const btn = document.querySelector(`#${sourceScreen} .btn-primary`);
-  if (btn) { btn.disabled=true; btn.textContent="Menyimpan... / Saving..."; }
-  try {
-    await db.collection("registrations").doc(memberDocId).update({
-      [firestorePath]: value,
-      lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    // Refresh local member data
-    const snap = await db.collection("registrations").doc(memberDocId).get();
-    memberData  = snap.data();
-    showSuccessAndReturn(fieldLabel);
-  } catch(e) {
-    const errEl = document.getElementById(errId);
-    if (errEl) errEl.textContent = "Ralat / Error: " + e.message;
-    if (btn) { btn.disabled=false; btn.textContent="💾 Simpan / Save"; }
-  }
-}
-
-// ═══════════════════════════════════════════════
-// SHOW SUCCESS NOTICE & RETURN TO MENU
-// ═══════════════════════════════════════════════
-function showSuccessAndReturn(fieldLabel) {
-  const notice  = document.getElementById("updateSuccessNotice");
-  const textEl  = document.getElementById("updateSuccessText");
-  textEl.innerHTML = `Berjaya mengemas kini <strong>${fieldLabel}</strong>! / Successfully updated your <strong>${fieldLabel}</strong>!`;
-  notice.style.display = "flex";
-  // Refresh member banner with updated data
-  populateMenu();
-  showScreen("screen-menu");
-  window.scrollTo({ top:0, behavior:"smooth" });
-  // Auto-hide after 6 seconds
-  setTimeout(() => { notice.style.display="none"; }, 6000);
 }
