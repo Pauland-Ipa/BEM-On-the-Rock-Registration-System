@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════
-   BEM On The Rock — main.js
+   BEM On The Rock — main.js  v2.1
 ═══════════════════════════════════════════════ */
 
 "use strict";
@@ -744,20 +744,23 @@ function populateFormWithData(data) {
     localStorage.setItem("bem_otr_draft_sectionC", JSON.stringify({ children }));
   }
 
-  // ── Sections D & E — make read-only ──
+  // ── Sections D & E — make read-only (these are never editable) ──
   makeReadOnly("section-d");
   makeReadOnly("section-e");
-  // Also populate D and E for display
+
+  // Populate Section E fields with existing data for display (correct IDs)
+  if (e.komsel) setVal("confessionKomsel", e.komsel);
+  if (e.since)  setVal("confessionSince",  e.since);
+  if (e.leader) setVal("confessionLeader", e.leader);
+  if (e.name)   setVal("confessionName",   e.name);
+  if (e.date)   setVal("confessionDate",   e.date);
+
+  // Populate Section D pledge checkboxes as checked + disabled
   if (d.pledgeAgreed) {
     document.querySelectorAll('#section-d input[type="checkbox"]').forEach(cb => {
       cb.checked = true; cb.disabled = true;
     });
   }
-  if (e.komsel) setVal("komselE", e.komsel);
-  if (e.name)   setVal("nameE",   e.name);
-  if (e.leader) setVal("leaderE", e.leader);
-  if (e.since)  setVal("sinceE",  e.since);
-  if (e.date)   setVal("dateE",   e.date);
 
   // Navigate to section A to start editing
   navigateTo("a");
