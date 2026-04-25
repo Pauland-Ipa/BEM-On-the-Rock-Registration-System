@@ -35,26 +35,47 @@ function showScreen(id) {
   window.scrollTo({top:0,behavior:"smooth"});
 }
 
-// ── Auto-verify from ?ic= URL param (admin flow) — waits for Firebase auth ──
+// ── Auto-verify from URL params (admin flow uses ?docId=, user flow uses ?ic=) ──
 function tryAutoVerify() {
   const params  = new URLSearchParams(window.location.search);
+  const docId   = params.get("docId");
   const icParam = params.get("ic");
-  if (!icParam) return;
+  const isAdmin = params.get("admin") === "1";
 
-  // Wait for Firebase to be ready by hooking into auth state
+  if (!docId && !icParam) return;
+
   const unsubscribe = auth.onAuthStateChanged(async () => {
-    unsubscribe(); // only run once
+    unsubscribe();
     try {
-      const ic   = icParam.replace(/-/g,"");
-      const snap = await db.collection("registrations").where("icNo","==",ic).limit(1).get();
-      if (!snap.empty) {
-        memberDocId = snap.docs[0].id;
-        memberData  = snap.docs[0].data();
-        const icEl  = document.getElementById("verifyIC");
-        if (icEl) icEl.value = icParam;
-        showPreviewModal();
+      let snap;
+      if (docId) {
+        // Admin flow — load by doc ID directly, skip IC verify screen
+        const docSnap = await db.collection("registrations").doc(docId).get();
+        if (docSnap.exists) {
+          memberDocId = docSnap.id;
+          memberData  = docSnap.data();
+          if (isAdmin) {
+            // Go straight to preview without showing IC screen at all
+            showPreviewModal();
+          } else {
+            const icEl = document.getElementById("verifyIC");
+            if (icEl) icEl.value = icParam || "";
+            showPreviewModal();
+          }
+        }
+      } else if (icParam) {
+        // User flow — load by IC
+        const ic = icParam.replace(/-/g,"");
+        snap = await db.collection("registrations").where("icNo","==",ic).limit(1).get();
+        if (!snap.empty) {
+          memberDocId = snap.docs[0].id;
+          memberData  = snap.docs[0].data();
+          const icEl  = document.getElementById("verifyIC");
+          if (icEl) icEl.value = icParam;
+          showPreviewModal();
+        }
       }
-    } catch(e) { /* silent — fall back to manual entry */ }
+    } catch(e) { /* silent */ }
   });
 }
 
@@ -103,7 +124,23 @@ document.getElementById("btnVerifyIC").addEventListener("click", async () => {
 // PREVIEW MODAL
 // ══════════════════════════════════════════════
 function vRow(label, value) {
-  return `<div class="vf-row"><span class="vf-label">${label}:</span><span class="vf-value">${value||"—"}</span></div>`;
+  return `<div style="display:flex;flex-direction:column;gap:2px;padding:0.3rem 0;">
+    <span style="font-family:var(--font-display);font-size:0.72rem;letter-spacing:0.07em;
+      color:var(--marigold);font-style:italic;">${label}:</span>
+    <span style="font-size:0.95rem;color:var(--text-primary);font-weight:600;">${value||"—"}</span>
+  </div>`;
+}
+
+function sectionTitle(text) {
+  return `<div style="font-family:var(--font-display);font-size:0.78rem;letter-spacing:0.08em;
+    text-transform:uppercase;color:var(--marigold-bright);padding:0.8rem 0 0.4rem;
+    border-bottom:1.5px solid var(--marigold-dim);margin-bottom:0.6rem;margin-top:1rem;">
+    ${text}</div>`;
+}
+
+function vGrid(content) {
+  return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem 1.5rem;
+    margin-bottom:0.5rem;">${content}</div>`;
 }
 
 function showPreviewModal() {
@@ -113,47 +150,64 @@ function showPreviewModal() {
   const d = memberData.sectionD || {};
   const e = memberData.sectionE || {};
   const gMap  = { male:"Lelaki / Male", female:"Perempuan / Female" };
-  const msMap = { single:"Bujang",engaged:"Bertunang",married:"Berkahwin",divorced:"Bercerai",widowed:"Balu/Duda" };
+  const msMap = { single:"Bujang / Single", engaged:"Bertunang / Engaged",
+    married:"Berkahwin / Married", divorced:"Bercerai / Divorced", widowed:"Balu/Duda / Widowed" };
+  const bMap  = { baptised:"Sudah Dibaptis / Baptised", notBaptised:"Belum Dibaptis / Not Baptised" };
   const kids  = (c.children||[]).filter(k=>k.name?.trim()&&k.gender);
   const svcs  = b.services || {};
   const active= Object.entries(svcs).filter(([,v])=>v?.current).map(([k])=>k).join(", ")||"—";
+  const uid   = memberData.uniqueID || "—";
 
-  document.getElementById("previewModalName").textContent =
-    `📋 ${(a.fullName||memberData.name||"—").toUpperCase()}`;
+  document.getElementById("previewModalName").innerHTML =
+    `📋 <strong style="color:var(--marigold-bright)">${(a.fullName||memberData.name||"—").toUpperCase()}</strong>`;
 
   document.getElementById("previewModalBody").innerHTML = `
-    ${memberData.photoURL?`<div style="text-align:center;margin-bottom:1rem;">
-      <img src="${memberData.photoURL}" style="width:72px;height:90px;object-fit:cover;border-radius:6px;border:2px solid var(--marigold-dim);"/></div>`:""}
-    <div class="vf-section-title">A. Maklumat Peribadi / Personal Information</div>
-    <div class="vf-grid">
-      ${vRow("Nama / Name",         (a.fullName||"—").toUpperCase())}
-      ${vRow("No. KP / ID",          a.citizenship==="nonCitizen"?(a.foreignID||"—"):(a.icNo||"—"))}
-      ${vRow("Jantina / Gender",     gMap[a.gender]||"—")}
-      ${vRow("Tarikh Lahir / DOB",   a.dob||"—")}
-      ${vRow("Bangsa / Race",        a.race||"—")}
-      ${vRow("Status Perkahwinan",   msMap[a.maritalStatus]||"—")}
-      ${a.partnerName?vRow("Nama Pasangan",a.partnerName):""}
-      ${vRow("Status Pembaptisan",   a.baptismStatus||"—")}
-      ${a.baptismYear?vRow("Tahun Pembaptisan",a.baptismYear):""}
-      ${vRow("Warganegara",          a.citizenship==="nonCitizen"?"Bukan Warganegara":"Warganegara Malaysia")}
-      ${a.citizenship==="nonCitizen"?vRow("Negara Asal",a.countryOfOrigin||"—"):""}
-      ${vRow("No. Telefon",          a.phoneNumber||"—")}
-      ${vRow("Pekerjaan",            a.occupation||"—")}
-      ${vRow("Gereja Asal",          a.originalChurch||"—")}
-      ${vRow("Tahun Menyertai OTR",  a.yearJoining||"—")}
-      ${vRow("Jawatan Komsel",       a.memberRole||"—")}
-      ${vRow("Kod Komsel",           a.komselCode||"—")}
-      ${vRow("Alamat",               a.currentAddress||"—")}
+    ${memberData.photoURL ? `<div style="text-align:center;margin-bottom:1.2rem;">
+      <img src="${memberData.photoURL}" style="width:80px;height:100px;object-fit:cover;
+        border-radius:8px;border:2px solid var(--marigold);
+        box-shadow:0 4px 16px rgba(255,140,0,0.3);"/></div>` : ""}
+
+    ${sectionTitle("A. Maklumat Peribadi / Personal Information")}
+    ${vGrid(`
+      ${vRow("ID Unik / Unique ID", `<strong style="color:var(--marigold)">${uid}</strong>`)}
+      ${vRow("Nama Penuh / Full Name", (a.fullName||"—").toUpperCase())}
+      ${vRow("No. KP / IC No.", a.citizenship==="nonCitizen"?(a.foreignID||"—"):(a.icNo||"—"))}
+      ${vRow("Jantina / Gender", gMap[a.gender]||"—")}
+      ${vRow("Tarikh Lahir / Date of Birth", a.dob||"—")}
+      ${vRow("Bangsa / Race", a.race||"—")}
+      ${vRow("Status Perkahwinan / Marital Status", msMap[a.maritalStatus]||"—")}
+      ${a.partnerName ? vRow("Nama Pasangan / Partner's Name", a.partnerName) : ""}
+      ${a.latePartnerName ? vRow("Nama Allahyarham", a.latePartnerName) : ""}
+      ${vRow("Status Pembaptisan / Baptism", bMap[a.baptismStatus]||a.baptismStatus||"—")}
+      ${a.baptismYear ? vRow("Tahun Pembaptisan / Year Baptised", a.baptismYear) : ""}
+      ${vRow("Warganegara / Citizenship", a.citizenship==="nonCitizen"?"Bukan Warganegara / Non-Malaysian":"Warganegara Malaysia / Malaysian")}
+      ${a.citizenship==="nonCitizen" ? vRow("Negara Asal / Country of Origin", a.countryOfOrigin||"—") : ""}
+      ${vRow("No. Telefon / Phone", a.phoneNumber||"—")}
+      ${vRow("Pekerjaan / Occupation", a.occupation||"—")}
+      ${vRow("Gereja Asal / Original Church", a.originalChurch||"—")}
+      ${vRow("Tahun Menyertai OTR / Year Joining", a.yearJoining||"—")}
+      ${vRow("Jawatan Komsel / Cell Position", a.memberRole||"—")}
+      ${vRow("Kod Komsel / Cell Code", a.komselCode||"—")}
+    `)}
+    <div style="grid-column:1/-1;">
+      ${vRow("Alamat / Address", a.currentAddress||"—")}
     </div>
-    <div class="vf-section-title">B. Pelayanan / Services</div>
-    <div class="vf-grid">${vRow("Pelayanan Semasa",active)}</div>
-    <div class="vf-section-title">C. Kanak-kanak / Children</div>
-    <div class="vf-grid">${kids.length?kids.map((k,i)=>vRow(`Anak ${i+1}`,`${k.name} (${gMap[k.gender]||"—"})`)).join(""):vRow("Kanak-kanak","Tiada / None")}</div>
-    <div class="vf-section-title" style="color:var(--text-muted);">D &amp; E — Tidak boleh diedit / Not editable</div>
-    <div class="vf-grid">
-      ${vRow("Ikrar Dipersetujui",d.pledgeAgreed?"Ya":"—")}
-      ${vRow("Kod Komsel (E)",e.komsel||"—")}
-    </div>`;
+
+    ${sectionTitle("B. Pelayanan / Services")}
+    ${vGrid(`${vRow("Pelayanan Semasa / Current Services", active)}`)}
+
+    ${sectionTitle("C. Kanak-kanak / Children")}
+    ${vGrid(kids.length
+      ? kids.map((k,i)=>vRow(`Anak ${i+1} / Child ${i+1}`,`${k.name} (${gMap[k.gender]||"—"})`)).join("")
+      : vRow("Kanak-kanak", "Tiada / None")
+    )}
+
+    ${sectionTitle("D &amp; E — Tidak boleh diedit / Not Editable")}
+    ${vGrid(`
+      ${vRow("Ikrar Dipersetujui / Pledge Agreed", d.pledgeAgreed ? "Ya / Yes" : "—")}
+      ${vRow("Kod Komsel (E) / Cell Code", e.komsel||"—")}
+      ${vRow("Ketua Komsel / Cell Leader", e.leader||"—")}
+    `)}`;
 
   document.getElementById("previewModal").style.display = "flex";
 }

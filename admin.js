@@ -596,7 +596,14 @@ function openViewModal(id) {
   const reg = registrations.find(r => r.id === id);
   if (!reg) return;
   document.getElementById("viewModalBody").innerHTML = buildViewHTML(reg);
-  document.getElementById("editModalBtn").onclick = () => alert("Edit feature coming soon.");
+
+  // Wire Edit button — pass docId directly so update-info skips IC verify
+  document.getElementById("editModalBtn").onclick = () => {
+    const ic = reg.icNo || reg.sectionA?.icNo || "";
+    // Pass both docId and ic so update-info.js can load member directly
+    window.location.href = `update-info.html?docId=${encodeURIComponent(id)}&ic=${encodeURIComponent(ic)}&admin=1`;
+  };
+
   document.getElementById("viewModal").style.display = "flex";
 }
 
