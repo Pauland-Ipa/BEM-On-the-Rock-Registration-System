@@ -619,20 +619,20 @@ async function initEditMode() {
   const subtitle = document.querySelector(".church-subtitle");
   if (subtitle) subtitle.textContent = "Kemas Kini Maklumat / Update Information";
 
-  // Hide the progress step nav steps D and E from the nav bar — still viewable but not editable
-  // (they will be replaced with view-only content in the form)
-  // We keep them visible so user can navigate through
+  // Hide eligibility notice (not relevant in edit mode)
+  const eligNotice = document.querySelector(".eligibility-notice");
+  if (eligNotice) eligNotice.style.display = "none";
 
-  // Replace submit button text
-  const btnSubmit = document.getElementById("btnSubmit");
-  if (btnSubmit) btnSubmit.textContent = "Semak Perubahan / Review Changes →";
-
-  // Replace back home button
+  // Hide the back-to-home button, replace with back link
   const backBtn = document.querySelector(".back-home-btn");
   if (backBtn) {
     backBtn.textContent = "← Kembali / Back";
     backBtn.href = "javascript:history.back()";
   }
+
+  // Replace submit button text
+  const btnSubmit = document.getElementById("btnSubmit");
+  if (btnSubmit) btnSubmit.textContent = "Semak Perubahan / Review Changes →";
 
   try {
     // Load member data from Firestore
@@ -759,8 +759,8 @@ function populateFormWithData(data) {
   if (e.since)  setVal("sinceE",  e.since);
   if (e.date)   setVal("dateE",   e.date);
 
-  // Navigate to section A
-  showSection("a");
+  // Navigate to section A to start editing
+  navigateTo("a");
 }
 
 function makeReadOnly(sectionId) {
