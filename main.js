@@ -17,6 +17,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initBehalfMode();
   initAffiliatedMode();
   initPartnerAddressModal();
+  if (IS_EDIT_MODE) initEditMode();
 
   // Affiliated autofill modal buttons
   document.getElementById("btnAffiliatedYes")?.addEventListener("click", () => {
@@ -348,8 +349,10 @@ function generateUniqueID(fullName, icNo, yearJoining, foreignID) {
 // ═══════════════════════════════════════════════
 // 1h. BEHALF MODE — conditional rendering
 // ═══════════════════════════════════════════════
-const IS_BEHALF_MODE    = new URLSearchParams(window.location.search).get("mode") === "behalf";
+const IS_BEHALF_MODE     = new URLSearchParams(window.location.search).get("mode") === "behalf";
 const IS_AFFILIATED_MODE = new URLSearchParams(window.location.search).get("mode") === "affiliated";
+const IS_EDIT_MODE       = new URLSearchParams(window.location.search).get("mode") === "edit";
+const EDIT_DOC_ID        = new URLSearchParams(window.location.search).get("docId") || "";
 
 // ═══════════════════════════════════════════════
 // 1j. AFFILIATED MEMBER AUTOFILL (for main registration)
@@ -602,6 +605,379 @@ function showAffiliatedSuccessPage() {
   }
 }
 
+
+// ═══════════════════════════════════════════════
+// EDIT MODE — load existing member data into form
+// Activated via ?mode=edit&docId=XXX
+// ═══════════════════════════════════════════════
+let editOriginalData = null; // snapshot of data before edits
+
+async function initEditMode() {
+  if (!EDIT_DOC_ID) { console.warn("Edit mode: no docId"); return; }
+
+  // Update UI for edit context
+  const subtitle = document.querySelector(".church-subtitle");
+  if (subtitle) subtitle.textContent = "Kemas Kini Maklumat / Update Information";
+
+  // Hide the progress step nav steps D and E from the nav bar — still viewable but not editable
+  // (they will be replaced with view-only content in the form)
+  // We keep them visible so user can navigate through
+
+  // Replace submit button text
+  const btnSubmit = document.getElementById("btnSubmit");
+  if (btnSubmit) btnSubmit.textContent = "Semak Perubahan / Review Changes →";
+
+  // Replace back home button
+  const backBtn = document.querySelector(".back-home-btn");
+  if (backBtn) {
+    backBtn.textContent = "← Kembali / Back";
+    backBtn.href = "javascript:history.back()";
+  }
+
+  try {
+    // Load member data from Firestore
+    const doc = await db.collection("registrations").doc(EDIT_DOC_ID).get();
+    if (!doc.exists) { alert("Rekod tidak dijumpai / Record not found."); return; }
+    editOriginalData = doc.data();
+    populateFormWithData(editOriginalData);
+  } catch(e) {
+    alert("Ralat memuatkan data / Error loading data: " + e.message);
+  }
+}
+
+function populateFormWithData(data) {
+  const a = data.sectionA || {};
+  const b = data.sectionB || {};
+  const c = data.sectionC || {};
+  const d = data.sectionD || {};
+  const e = data.sectionE || {};
+
+  // ── Section A ──
+  const setVal = (id, v) => { const el = document.getElementById(id); if (el && v !== undefined && v !== null) el.value = v; };
+  const setRadio = (name, v) => { const el = document.querySelector(`input[name="${name}"][value="${v}"]`); if (el) { el.checked = true; el.dispatchEvent(new Event("change")); } };
+  const setCheck = (id, v) => { const el = document.getElementById(id); if (el) el.checked = !!v; };
+
+  setVal("fullName", a.fullName || data.name || "");
+  // IC — format it
+  if (a.icNo) {
+    const ic = a.icNo.replace(/(\d{6})(\d{2})(\d{4})/, "$1-$2-$3");
+    setVal("icNo", ic);
+  }
+  setVal("dob",            a.dob || "");
+  setVal("race",           a.race || "");
+  setVal("occupation",     a.occupation || "");
+  setVal("phoneNumber",    a.phoneNumber || "");
+  setVal("originalChurch", a.originalChurch || "");
+  setVal("currentAddress", a.currentAddress || "");
+  setVal("countryOfOrigin",a.countryOfOrigin || "");
+  setVal("foreignID",      a.foreignID || "");
+  setVal("baptismYear",    a.baptismYear || "");
+
+  // Year joining dropdown
+  const yjEl = document.getElementById("yearJoining");
+  if (yjEl && a.yearJoining) yjEl.value = a.yearJoining;
+
+  // Gender
+  if (a.gender) setRadio("gender", a.gender);
+
+  // Baptism status
+  if (a.baptismStatus) {
+    setRadio("baptismStatus", a.baptismStatus);
+    if (a.baptismStatus === "baptised") {
+      const bf = document.getElementById("baptismDateField");
+      if (bf) bf.style.display = "flex";
+      const spacer = document.getElementById("baptismYearSpacer");
+      if (spacer) spacer.style.display = "none";
+    }
+  }
+
+  // Citizenship
+  if (a.citizenship) {
+    setRadio("citizenship", a.citizenship);
+    // Manually trigger IC disable for non-citizens
+    if (a.citizenship === "nonCitizen") {
+      const icInput = document.getElementById("icNo");
+      if (icInput) { icInput.disabled = true; icInput.style.opacity = "0.4"; icInput.style.cursor = "not-allowed"; }
+      document.getElementById("icNoNonCitizenHint")?.style && (document.getElementById("icNoNonCitizenHint").style.display = "");
+      document.getElementById("icNoRequired")?.style     && (document.getElementById("icNoRequired").style.display = "none");
+    }
+  }
+
+  // Marital status
+  if (a.maritalStatus) {
+    setVal("maritalStatus", a.maritalStatus);
+    document.getElementById("maritalStatus")?.dispatchEvent(new Event("change"));
+    setVal("partnerName",     a.partnerName || "");
+    setVal("latePartnerName", a.latePartnerName || "");
+  }
+
+  // Member role (komsel position)
+  if (a.memberRole) setRadio("memberRole", a.memberRole);
+
+  // Komsel code
+  if (a.komselCode) setVal("komselCode", a.komselCode);
+
+  // Photo
+  if (data.photoURL) {
+    photoDataURL = data.photoURL;
+    const preview = document.getElementById("photoPreviewImg");
+    const wrap    = document.getElementById("photoPreviewWrap");
+    const label   = document.getElementById("photoUploadLabel");
+    if (preview) preview.src = data.photoURL;
+    if (wrap)    wrap.classList.add("visible");
+    if (label)   label.style.display = "none";
+  }
+
+  // ── Section B — Services ──
+  const svcs = b.services || {};
+  Object.entries(svcs).forEach(([key, val]) => {
+    const curEl  = document.querySelector(`input[data-service-key="${key}"][data-service-type="current"]`);
+    const joinEl = document.querySelector(`input[data-service-key="${key}"][data-service-type="join"]`);
+    if (curEl  && val.current) curEl.checked  = true;
+    if (joinEl && val.join)    joinEl.checked  = true;
+  });
+
+  // ── Section C — Children ──
+  const children = (c.children || []).filter(ch => ch.name?.trim() && ch.gender);
+  if (children.length > 0) {
+    // Store in draft so Section C loads them when navigated to
+    localStorage.setItem("bem_otr_draft_sectionC", JSON.stringify({ children }));
+  }
+
+  // ── Sections D & E — make read-only ──
+  makeReadOnly("section-d");
+  makeReadOnly("section-e");
+  // Also populate D and E for display
+  if (d.pledgeAgreed) {
+    document.querySelectorAll('#section-d input[type="checkbox"]').forEach(cb => {
+      cb.checked = true; cb.disabled = true;
+    });
+  }
+  if (e.komsel) setVal("komselE", e.komsel);
+  if (e.name)   setVal("nameE",   e.name);
+  if (e.leader) setVal("leaderE", e.leader);
+  if (e.since)  setVal("sinceE",  e.since);
+  if (e.date)   setVal("dateE",   e.date);
+
+  // Navigate to section A
+  showSection("a");
+}
+
+function makeReadOnly(sectionId) {
+  const section = document.getElementById(sectionId);
+  if (!section) return;
+  section.querySelectorAll("input, textarea, select").forEach(el => {
+    el.disabled = true;
+    el.style.opacity = "0.6";
+    el.style.cursor  = "not-allowed";
+  });
+  // Add visual banner
+  const banner = document.createElement("div");
+  banner.style.cssText = `background:rgba(255,140,0,0.06);border:1px solid rgba(255,140,0,0.2);
+    border-radius:var(--radius);padding:0.7rem 1rem;margin-bottom:1rem;
+    font-family:var(--font-display);font-size:0.8rem;letter-spacing:0.04em;color:var(--text-muted);`;
+  banner.textContent = "Seksyen ini tidak boleh diedit / This section cannot be edited.";
+  section.insertBefore(banner, section.querySelector(".section-header")?.nextSibling || section.firstChild);
+}
+
+// ── Override submit in edit mode — show diff modal instead ──
+// (wired in submit handler below)
+
+// ── EDIT MODE FIELD LABELS for diff ──
+const EDIT_FIELD_LABELS = {
+  fullName:"Nama Penuh", icNo:"No. KP", gender:"Jantina", dob:"Tarikh Lahir",
+  race:"Bangsa", phoneNumber:"No. Telefon", occupation:"Pekerjaan",
+  maritalStatus:"Status Perkahwinan", partnerName:"Nama Pasangan",
+  latePartnerName:"Nama Allahyarham", baptismStatus:"Status Pembaptisan",
+  baptismYear:"Tahun Pembaptisan", citizenship:"Warganegara",
+  countryOfOrigin:"Negara Asal", foreignID:"Nombor ID",
+  originalChurch:"Gereja Asal", yearJoining:"Tahun Menyertai",
+  memberRole:"Jawatan Komsel", komselCode:"Kod Komsel", currentAddress:"Alamat",
+};
+
+function collectCurrentFormData() {
+  const draft = JSON.parse(localStorage.getItem("bem_otr_draft_sectionA") || "{}");
+  const draftB = JSON.parse(localStorage.getItem("bem_otr_draft_sectionB") || "{}");
+  const draftC = JSON.parse(localStorage.getItem("bem_otr_draft_sectionC") || "{}");
+  return {
+    a: {
+      fullName:       draft.fullName || "",
+      icNo:           (draft.icNo||"").replace(/-/g,""),
+      gender:         draft.gender || "",
+      dob:            draft.dob || "",
+      race:           draft.race || "",
+      phoneNumber:    draft.phoneNumber || "",
+      occupation:     draft.occupation || "",
+      maritalStatus:  draft.maritalStatus || "",
+      partnerName:    draft.partnerName || "",
+      latePartnerName:draft.latePartnerName || "",
+      baptismStatus:  draft.baptismStatus || "",
+      baptismYear:    draft.baptismYear || "",
+      citizenship:    draft.citizenship || "",
+      countryOfOrigin:draft.countryOfOrigin || "",
+      foreignID:      draft.foreignID || "",
+      originalChurch: draft.originalChurch || "",
+      yearJoining:    draft.yearJoining || "",
+      memberRole:     draft.memberRole || "",
+      komselCode:     draft.komselCode || "",
+      currentAddress: draft.currentAddress || "",
+    },
+    b: draftB,
+    c: draftC,
+  };
+}
+
+async function submitEditMode() {
+  // Collect current data
+  const { a: newA, b: newB, c: newC } = collectCurrentFormData();
+  const oldA = editOriginalData?.sectionA || {};
+  const oldB = editOriginalData?.sectionB || {};
+  const oldC = editOriginalData?.sectionC || {};
+
+  // Build diff
+  const changes = [];
+  Object.keys(EDIT_FIELD_LABELS).forEach(key => {
+    const before = String(oldA[key] || "").trim();
+    const after  = String(newA[key] || "").trim();
+    if (before !== after) changes.push({ section:"A — Peribadi", field:EDIT_FIELD_LABELS[key], before:before||"—", after:after||"—" });
+  });
+
+  // Services diff
+  const SERVICE_NAMES_EDIT = ["worship","prayer","multimedia","hospitality","children","youth",
+    "evangelism","transport","music","ushering","sound","cleaning","finance","pastoral",
+    "security","photography","decoration","it","catering","counselling","administration","drama","others"];
+  const oldSvcs = oldB.services || {};
+  const newSvcs = newB.services || {};
+  SERVICE_NAMES_EDIT.forEach(key => {
+    const oc = !!(oldSvcs[key]?.current), nc = !!(newSvcs[key]?.current);
+    const oj = !!(oldSvcs[key]?.join),    nj = !!(newSvcs[key]?.join);
+    if (oc !== nc) changes.push({ section:"B — Pelayanan", field:`${key} (Terlibat)`, before:oc?"Ya":"Tidak", after:nc?"Ya":"Tidak" });
+    if (oj !== nj) changes.push({ section:"B — Pelayanan", field:`${key} (Ingin Sertai)`, before:oj?"Ya":"Tidak", after:nj?"Ya":"Tidak" });
+  });
+
+  // Children diff
+  const gMap = { male:"Lelaki", female:"Perempuan" };
+  const oldKids = (oldC.children||[]).filter(k=>k.name?.trim()&&k.gender);
+  const newKids = (newC.children||[]).filter(k=>k.name?.trim()&&k.gender);
+  if (JSON.stringify(oldKids.map(k=>({n:k.name,g:k.gender}))) !== JSON.stringify(newKids.map(k=>({n:k.name,g:k.gender})))) {
+    const fmt = kids => kids.length ? kids.map(k=>`${k.name} (${gMap[k.gender]||"—"})`).join(", ") : "Tiada";
+    changes.push({ section:"C — Kanak-kanak", field:"Senarai Anak", before:fmt(oldKids), after:fmt(newKids) });
+  }
+
+  // Photo change
+  if (photoDataURL && photoDataURL !== editOriginalData?.photoURL) {
+    changes.push({ section:"A — Peribadi", field:"Gambar / Photo", before:"(gambar lama)", after:"(gambar baru)" });
+  }
+
+  // Show diff modal
+  showEditDiffModal(changes, newA, newSvcs, newKids);
+}
+
+function showEditDiffModal(changes, newA, newSvcs, newKids) {
+  // Create modal if not present
+  let modal = document.getElementById("editDiffModal");
+  if (!modal) {
+    modal = document.createElement("div");
+    modal.id = "editDiffModal";
+    modal.className = "modal-overlay";
+    modal.style.display = "flex";
+    modal.innerHTML = `
+      <div class="modal-card modal-card--lg">
+        <div class="modal-header">
+          <h3 class="modal-title">🔍 Semak Perubahan / Review Changes</h3>
+        </div>
+        <div class="modal-body" style="padding:1.2rem 1.5rem;">
+          <p style="font-size:0.88rem;color:var(--text-muted);font-style:italic;margin-bottom:1rem;line-height:1.6;">
+            Berikut merupakan semua perubahan yang anda telah kemas kini, sila semak sebelum tekan butang 'Simpan' /
+            The following are the changes you've made, please analyse carefully before pressing 'Save'.
+          </p>
+          <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
+            <table id="editDiffTable" style="width:100%;border-collapse:collapse;min-width:480px;">
+              <thead>
+                <tr style="background:var(--bg-header);">
+                  <th style="padding:0.6rem 0.8rem;text-align:left;font-family:var(--font-display);font-size:0.75rem;letter-spacing:0.05em;color:var(--marigold-bright);border-bottom:2px solid var(--marigold-dim);">Seksyen / Section</th>
+                  <th style="padding:0.6rem 0.8rem;text-align:left;font-family:var(--font-display);font-size:0.75rem;letter-spacing:0.05em;color:var(--marigold-bright);border-bottom:2px solid var(--marigold-dim);">Ruangan / Field</th>
+                  <th style="padding:0.6rem 0.8rem;text-align:left;font-family:var(--font-display);font-size:0.75rem;letter-spacing:0.05em;color:var(--marigold-bright);border-bottom:2px solid var(--marigold-dim);">Sebelum / Before</th>
+                  <th style="padding:0.6rem 0.8rem;text-align:left;font-family:var(--font-display);font-size:0.75rem;letter-spacing:0.05em;color:var(--marigold-bright);border-bottom:2px solid var(--marigold-dim);">Selepas / After</th>
+                </tr>
+              </thead>
+              <tbody id="editDiffBody"></tbody>
+            </table>
+            <div id="editDiffNoChange" style="display:none;text-align:center;padding:1.5rem;color:var(--text-muted);font-style:italic;">Tiada perubahan dibuat. / No changes were made.</div>
+          </div>
+        </div>
+        <div class="modal-footer" style="justify-content:space-between;">
+          <button class="btn btn-secondary" id="btnEditDiffBack">✏️ Kembali Mengemas Kini / Back to Editing</button>
+          <button class="btn btn-primary" id="btnEditDiffSave">💾 Simpan / Save</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+  } else {
+    modal.style.display = "flex";
+  }
+
+  // Populate table
+  const tbody = document.getElementById("editDiffBody");
+  const noChg = document.getElementById("editDiffNoChange");
+  const table = document.getElementById("editDiffTable");
+  if (changes.length === 0) {
+    table.style.display = "none"; noChg.style.display = "";
+  } else {
+    table.style.display = ""; noChg.style.display = "none";
+    tbody.innerHTML = changes.map(r => `<tr style="border-bottom:1px solid var(--border-card);">
+      <td style="padding:0.5rem 0.7rem;font-size:0.8rem;color:var(--text-muted);white-space:nowrap;">${r.section}</td>
+      <td style="padding:0.5rem 0.7rem;font-size:0.88rem;font-weight:600;color:var(--text-primary);">${r.field}</td>
+      <td style="padding:0.5rem 0.7rem;font-size:0.85rem;color:#E05555;">${r.before}</td>
+      <td style="padding:0.5rem 0.7rem;font-size:0.85rem;color:#4CAF7D;">${r.after}</td>
+    </tr>`).join("");
+  }
+
+  // Wire buttons
+  document.getElementById("btnEditDiffBack").onclick = () => { modal.style.display = "none"; };
+  document.getElementById("btnEditDiffSave").onclick = async () => {
+    const saveBtn = document.getElementById("btnEditDiffSave");
+    saveBtn.disabled = true; saveBtn.textContent = "Menyimpan... / Saving...";
+    try {
+      const payload = {
+        name:                (newA.fullName||"").toUpperCase(),
+        sectionA:            { ...(editOriginalData?.sectionA||{}), ...newA },
+        "sectionB.services": newSvcs,
+        "sectionC.children": newKids,
+        lastUpdated: firebase.firestore.FieldValue.serverTimestamp(),
+      };
+      if (photoDataURL && photoDataURL !== editOriginalData?.photoURL) {
+        payload.photoURL = photoDataURL;
+      }
+      await db.collection("registrations").doc(EDIT_DOC_ID).update(payload);
+      // Clear drafts
+      ["bem_otr_draft_sectionA","bem_otr_draft_sectionB","bem_otr_draft_sectionC"]
+        .forEach(k => localStorage.removeItem(k));
+      modal.style.display = "none";
+      // Show success
+      document.querySelectorAll(".form-section").forEach(s => s.style.display="none");
+      document.querySelector(".step-nav")?.style && (document.querySelector(".step-nav").style.display="none");
+      const successDiv = document.getElementById("successPage");
+      if (successDiv) {
+        successDiv.style.display = "block";
+        const title = successDiv.querySelector(".success-title");
+        const titleEn = successDiv.querySelector(".success-title-en");
+        const msg     = successDiv.querySelector(".success-msg");
+        const msgEn   = successDiv.querySelector(".success-msg-en");
+        if (title)   title.textContent   = "Maklumat Berjaya Dikemas Kini!";
+        if (titleEn) titleEn.textContent = "Successfully Updated Your Information!";
+        if (msg)     msg.textContent     = "";
+        if (msgEn)   msgEn.textContent   = "";
+        // Remove payment reminder
+        const payReminder = successDiv.querySelector("div[style*='rgba(255,140,0']");
+        if (payReminder) payReminder.remove();
+      }
+      window.scrollTo({top:0, behavior:"smooth"});
+    } catch(err) {
+      alert("Ralat menyimpan / Save error: " + err.message);
+      saveBtn.disabled = false; saveBtn.textContent = "💾 Simpan / Save";
+    }
+  };
+}
 
 function parseICToDOB(ic) {
   // Remove dashes
@@ -1549,6 +1925,13 @@ function initSectionE() {
 
   // Submit button — Firestore integration
   document.getElementById("btnSubmit")?.addEventListener("click", async () => {
+    // ── EDIT MODE: show diff modal instead of submitting ──
+    if (IS_EDIT_MODE) {
+      saveDraft(); // ensure latest values are in localStorage
+      await submitEditMode();
+      return;
+    }
+
     const btn = document.getElementById("btnSubmit");
     const icVal = (document.getElementById("icNo")?.value || "").replace(/-/g, "");
 

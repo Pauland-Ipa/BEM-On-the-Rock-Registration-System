@@ -459,16 +459,11 @@ document.getElementById("closeMCModalBtn")?.addEventListener("click", () => docu
   document.head.appendChild(style);
 })();
 
-// ── Edit button in view modal — opens update-info page with IC pre-filled ──
+// ── Edit button in view modal — goes straight to index.html in edit mode ──
 document.getElementById("editModalBtn")?.addEventListener("click", () => {
-  const reg = registrations.find(r => r.id === currentActionId);
-  if (!reg) return;
-  const ic = reg.icNo || reg.sectionA?.icNo || "";
-  if (ic) {
-    window.location.href = `update-info.html?ic=${encodeURIComponent(ic)}`;
-  } else {
-    window.location.href = "update-info.html";
-  }
+  // currentActionId is set when action modal opened; fallback to finding from view modal
+  const id = currentActionId;
+  if (id) window.location.href = `index.html?from=admin&mode=edit&docId=${encodeURIComponent(id)}`;
 });
 async function cancelTransfer(id, name) {
   if (!confirm(`Batal pemindahan ${name}?\nCancel transfer for ${name}?`)) return;
@@ -597,11 +592,9 @@ function openViewModal(id) {
   if (!reg) return;
   document.getElementById("viewModalBody").innerHTML = buildViewHTML(reg);
 
-  // Wire Edit button — pass docId directly so update-info skips IC verify
+  // Wire Edit button — go straight to index.html in edit mode, no IC verify needed
   document.getElementById("editModalBtn").onclick = () => {
-    const ic = reg.icNo || reg.sectionA?.icNo || "";
-    // Pass both docId and ic so update-info.js can load member directly
-    window.location.href = `update-info.html?docId=${encodeURIComponent(id)}&ic=${encodeURIComponent(ic)}&admin=1`;
+    window.location.href = `index.html?from=admin&mode=edit&docId=${encodeURIComponent(id)}`;
   };
 
   document.getElementById("viewModal").style.display = "flex";

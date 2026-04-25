@@ -50,53 +50,6 @@
     </section>
 
     <!-- ══ SCREEN 2: Edit Form ══ -->
-    <section id="screen-edit" style="display:none;">
-      <!-- Step nav -->
-      <div class="step-nav" id="editStepNav">
-        <div class="step active" data-section="a">
-          <div class="step-circle">A</div>
-          <div class="step-label">Peribadi<br/><em>Personal</em></div>
-        </div>
-        <div class="step-line"></div>
-        <div class="step" data-section="b">
-          <div class="step-circle">B</div>
-          <div class="step-label">Pelayanan<br/><em>Service</em></div>
-        </div>
-        <div class="step-line"></div>
-        <div class="step" data-section="c">
-          <div class="step-circle">C</div>
-          <div class="step-label">Kanak-kanak<br/><em>Children</em></div>
-        </div>
-        <div class="step-line"></div>
-        <div class="step" data-section="d">
-          <div class="step-circle">D</div>
-          <div class="step-label">Ikrar<br/><em>Pledge</em></div>
-        </div>
-        <div class="step-line"></div>
-        <div class="step" data-section="e">
-          <div class="step-circle">E</div>
-          <div class="step-label">Pengakuan<br/><em>Confession</em></div>
-        </div>
-      </div>
-
-      <!-- Edit sections rendered by JS -->
-      <div id="editSectionsWrap"></div>
-
-      <div class="form-actions" id="editNavActions" style="margin-top:1.5rem;">
-        <button class="btn btn-secondary" id="btnEditBack">&larr; Kembali / Back</button>
-        <button class="btn btn-primary" id="btnEditNext">Seterusnya / Next &rarr;</button>
-      </div>
-    </section>
-
-    <!-- ══ SCREEN 3: Success ══ -->
-    <div id="screen-success" style="display:none;">
-      <div class="success-card">
-        <div class="success-icon">✅</div>
-        <h2 class="success-title">Informasi Anda Berjaya Dikemas Kini!</h2>
-        <p class="success-title-en">Successfully Updated Your Information!</p>
-        <a href="home.html" class="btn btn-primary success-back-btn">&#8592; Kembali ke Halaman Rumah / Back to Home Page</a>
-      </div>
-    </div>
   </main>
 
   <!-- ══ PREVIEW MODAL ══ -->
@@ -109,41 +62,6 @@
       <div class="modal-footer" style="justify-content:space-between;">
         <button class="btn btn-secondary" id="btnPreviewBack">&larr; Kembali / Back</button>
         <button class="btn btn-primary" id="btnPreviewEdit">✏️ Edit</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ══ CHANGES CONFIRMATION MODAL ══ -->
-  <div class="modal-overlay" id="changesModal" style="display:none;">
-    <div class="modal-card modal-card--lg">
-      <div class="modal-header">
-        <h3 class="modal-title">🔍 Semak Perubahan / Review Changes</h3>
-      </div>
-      <div class="modal-body" style="padding:1.2rem 1.5rem;">
-        <p style="font-size:0.88rem;color:var(--text-muted);font-style:italic;margin-bottom:1rem;line-height:1.6;">
-          Berikut merupakan semua perubahan yang anda telah kemas kini, sila semak sebelum tekan butang 'Simpan' /
-          The following are the changes you've made, please analyse carefully before pressing 'Save'.
-        </p>
-        <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
-          <table id="changesTable" style="width:100%;border-collapse:collapse;font-size:0.9rem;min-width:480px;">
-            <thead>
-              <tr style="background:var(--bg-header);">
-                <th style="padding:0.6rem 0.8rem;text-align:left;font-family:var(--font-display);font-size:0.75rem;letter-spacing:0.05em;color:var(--marigold-bright);border-bottom:2px solid var(--marigold-dim);white-space:nowrap;">Seksyen / Section</th>
-                <th style="padding:0.6rem 0.8rem;text-align:left;font-family:var(--font-display);font-size:0.75rem;letter-spacing:0.05em;color:var(--marigold-bright);border-bottom:2px solid var(--marigold-dim);white-space:nowrap;">Ruangan / Field</th>
-                <th style="padding:0.6rem 0.8rem;text-align:left;font-family:var(--font-display);font-size:0.75rem;letter-spacing:0.05em;color:var(--marigold-bright);border-bottom:2px solid var(--marigold-dim);white-space:nowrap;">Sebelum / Before</th>
-                <th style="padding:0.6rem 0.8rem;text-align:left;font-family:var(--font-display);font-size:0.75rem;letter-spacing:0.05em;color:var(--marigold-bright);border-bottom:2px solid var(--marigold-dim);white-space:nowrap;">Selepas / After</th>
-              </tr>
-            </thead>
-            <tbody id="changesTableBody"></tbody>
-          </table>
-        </div>
-        <div id="noChangesMsg" style="display:none;text-align:center;padding:1.5rem;color:var(--text-muted);font-style:italic;">
-          Tiada perubahan dibuat. / No changes were made.
-        </div>
-      </div>
-      <div class="modal-footer" style="justify-content:space-between;">
-        <button class="btn btn-secondary" id="btnBackToEdit">✏️ Kembali Mengemas Kini / Back to Editing</button>
-        <button class="btn btn-primary" id="btnSaveChanges">💾 Simpan / Save</button>
       </div>
     </div>
   </div>

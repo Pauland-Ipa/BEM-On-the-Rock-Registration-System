@@ -215,11 +215,9 @@ document.getElementById("btnPreviewBack").addEventListener("click", () => {
 });
 
 document.getElementById("btnPreviewEdit").addEventListener("click", () => {
-  document.getElementById("previewModal").style.display = "none";
-  newPhotoDataURL = null;
-  currentStep = "a";
-  showScreen("screen-edit");
-  renderStep("a");
+  if (!memberDocId) return;
+  // Redirect to main registration page in edit mode — it handles all the form rendering
+  window.location.href = `index.html?from=update&mode=edit&docId=${encodeURIComponent(memberDocId)}`;
 });
 
 // ══════════════════════════════════════════════
