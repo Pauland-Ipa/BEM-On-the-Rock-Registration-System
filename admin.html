@@ -1,746 +1,358 @@
-"use strict";
-/* ═══════════════════════════════════════════════
-   BEM On The Rock — admin.js
-═══════════════════════════════════════════════ */
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8"/>
+  <link rel="icon" type="image/png" href="Images/bemotr_favicon.png"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BEM On The Rock — Admin</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="admin.css"/>
+</head>
+<body class="admin-body">
 
-document.getElementById("adminFooterYear").textContent = new Date().getFullYear();
-
-// ── Password visibility toggle ──
-document.getElementById("togglePassword")?.addEventListener("click", function() {
-  const input = document.getElementById("adminPassword");
-  const icon  = document.getElementById("togglePasswordIcon");
-  if (input.type === "password") {
-    input.type = "text";
-    // Open eye (password visible)
-    icon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
-  } else {
-    input.type = "password";
-    // Closed eye (password hidden)
-    icon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`;
-  }
-});
-
-function generateAdminUniqueID(fullName, icNo, yearJoining) {
-  const names    = (fullName || "").trim().split(/\s+/).filter(Boolean);
-  const initials = names.map(n => n[0].toUpperCase()).join("");
-  const ic       = (icNo || "").replace(/-/g,"");
-  const last4    = ic.length >= 4 ? ic.slice(-4) : ic.padStart(4,"0");
-  const yr       = String(yearJoining || "").slice(-2);
-  return `${initials}-${last4}-${yr}`;
-}
-
-const SERVICE_NAMES = [
-  "","Pastoral","Pekerja Sepenuh Masa (Gereja)","[Rock Wave] Penyanyi","[Rock Wave] Pemain Muzik",
-  "[Rock Wave] Penari Kreatif","Multimedia","Pengendali Sistem Bunyi","Pengendali Pencahayaan",
-  "Usher","Keselamatan & Parkir","Krew Pentas","Hospitaliti untuk Jemaat Baru","Hospitaliti untuk VIP",
-  "Rock Essence","Rock Resource","Kaunter Maklumat","Pengangkutan","Pendoa Syafaat",
-  "Kebajikan & Sosial","Adiwira","Pembantu Peribadi Pastor & Penceramah","Penginjilan","Tim Persembahan"
-];
-
-const genderMap  = { male:"Lelaki / Male", female:"Perempuan / Female" };
-const maritalMap = {
-  single:"Bujang / Single", engaged:"Bertunang / Engaged", married:"Berkahwin / Married",
-  divorced:"Bercerai / Divorced", widowed:"Balu/Duda / Widowed"
-};
-const baptismMap = { baptised:"Sudah Dibaptis / Baptised", notBaptised:"Belum Dibaptis / Not Yet Baptised" };
-
-let registrations   = [];
-let pendingDeleteId = null;
-let pendingActivateId = null;
-let pendingDeactivateId = null;
-let deactivateTimer   = null;
-let currentSort       = { by:"date", order:"asc" };
-let searchQuery       = "";
-
-// ── Auth ──
-auth.onAuthStateChanged(user => {
-  if (user) {
-    document.getElementById("loginOverlay").style.display = "none";
-    document.getElementById("adminPage").style.display    = "block";
-    loadRegistrations();
-  } else {
-    document.getElementById("adminPage").style.display    = "none";
-    document.getElementById("loginOverlay").style.display = "flex";
-  }
-});
-
-// ── Login ──
-document.getElementById("btnLogin").addEventListener("click", async () => {
-  const email    = document.getElementById("adminUsername").value.trim();
-  const password = document.getElementById("adminPassword").value;
-  const errEl    = document.getElementById("loginError");
-  const btn      = document.getElementById("btnLogin");
-  if (!email || !password) { errEl.textContent = "Sila isi emel dan kata laluan."; return; }
-  btn.disabled = true; btn.textContent = "Log masuk...";
-  errEl.textContent = "";
-  try {
-    await auth.signInWithEmailAndPassword(email, password);
-  } catch(e) {
-    errEl.textContent = "Emel atau kata laluan salah. / Incorrect email or password.";
-    btn.disabled = false; btn.textContent = "Log Masuk / Login";
-  }
-});
-
-["adminUsername","adminPassword"].forEach(id =>
-  document.getElementById(id).addEventListener("keydown", e => {
-    if (e.key === "Enter") document.getElementById("btnLogin").click();
-  })
-);
-
-// ── Logout ──
-document.getElementById("btnLogout").addEventListener("click", () => auth.signOut());
-
-// ── Load ──
-function loadRegistrations() {
-  db.collection("registrations").orderBy("submittedAt","desc")
-    .onSnapshot(snap => {
-      registrations = snap.docs.map(d => ({ id:d.id, ...d.data() }));
-      renderTable();
-    }, err => console.error("Firestore:", err));
-}
-
-// ── Search & Sort ──
-document.getElementById("adminSearch").addEventListener("input", function() {
-  searchQuery = this.value.trim().toLowerCase(); renderTable();
-});
-document.getElementById("sortBy").addEventListener("change",    function() { currentSort.by    = this.value; renderTable(); });
-document.getElementById("sortOrder").addEventListener("change", function() { currentSort.order = this.value; renderTable(); });
-
-function getSortedFiltered() {
-  let data = [...registrations];
-  if (searchQuery) {
-    data = data.filter(r =>
-      (r.name||"").toLowerCase().includes(searchQuery) ||
-      (r.icNo||"").replace(/-/g,"").includes(searchQuery.replace(/-/g,"")) ||
-      (r.uniqueID||"").toLowerCase().includes(searchQuery)
-    );
-  }
-  data.sort((a,b) => {
-    let vA, vB;
-    switch(currentSort.by) {
-      case "name":   vA=(a.name||"").toLowerCase();   vB=(b.name||"").toLowerCase(); break;
-      case "id":     vA=(a.uniqueID||"").toLowerCase();vB=(b.uniqueID||"").toLowerCase(); break;
-      case "ic":     vA=(a.icNo||"");                 vB=(b.icNo||""); break;
-      case "komsel": vA=(a.sectionA?.komselCode||""); vB=(b.sectionA?.komselCode||""); break;
-      default:
-        vA = a.submittedAt?.toDate ? a.submittedAt.toDate().toISOString() : (a.dateApplied||"");
-        vB = b.submittedAt?.toDate ? b.submittedAt.toDate().toISOString() : (b.dateApplied||"");
-    }
-    if (vA < vB) return currentSort.order==="asc" ? -1 : 1;
-    if (vA > vB) return currentSort.order==="asc" ?  1 :-1;
-    return 0;
-  });
-  return data;
-}
-
-function formatDate(d) {
-  if (!d) return "—";
-  const date = d?.toDate ? d.toDate() : new Date(d);
-  if (isNaN(date)) return "—";
-  return date.toLocaleDateString("ms-MY", { day:"2-digit", month:"short", year:"numeric" });
-}
-
-// ── Render Table ──
-function renderTable() {
-  const tbody = document.getElementById("adminTableBody");
-  const empty = document.getElementById("adminEmpty");
-  tbody.innerHTML = "";
-  const data = getSortedFiltered();
-  if (!data.length) { empty.style.display="block"; return; }
-  empty.style.display = "none";
-
-  data.forEach((reg, i) => {
-    const tr  = document.createElement("tr");
-    const uid = reg.uniqueID || generateAdminUniqueID(reg.name, reg.icNo, reg.sectionA?.yearJoining);
-    const photoHTML = reg.photoURL
-      ? `<img src="${reg.photoURL}" class="admin-photo-thumb" alt="Photo"/>`
-      : `<div class="admin-photo-placeholder">👤</div>`;
-    const isActive      = reg.approved === true;
-    const isTransferred = reg.transferred === true;
-
-    let statusHTML;
-    if (isTransferred) {
-      statusHTML = `<span class="membership-badge membership-badge--transferred">↗ Berpindah / Transferred</span>`;
-    } else if (isActive) {
-      statusHTML = `<span class="membership-badge membership-badge--active">✔ Aktif / Active</span>`;
-    } else {
-      statusHTML = `<span class="membership-badge membership-badge--inactive">✖ Tidak Aktif / Inactive</span>`;
-    }
-
-    // Action button logic
-    let activateBtn;
-    if (isTransferred) {
-      activateBtn = `<button class="action-dropdown-item cancel-transfer-btn" data-id="${reg.id}" data-name="${reg.name||""}"><span class="action-icon">↩️</span> Batal Pindah / Cancel Transfer</button>`;
-    } else if (isActive) {
-      activateBtn = `<button class="action-dropdown-item deactivate-btn" data-id="${reg.id}" data-name="${reg.name||""}"><span class="action-icon">🔴</span> Nyahaktifkan / Deactivate</button>`;
-    } else {
-      activateBtn = `<button class="action-dropdown-item activate-btn" data-id="${reg.id}" data-name="${reg.name||""}"><span class="action-icon">🟢</span> Aktifkan / Activate</button>`;
-    }
-
-    tr.innerHTML = `
-      <td class="col-photo">${photoHTML}</td>
-      <td class="col-nameID">
-        <div class="admin-name-bold">${(reg.name||"—")}</div>
-        <div class="admin-uid-tag">${uid}</div>
-      </td>
-      <td>${reg.sectionA?.citizenship === "nonCitizen"
-        ? (reg.sectionA?.foreignID || "—")
-        : (reg.icNo || "—")}</td>
-      <td>${reg.sectionA?.komselCode||"—"}</td>
-      <td>${formatDate(reg.submittedAt || reg.dateApplied)}</td>
-      <td class="col-memberstatus">${statusHTML}</td>
-      <td class="action-cell">
-        <button class="btn-action-dots" data-id="${reg.id}">•••</button>
-      </td>`;
-    tbody.appendChild(tr);
-  });
-  bindTableEvents();
-}
-
-// ── Table Events ──
-let currentActionId = null;
-
-function bindTableEvents() {
-  document.querySelectorAll(".btn-action-dots").forEach(btn => {
-    btn.addEventListener("click", function(e) {
-      e.stopPropagation();
-      currentActionId = this.dataset.id;
-      const reg = registrations.find(r => r.id === currentActionId);
-      if (!reg) return;
-
-      // Set modal title to member name
-      document.getElementById("actionModalName").textContent =
-        (reg.name || reg.sectionA?.fullName || "—").toUpperCase();
-
-      // Set status button label dynamically
-      const statusBtn = document.getElementById("actionBtnStatus");
-      if (reg.transferred) {
-        statusBtn.innerHTML = `<span class="action-icon">↩️</span> Batal Pindah / Cancel Transfer`;
-      } else if (reg.approved) {
-        statusBtn.innerHTML = `<span class="action-icon">🔴</span> Nyahaktifkan / Deactivate`;
-      } else {
-        statusBtn.innerHTML = `<span class="action-icon">🟢</span> Aktifkan / Activate`;
-      }
-
-      document.getElementById("actionModal").style.display = "flex";
-    });
-  });
-}
-
-// Action modal button wiring
-document.getElementById("closeActionModal")?.addEventListener("click", () => {
-  document.getElementById("actionModal").style.display = "none"; currentActionId = null;
-});
-document.getElementById("closeActionModalBtn")?.addEventListener("click", () => {
-  document.getElementById("actionModal").style.display = "none"; currentActionId = null;
-});
-
-document.getElementById("actionBtnView")?.addEventListener("click", () => {
-  document.getElementById("actionModal").style.display = "none";
-  openViewModal(currentActionId);
-});
-document.getElementById("actionBtnPrint")?.addEventListener("click", () => {
-  document.getElementById("actionModal").style.display = "none";
-  printRecord(currentActionId);
-});
-document.getElementById("actionBtnStatus")?.addEventListener("click", () => {
-  document.getElementById("actionModal").style.display = "none";
-  const reg = registrations.find(r => r.id === currentActionId);
-  if (!reg) return;
-  if (reg.transferred) cancelTransfer(currentActionId, reg.name);
-  else if (reg.approved) openDeactivateModal(currentActionId, reg.name);
-  else openActivateModal(currentActionId, reg.name);
-});
-document.getElementById("actionBtnCard")?.addEventListener("click", () => {
-  document.getElementById("actionModal").style.display = "none";
-  openMembershipCardModal(currentActionId);
-});
-document.getElementById("actionBtnDelete")?.addEventListener("click", () => {
-  document.getElementById("actionModal").style.display = "none";
-  pendingDeleteId = currentActionId;
-  document.getElementById("deleteModal").style.display = "flex";
-});
-
-// ── XLSX Download ──
-document.getElementById("btnDownloadXLSX")?.addEventListener("click", () => {
-  const rows = registrations.map(reg => {
-    const a = reg.sectionA || {};
-    const b = reg.sectionB || {};
-    const c = reg.sectionC || {};
-    const services = b.services || {};
-    const involved    = Object.entries(services).filter(([,v])=>v?.current).map(([k])=>k).join(", ");
-    const wantToJoin  = Object.entries(services).filter(([,v])=>v?.join).map(([k])=>k).join(", ");
-    const children    = (c.children||[]).filter(ch=>ch.name?.trim()&&ch.gender).length;
-    return {
-      "Nama / Name":              (a.fullName||reg.name||"").toUpperCase(),
-      "ID Unik / Unique ID":      reg.uniqueID||"",
-      "No. KP / IC No.":          a.icNo||reg.icNo||"",
-      "No. Telefon / Phone":      a.phoneNumber||"",
-      "Jantina / Gender":         a.gender||"",
-      "Tarikh Lahir / DOB":       a.dob||"",
-      "Bangsa / Race":             a.race||"",
-      "Pekerjaan / Occupation":   a.occupation||"",
-      "Status Perkahwinan / Marital": a.maritalStatus||"",
-      "Status Pembaptisan / Baptism": a.baptismStatus||"",
-      "Tahun Pembaptisan / Year Baptised": a.baptismYear||"",
-      "Warganegara / Citizenship": a.citizenship||"",
-      "Gereja Asal / Original Church": a.originalChurch||"",
-      "Tahun Menyertai OTR / Year Joining": a.yearJoining||"",
-      "Jawatan Komsel / Cell Role": a.memberRole||"",
-      "Kod Komsel / Cell Code":    a.komselCode||"",
-      "Alamat / Address":          a.currentAddress||"",
-      "Perkhidmatan Semasa / Current Services": involved,
-      "Ingin Sertai / Want To Join": wantToJoin,
-      "Bilangan Anak / No. Children": children,
-      "Status Keanggotaan / Status": reg.approved ? "Aktif" : reg.transferred ? "Berpindah" : "Tidak Aktif",
-    };
-  });
-  const ws  = XLSX.utils.json_to_sheet(rows);
-  const wb  = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Senarai Ahli");
-  XLSX.writeFile(wb, `BEM_OTR_Senarai_Ahli_${new Date().toISOString().split("T")[0]}.xlsx`);
-});
-
-// ── Activate Modal ──
-function openActivateModal(id, name) {
-  pendingActivateId = id;
-  document.getElementById("activateModalTitle").textContent = "Aktifkan Keanggotaan / Activate Membership";
-  document.getElementById("activateModalText").innerHTML =
-    `Aktifkan status keanggotaan <strong>${name}</strong>?<br/>
-     <em style="color:var(--text-muted);font-size:0.9rem;">Activate <strong>${name}</strong>'s membership status?</em>`;
-  // Pre-fill with today's date — editable by admin
-  document.getElementById("activateDate").value = new Date().toISOString().split("T")[0];
-  document.getElementById("activateModal").style.display = "flex";
-}
-
-document.getElementById("cancelActivateBtn").addEventListener("click", () => {
-  document.getElementById("activateModal").style.display = "none"; pendingActivateId = null;
-});
-document.getElementById("closeActivateModal").addEventListener("click", () => {
-  document.getElementById("activateModal").style.display = "none"; pendingActivateId = null;
-});
-document.getElementById("confirmActivateBtn").addEventListener("click", async () => {
-  if (!pendingActivateId) return;
-  const reg = registrations.find(r => r.id === pendingActivateId);
-  const chosenDate = document.getElementById("activateDate").value;
-  const approvedAt = chosenDate ? new Date(chosenDate) : new Date();
-
-  // ── Check for unpaid fees ──
-  if (reg) {
-    const pendingFees = calculateAdminPendingFees(reg, approvedAt);
-    if (pendingFees > 0) {
-      document.getElementById("activateModal").style.display = "none";
-      // Show unpaid warning
-      document.getElementById("unpaidWarningName").textContent =
-        reg.name || reg.sectionA?.fullName || "—";
-      document.getElementById("unpaidWarningAmount").textContent =
-        `RM ${(pendingFees * 10).toFixed(2)}`;
-      document.getElementById("unpaidWarningModal").style.display = "flex";
-      return;
-    }
-  }
-
-  await doActivate(pendingActivateId, approvedAt);
-  document.getElementById("activateModal").style.display = "none";
-  pendingActivateId = null;
-});
-
-function calculateAdminPendingFees(reg, approvedAt) {
-  const currentYear = new Date().getFullYear();
-  const approvedYear = approvedAt.getFullYear();
-  const paidYears   = reg.paidYears || [];
-  let unpaid = 0;
-  for (let y = approvedYear; y <= currentYear; y++) {
-    if (!paidYears.includes(y)) unpaid++;
-  }
-  return unpaid;
-}
-
-async function doActivate(id, approvedAt) {
-  try {
-    await db.collection("registrations").doc(id).update({
-      approved:   true,
-      approvedAt: firebase.firestore.Timestamp.fromDate(approvedAt)
-    });
-  } catch(e) { alert("Ralat / Error: " + e.message); }
-}
-
-// Unpaid warning — confirm anyway
-document.getElementById("btnActivateAnyway")?.addEventListener("click", async () => {
-  document.getElementById("unpaidWarningModal").style.display = "none";
-  const chosenDate = document.getElementById("activateDate").value;
-  const approvedAt = chosenDate ? new Date(chosenDate) : new Date();
-  await doActivate(pendingActivateId, approvedAt);
-  pendingActivateId = null;
-});
-
-document.getElementById("btnCancelUnpaid")?.addEventListener("click", () => {
-  document.getElementById("unpaidWarningModal").style.display = "none";
-  pendingActivateId = null;
-});
-
-// ── Deactivate Modal with 10s countdown ──
-function openDeactivateModal(id, name) {
-  pendingDeactivateId = id;
-  document.getElementById("deactivateModalText").innerHTML =
-    `Adakah anda pasti ingin nyahaktifkan status keanggotaan <strong>${name}</strong>?<br/>
-     <em style="color:var(--text-muted);">Are you sure you would like to deactivate <strong>${name}</strong>'s membership status?</em>`;
-  const btn = document.getElementById("confirmDeactivateBtn");
-  btn.disabled = true;
-  let count = 10;
-  document.getElementById("deactivateCountdown").textContent = `(${count})`;
-  document.getElementById("deactivateModal").style.display = "flex";
-  if (deactivateTimer) clearInterval(deactivateTimer);
-  deactivateTimer = setInterval(() => {
-    count--;
-    document.getElementById("deactivateCountdown").textContent = count > 0 ? `(${count})` : "";
-    if (count <= 0) {
-      clearInterval(deactivateTimer);
-      btn.disabled = false;
-    }
-  }, 1000);
-}
-
-document.getElementById("cancelDeactivateBtn").addEventListener("click",  closeDeactivateModal);
-document.getElementById("closeDeactivateModal").addEventListener("click", closeDeactivateModal);
-function closeDeactivateModal() {
-  document.getElementById("deactivateModal").style.display = "none";
-  pendingDeactivateId = null;
-  if (deactivateTimer) { clearInterval(deactivateTimer); deactivateTimer = null; }
-  document.getElementById("confirmDeactivateBtn").disabled = true;
-  document.getElementById("deactivateCountdown").textContent = "(10)";
-}
-document.getElementById("confirmDeactivateBtn").addEventListener("click", async () => {
-  if (!pendingDeactivateId) return;
-  try {
-    await db.collection("registrations").doc(pendingDeactivateId).update({ approved: false });
-  } catch(e) { alert("Ralat / Error: " + e.message); }
-  closeDeactivateModal();
-});
-
-// ── Membership Card Modal ──
-function openMembershipCardModal(id) {
-  const reg = registrations.find(r => r.id === id);
-  if (!reg) return;
-
-  const cardEl = document.getElementById("adminMembershipCard");
-  if (!cardEl) return;
-
-  // Populate using shared helper from membership-card.js
-  populateMembershipCard(cardEl, reg);
-
-  // Wire download buttons
-  const safeName = (reg.sectionA?.fullName || reg.name || "member").replace(/\s+/g,"-").toLowerCase();
-  document.getElementById("adminBtnDLPNG").onclick = () => downloadCardPNG(cardEl, `kad-keanggotaan-${safeName}`);
-  document.getElementById("adminBtnDLPDF").onclick = () => downloadCardPDF(cardEl, `kad-keanggotaan-${safeName}`);
-
-  document.getElementById("membershipCardModal").style.display = "flex";
-}
-
-document.getElementById("closeMCModal")   ?.addEventListener("click", () => document.getElementById("membershipCardModal").style.display="none");
-document.getElementById("closeMCModalBtn")?.addEventListener("click", () => document.getElementById("membershipCardModal").style.display="none");
-
-// ── Membership Card button styles (inline for admin) ──
-(function injectMCButtonStyles() {
-  const style = document.createElement("style");
-  style.textContent = `
-    .mc-dl-btn {
-      display:inline-flex; align-items:center; gap:0.5rem;
-      font-family:var(--font-display); font-size:0.78rem;
-      letter-spacing:0.05em; font-weight:700;
-      padding:0.5rem 1.2rem; border-radius:var(--radius);
-      border:none; cursor:pointer; transition:all 0.2s ease;
-    }
-    .mc-dl-btn--pdf { background:linear-gradient(135deg,#CC3333,#E04444); color:#fff; }
-    .mc-dl-btn--pdf:hover { transform:translateY(-2px); }
-    .mc-dl-btn--png { background:linear-gradient(135deg,#1565C0,#1976D2); color:#fff; }
-    .mc-dl-btn--png:hover { transform:translateY(-2px); }
-  `;
-  document.head.appendChild(style);
-})();
-
-// ── Edit button in view modal — opens update-info page with IC pre-filled ──
-document.getElementById("editModalBtn")?.addEventListener("click", () => {
-  const reg = registrations.find(r => r.id === currentActionId);
-  if (!reg) return;
-  const ic = reg.icNo || reg.sectionA?.icNo || "";
-  if (ic) {
-    window.location.href = `update-info.html?ic=${encodeURIComponent(ic)}`;
-  } else {
-    window.location.href = "update-info.html";
-  }
-});
-async function cancelTransfer(id, name) {
-  if (!confirm(`Batal pemindahan ${name}?\nCancel transfer for ${name}?`)) return;
-  try {
-    await db.collection("registrations").doc(id).update({
-      transferred:    false,
-      transferReason: firebase.firestore.FieldValue.delete(),
-      transferDate:   firebase.firestore.FieldValue.delete(),
-      transferTo:     firebase.firestore.FieldValue.delete(),
-      transferAt:     firebase.firestore.FieldValue.delete(),
-      approved:       false,
-    });
-  } catch(e) { alert("Ralat / Error: " + e.message); }
-}
-
-// ── VIEW MODAL — fixed label:value formatting ──
-function vRow(label, value) {
-  return `<div class="vf-row"><span class="vf-label">${label}:</span><span class="vf-value">${value||"—"}</span></div>`;
-}
-
-function buildViewHTML(reg) {
-  const a = reg.sectionA || {};
-  const servicesB = reg.sectionB?.services || {};
-  const haveList = [], wantList = [];
-  Object.entries(servicesB).forEach(([idx,val]) => {
-    const n = SERVICE_NAMES[parseInt(idx)] || `Service ${idx}`;
-    if (val.have) haveList.push(n);
-    if (val.want) wantList.push(n);
-  });
-  const children = reg.sectionC?.children || [];
-  const uid = reg.uniqueID || generateAdminUniqueID(reg.name, reg.icNo, a.yearJoining);
-  const e   = reg.sectionE || {};
-  const photoSection = reg.photoURL
-    ? `<div style="text-align:center;margin-bottom:1rem;"><img src="${reg.photoURL}" style="width:100px;height:125px;object-fit:cover;border-radius:8px;border:2px solid var(--marigold-dim);"/></div>`
-    : "";
-
-  const behalfSection = reg.behalfRegistration ? `
-    <div class="vf-section-title" style="color:var(--marigold);">⚠️ Didaftar Oleh Orang Lain / Registered By Another Person</div>
-    <div class="vf-grid">
-      ${vRow("Didaftar Oleh / Registered By", `${reg.behalfRegistrantName||"—"} (${reg.behalfRegistrantIC||"—"})`)}
-      ${vRow("Hubungan / Relationship", reg.behalfRelationship)}
-      ${vRow("Sebab / Reason", reg.behalfReason === "oku" ? "Individu O.K.U / Disabled Individual" :
-        reg.behalfReason === "elderly" ? "Warga Emas / Senior / Elderly" :
-        reg.behalfReason === "others" ? `Lain-lain / Others: ${reg.behalfOtherReason||"—"}` : "—")}
-    </div>` : "";
-
-  const transferSection = reg.transferred ? `
-    <div class="vf-section-title" style="color:#3B9EE8;">↗ Maklumat Pemindahan / Transfer Information</div>
-    <div class="vf-grid">
-      ${vRow("Tujuan Perpindahan / Reason For Transfer", reg.transferReason)}
-      ${vRow("Tarikh Akan Berpindah / Date of Transfer",  reg.transferDate)}
-      ${vRow("Pindah Ke Mana? / Transfer To Where?",      reg.transferTo)}
-    </div>` : "";
-
-  return `
-    ${behalfSection}
-    ${transferSection}
-    ${photoSection}
-    <div class="vf-section-title">A. Maklumat Peribadi / Personal Information</div>
-    <div class="vf-grid">
-      ${vRow("ID Unik / Unique ID", `<strong style="color:var(--marigold)">${uid}</strong>`)}
-      ${vRow("Nama Penuh / Full Name", `<strong>${(a.fullName||"—")}</strong>`)}
-      ${vRow("No. KP / IC No.", a.citizenship === "nonCitizen"
-        ? "<em style='color:var(--text-muted);font-size:0.85rem;'>Tiada kaitan kerana anggota bukan warga Malaysia / Irrelevant since member is not Malaysian</em>"
-        : (a.icNo || reg.icNo || "—"))}
-      ${vRow("Jantina / Gender", genderMap[a.gender])}
-      ${vRow("Tarikh Lahir / Date of Birth", a.dob)}
-      ${vRow("Bangsa / Race", a.race)}
-      ${vRow("Status Perkahwinan / Marital Status", maritalMap[a.maritalStatus])}
-      ${a.partnerName     ? vRow("Nama Pasangan / Partner's Name", a.partnerName) : ""}
-      ${a.latePartnerName ? vRow("Nama Pasangan Meninggal / Late Partner", a.latePartnerName) : ""}
-      ${vRow("Status Pembaptisan / Baptism Status", baptismMap[a.baptismStatus])}
-      ${a.baptismYear ? vRow("Tahun Pembaptisan / Year of Baptism", a.baptismYear) : ""}
-      ${vRow("Warganegara / Citizenship", a.citizenship==="citizen" ? "Warganegara Malaysia / Malaysian" : "Bukan Warganegara / Non-Malaysian")}
-      ${a.citizenship !== "citizen" ? vRow("Negara Asal / Country of Origin", a.countryOfOrigin) : ""}
-      ${a.citizenship !== "citizen" ? vRow("Nombor ID / ID Number", a.foreignID || "—") : ""}
-      ${vRow("Nombor Telefon / Telephone No.", a.phoneNumber)}
-      ${vRow("Pekerjaan / Occupation", a.occupation || "Tiada Maklumat / No Information")}
-      ${vRow("Gereja Asal / Original Church", a.originalChurch || "Tiada Maklumat / No Information")}
-      ${vRow("Tahun Menyertai / Year Joined", a.yearJoining)}
-      ${vRow("Kod Komsel / Cell Group Code", a.komselCode)}
-      ${vRow("Alamat Terkini / Current Address", a.currentAddress)}
+  <!-- ═══ LOGIN OVERLAY ═══ -->
+  <div class="login-overlay" id="loginOverlay">
+    <div class="login-card">
+      <div class="login-logo">
+        <img src="Images/logo.jpg" alt="BEM On The Rock" class="logo-img login-logo-img"/>
+        <img src="Images/logo_bem_sib.png" alt="B.E.M" class="logo-img login-logo-img"/>
+      </div>
+      <h2 class="login-title">BEM On The Rock</h2>
+      <p class="login-subtitle">Laman Admin / Admin Page</p>
+      <div class="login-form">
+        <div class="form-group">
+          <label class="form-label" for="adminUsername">Emel / E-mail</label>
+          <input type="email" id="adminUsername" class="form-input" placeholder="Masukkan emel / Enter email"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="adminPassword">Kata Laluan / Password</label>
+          <div style="position:relative;">
+            <input type="password" id="adminPassword" class="form-input" placeholder="Masukkan kata laluan / Enter password" style="padding-right:3rem;"/>
+            <button type="button" id="togglePassword"
+              style="position:absolute;right:0.65rem;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:1.2rem;color:var(--marigold);padding:0;line-height:1;z-index:2;"
+              title="Tunjuk/Sembunyi Kata Laluan / Show/Hide Password">
+              <span id="togglePasswordIcon" style="display:flex;align-items:center;"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg></span>
+            </button>
+          </div>
+        </div>
+        <span class="error-msg" id="loginError"></span>
+        <button class="btn btn-primary login-btn" id="btnLogin">Log Masuk / Login</button>
+        <a href="home.html" class="btn btn-secondary login-btn" style="text-align:center;text-decoration:none;margin-top:0.5rem;">
+          &larr; Kembali ke Halaman Rumah / Back to Home Page
+        </a>
+      </div>
     </div>
-
-    <div class="vf-section-title">B. Bidang Pelayanan / Field of Service</div>
-    <div class="vf-grid">
-      ${vRow("Pernah Terlibat / Have Been Involved",        haveList.length ? haveList.join(", ") : "—")}
-      ${vRow("Ingin Terlibat / Would Like to Be Involved",  wantList.length ? wantList.join(", ") : "—")}
-    </div>
-
-    <div class="vf-section-title">C. Maklumat Kanak-kanak / Children Information
-      ${reg.sectionC?.syncedFromPartner
-        ? `<span style="font-size:0.72rem;font-family:var(--font-body);color:var(--marigold);
-            background:rgba(255,140,0,0.1);border:1px solid rgba(255,140,0,0.25);
-            border-radius:999px;padding:2px 8px;margin-left:8px;font-weight:400;letter-spacing:0.03em;">
-            🔗 Disegerakkan dari pasangan / Synced from partner (${reg.sectionC?.syncedFromPartnerUID||"—"})
-           </span>`
-        : ""}
-    </div>
-    <div class="vf-grid">
-      ${children.length
-        ? children.map((c,i) => vRow(`Anak ${i+1} / Child ${i+1}`, `${c.name||"—"} (${genderMap[c.gender]||"—"}) — MyKid: ${c.myKid||"—"}`)).join("")
-        : vRow("Kanak-kanak / Children", "Tiada Anak berumur 12 tahun ke bawah / No children aged 12 and below")
-      }
-    </div>
-
-    <div class="vf-section-title">D. Ikrar Jemaat / Church Pledge</div>
-    <div class="vf-grid">
-      ${vRow("Ikrar / Pledge", reg.sectionD?.pledgeAgreed
-        ? "✔ Saya bersetuju dengan ikrar-ikrar gereja / I agree with the church's pledge"
-        : "✖ Tidak bersetuju / Not agreed")}
-    </div>
-
-    <div class="vf-section-title">E. Pengakuan Jemaat / Confession</div>
-    <div class="vf-grid">
-      ${vRow("Kod Komsel / Cell Group Code", e.komsel)}
-      ${vRow("Sejak / Since",                e.since)}
-      ${vRow("Pemimpin / Leader",            e.leader)}
-      ${vRow("Nama / Name",                  e.name)}
-      ${vRow("Tarikh / Date",                formatDate(e.date))}
-    </div>`;
-}
-
-function openViewModal(id) {
-  const reg = registrations.find(r => r.id === id);
-  if (!reg) return;
-  document.getElementById("viewModalBody").innerHTML = buildViewHTML(reg);
-  document.getElementById("editModalBtn").onclick = () => alert("Edit feature coming soon.");
-  document.getElementById("viewModal").style.display = "flex";
-}
-
-document.getElementById("closeViewModal").addEventListener("click",    () => document.getElementById("viewModal").style.display = "none");
-document.getElementById("closeViewModalBtn").addEventListener("click", () => document.getElementById("viewModal").style.display = "none");
-
-// ── PRINT ──
-function printRecord(id) {
-  const reg = registrations.find(r => r.id === id);
-  if (!reg) return;
-  const a = reg.sectionA || {};
-  const servicesB = reg.sectionB?.services || {};
-  const haveList = [], wantList = [];
-  Object.entries(servicesB).forEach(([idx,val]) => {
-    const n = SERVICE_NAMES[parseInt(idx)] || `Service ${idx}`;
-    if (val.have) haveList.push({ num:parseInt(idx), name:n });
-    if (val.want) wantList.push({ num:parseInt(idx), name:n });
-  });
-  const allNums = [...new Set([...haveList.map(x=>x.num),...wantList.map(x=>x.num)])].sort((a,b)=>a-b);
-  const serviceRows = allNums.length
-    ? allNums.map((num,i) => {
-        const h = haveList.find(x=>x.num===num) ? "✓" : "";
-        const w = wantList.find(x=>x.num===num) ? "✓" : "";
-        return `<tr><td>${i+1}</td><td>${SERVICE_NAMES[num]||"—"}</td><td style="text-align:center">${h}</td><td style="text-align:center">${w}</td></tr>`;
-      }).join("")
-    : "<tr><td colspan='4' style='text-align:center;font-style:italic'>—</td></tr>";
-  const children = reg.sectionC?.children || [];
-  const childrenPrint = children.length
-    ? children.map((c,i) => `<p>${i+1}. ${c.name||"—"} (${genderMap[c.gender]||"—"}) — MyKid: ${c.myKid||"—"}</p>`).join("")
-    : "<p>Tiada Anak berumur 12 tahun dan ke bawah / No Children aged 12 and below</p>";
-  const e   = reg.sectionE || {};
-  const uid = reg.uniqueID || generateAdminUniqueID(reg.name, reg.icNo, a.yearJoining);
-  const photoSection = reg.photoURL
-    ? `<img src="${reg.photoURL}" style="float:right;width:90px;height:115px;object-fit:cover;border:1px solid #000;margin-left:12px;" alt="Photo"/>`
-    : "";
-  const pledgeItems = [
-    "Saya menyokong penuh Visi, Misi, Nilai dan Struktur gereja ini memperluaskan kerajaan Syurga di Bumi.",
-    "Saya siap untuk mendokong & terlibat dalam pelayanan yang dipercayakan.",
-    "Saya siap untuk setia mendokong & terlibat dalam pelayanan gereja melalui Pemberian Persepuluhan & Sumbangan Kewangan.",
-    "Saya komited untuk setia mendokong pelayanan gereja seperti Ibadah Raya, Komsel & Doa Korporat / Syafaat.",
-    "Saya akan selalu menjaga kesaksian hidup saya baik didalam mahupun diluar gereja.",
-    "Saya akan selalu menjaga hubungan baik diantara anggota gereja.",
-    "Saya akan taat berdoa bagi pertumbuhan & perkembangan gereja.",
-    "Saya siap untuk dibimbing, dinasihati & ditegur bila keadaan memerlukan demi kebaikan saya."
-  ];
-
-  const behalfPrint = reg.behalfRegistration ? `
-  <h3 style="color:#b35a00;">⚠️ Didaftar Oleh Orang Lain / Registered By Another Person</h3>
-  <div class="row"><span class="lbl">Didaftar Oleh / Registered By:</span><span>${reg.behalfRegistrantName||"—"} (${reg.behalfRegistrantIC||"—"})</span></div>
-  <div class="row"><span class="lbl">Hubungan / Relationship:</span><span>${reg.behalfRelationship||"—"}</span></div>
-  <div class="row"><span class="lbl">Sebab / Reason:</span><span>${
-    reg.behalfReason === "oku"     ? "Individu O.K.U / Disabled Individual" :
-    reg.behalfReason === "elderly" ? "Warga Emas / Senior / Elderly" :
-    reg.behalfReason === "others"  ? `Lain-lain / Others: ${reg.behalfOtherReason||"—"}` : "—"
-  }</span></div>` : "";
-
-  const transferPrint = reg.transferred ? `
-  <h3 style="color:#1a6ea8;">↗ Maklumat Pemindahan / Transfer Information</h3>
-  <div class="row"><span class="lbl">Tujuan Perpindahan / Reason For Transfer:</span><span>${reg.transferReason||"—"}</span></div>
-  <div class="row"><span class="lbl">Tarikh Akan Berpindah / Date of Transfer:</span><span>${reg.transferDate||"—"}</span></div>
-  <div class="row"><span class="lbl">Pindah Ke Mana? / Transfer To Where?:</span><span>${reg.transferTo||"—"}</span></div>` : "";
-
-  const printHTML = `<html><head><title>BEM On The Rock — ${(a.fullName||"Pendaftar").toUpperCase()}</title>
-  <style>
-    body{font-family:Arial,sans-serif;font-size:11pt;color:#000;margin:2cm}
-    h1{text-align:center;font-size:14pt;margin-bottom:2px}
-    h2{text-align:center;font-size:11pt;font-weight:normal;margin-bottom:4px}
-    h2.uid{text-align:center;font-size:10pt;color:#666;margin-bottom:16px}
-    h3{font-size:11pt;border-bottom:1px solid #000;padding-bottom:3px;margin:18px 0 8px;text-transform:uppercase;letter-spacing:.05em;clear:both}
-    p{margin:3px 0;line-height:1.6}
-    table{width:100%;border-collapse:collapse;margin:8px 0}
-    th,td{border:1px solid #000;padding:5px 8px;font-size:10pt;text-align:left}
-    th{background:#f0f0f0;font-weight:bold}
-    .row{display:flex;gap:20px;margin-bottom:5px}
-    .lbl{font-weight:bold;min-width:200px}
-    ol{margin:4px 0;padding-left:20px}
-    ol li{margin-bottom:6px}
-    .blank{display:inline-block;border-bottom:1px solid #000;min-width:120px}
-    .sig-line{margin-top:40px;display:flex;gap:60px}
-    .sig-block{flex:1}
-    .sig-block p{border-top:1px solid #000;margin-top:30px;font-size:9pt}
-    .office-box{border:1px solid #000;padding:12px;margin-top:8px}
-    @media print{body{margin:1.5cm}}
-  </style></head><body>
-  <h1>BEM On The Rock</h1>
-  <h2>Borang Pendaftaran Keanggotaan Gereja / Church Membership Registration Form</h2>
-  <h2 class="uid">ID Unik / Unique ID: ${uid}</h2>
-  ${behalfPrint}
-  ${transferPrint}
-  <h3>A. Maklumat Peribadi / Personal Information</h3>
-  ${photoSection}
-  <div class="row"><span class="lbl">Nama Penuh / Full Name:</span><span style="font-weight:bold;text-transform:uppercase">${a.fullName||"—"}</span></div>
-  <div class="row"><span class="lbl">No. KP / IC No.:</span><span>${reg.sectionA?.citizenship === "nonCitizen" ? (reg.sectionA?.foreignID || "—") : (reg.icNo||"—")}</span></div>
-  <div class="row"><span class="lbl">Jantina / Gender:</span><span>${genderMap[a.gender]||"—"}</span></div>
-  <div class="row"><span class="lbl">Tarikh Lahir / Date of Birth:</span><span>${a.dob||"—"}</span></div>
-  <div class="row"><span class="lbl">Bangsa / Race:</span><span>${a.race||"—"}</span></div>
-  <div class="row"><span class="lbl">Status Perkahwinan / Marital Status:</span><span>${maritalMap[a.maritalStatus]||"—"}${a.partnerName?" — "+a.partnerName:""}${a.latePartnerName?" — "+a.latePartnerName:""}</span></div>
-  <div class="row"><span class="lbl">Status Pembaptisan / Baptism:</span><span>${baptismMap[a.baptismStatus]||"—"}${a.baptismYear?" ("+a.baptismYear+")":""}</span></div>
-  <div class="row"><span class="lbl">Warganegara / Citizenship:</span><span>${a.citizenship==="citizen"?"Warganegara Malaysia / Malaysian":"Bukan Warganegara / Non-Malaysian"}</span></div>
-  ${a.citizenship !== "citizen" ? `<div class="row"><span class="lbl">Negara Asal / Country of Origin:</span><span>${a.countryOfOrigin||"—"}</span></div>` : ""}
-  ${a.citizenship !== "citizen" ? `<div class="row"><span class="lbl">Nombor ID / ID Number:</span><span>${a.foreignID||"—"}</span></div>` : ""}
-  <div class="row"><span class="lbl">Nombor Telefon / Phone:</span><span>${a.phoneNumber||"—"}</span></div>
-  <div class="row"><span class="lbl">Pekerjaan / Occupation:</span><span>${a.occupation||"Tiada Maklumat / No Information"}</span></div>
-  <div class="row"><span class="lbl">Gereja Asal / Original Church:</span><span>${a.originalChurch||"Tiada Maklumat / No Information"}</span></div>
-  <div class="row"><span class="lbl">Tahun Menyertai / Year Joined:</span><span>${a.yearJoining||"—"}</span></div>
-  <div class="row"><span class="lbl">Kod Komsel / Cell Group Code:</span><span>${a.komselCode||"—"}</span></div>
-  <div class="row"><span class="lbl">Alamat Terkini / Current Address:</span><span>${a.currentAddress||"—"}</span></div>
-  <h3>B. Bidang Pelayanan / Field of Service</h3>
-  <table><thead><tr><th>Bil.</th><th>Pelayanan / Service</th><th>Pernah Terlibat / Have Been Involved</th><th>Ingin Terlibat / Would Like to Be Involved</th></tr></thead>
-  <tbody>${serviceRows}</tbody></table>
-  <h3>C. Maklumat Kanak-kanak / Children Information</h3>
-  ${childrenPrint}
-  <h3>D. Ikrar Jemaat / Church Pledge</h3>
-  <ol>${pledgeItems.map(p=>`<li>${p}</li>`).join("")}</ol>
-  <p><strong>✔ Saya bersetuju dengan ikrar-ikrar gereja / I agree with the church's pledge: ${reg.sectionD?.pledgeAgreed?"Ya / Yes":"Tidak / No"}</strong></p>
-  <h3>E. Pengakuan Jemaat / Confession</h3>
-  <p>Saya mengaku bahawa saya telah menghadiri KOMSEL <strong>${e.komsel||"___"}</strong> sejak <strong>${e.since||"___"}</strong> dibawah pimpinan saudara/i <strong>${e.leader||"___"}</strong>.</p>
-  <p>Saya, <strong>${e.name||"___"}</strong> akui bahawa maklumat di atas adalah benar.</p>
-  <p>Tarikh / Date: <strong>${formatDate(e.date)}</strong></p>
-  <h3>F. Pengakuan Pemimpin Komsel / Komsel Leader Confession</h3>
-  <p>Saya, <span class="blank">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span> dengan nombor kad pengenalan <span class="blank">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>, pemimpin bagi Kod Komsel <span class="blank">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span> dengan ini mengesahkan bahawa saudara/i <span class="blank">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span> telah menghadiri komsel sejak <span class="blank">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>.</p>
-  <p>Beliau telah menunjukkan komitmen dengan mematuhi peraturan dan ikrar di atas.</p>
-  <div class="sig-line"><div class="sig-block"><p>Tarikh / Date</p></div><div class="sig-block"><p>Tandatangan / Signature</p></div></div>
-  <h3>G. Untuk Kegunaan Pejabat / For Office Use</h3>
-  <div class="office-box">
-    <p>Borang diterima pada / Form received on: <span class="blank">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></p>
-    <p>Jenis Keanggotaan / Membership Type: &nbsp;&nbsp; ☐ Tetap / Fixed &nbsp;&nbsp;&nbsp;&nbsp; ☐ Bersekutu / Associate</p>
   </div>
-  </body></html>`;
 
-  const win = window.open("","_blank");
-  win.document.write(printHTML);
-  win.document.close();
-  win.focus();
-  setTimeout(() => win.print(), 500);
-}
+  <!-- ═══ ADMIN PAGE ═══ -->
+  <div class="admin-page" id="adminPage" style="display:none;">
 
-// ── DELETE ──
-document.getElementById("confirmDeleteBtn").addEventListener("click", async () => {
-  if (!pendingDeleteId) return;
-  try { await db.collection("registrations").doc(pendingDeleteId).delete(); }
-  catch(e) { alert("Ralat memadam / Delete error: " + e.message); }
-  pendingDeleteId = null;
-  document.getElementById("deleteModal").style.display = "none";
-});
-document.getElementById("cancelDeleteBtn").addEventListener("click",  () => { pendingDeleteId = null; document.getElementById("deleteModal").style.display = "none"; });
-document.getElementById("closeDeleteModal").addEventListener("click", () => { pendingDeleteId = null; document.getElementById("deleteModal").style.display = "none"; });
+    <header class="site-header">
+      <div class="header-inner">
+        <div class="logo-wrap"><img src="Images/logo.jpg" alt="BEM On The Rock Logo" class="logo-img"/></div>
+        <div class="header-text">
+          <h1 class="church-name"><span class="church-name-bem">BEM</span> <span class="church-name-rock">On the ROCK</span></h1>
+          <p class="church-subtitle">Laman Admin &nbsp;/&nbsp; Admin Page</p>
+        </div>
+        <div class="logo-wrap logo-wrap-right"><img src="Images/logo_bem_sib.png" alt="B.E.M Logo" class="logo-img logo-bem"/></div>
+      </div>
+    </header>
+
+    <main class="admin-main">
+
+      <!-- Top Bar -->
+      <div class="admin-content-card">
+
+        <div class="admin-topbar">
+          <div class="admin-topbar-left">
+            <h2 class="admin-section-title">Senarai Pendaftaran <span>/ Registration List</span></h2>
+          </div>
+          <div class="admin-topbar-right">
+            <a href="affiliated-admin-view.html" class="btn btn-secondary admin-stats-btn" style="text-decoration:none;">
+              🤲 Jemaat Bersekutu / Affiliated
+            </a>
+            <button class="btn btn-secondary admin-stats-btn" id="btnDownloadXLSX">
+              📥 Muat Turun .xlsx
+            </button>
+            <a href="deceased-admin-view.html" class="btn btn-secondary admin-stats-btn" style="text-decoration:none;">
+              🕊️ Kematian / Deceased
+            </a>
+            <a href="stats.html" class="btn btn-secondary admin-stats-btn">
+              📊 Statistik / Statistics
+            </a>
+            <button class="btn btn-secondary admin-logout-btn" id="btnLogout">
+              Log Keluar / Logout
+            </button>
+          </div>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="admin-search-bar">
+          <input type="text" id="adminSearch" class="form-input admin-search-input"
+            placeholder="🔍 Cari nama, No. KP, atau ID / Search by name, IC No., or ID" />
+        </div>
+
+        <!-- Sort Controls -->
+        <div class="admin-controls">
+          <div class="admin-sort-group">
+            <label class="admin-control-label">Susun / Sort:</label>
+            <select id="sortBy" class="form-input form-select admin-select">
+              <option value="date">Mengikut Tarikh Mengisi Borang / By Date Form Filled</option>
+              <option value="name">Susunan Abjad / Alphabetical Order</option>
+              <option value="id">Mengikut ID / By ID</option>
+              <option value="ic">Mengikut No. KP / By IC Num.</option>
+              <option value="komsel">Mengikut Komsel / By Cell Group</option>
+            </select>
+          </div>
+          <div class="admin-sort-group">
+            <label class="admin-control-label">Tertib / Order:</label>
+            <select id="sortOrder" class="form-input form-select admin-select">
+              <option value="asc">Menaik / Ascending</option>
+              <option value="desc">Menurun / Descending</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Registrations Table -->
+        <div class="admin-table-wrap">
+          <table class="admin-table" id="adminTable">
+            <thead>
+              <tr>
+                <th class="col-photo">Gambar<br/><em class="th-en">Photo</em></th>
+                <th class="col-nameID">Nama &amp; ID<br/><em class="th-en">Name &amp; ID</em></th>
+                <th>No. KP<br/><em class="th-en">IC Num.</em></th>
+                <th>Komsel<br/><em class="th-en">Cell Group</em></th>
+                <th>Tarikh Mengisi Borang<br/><em class="th-en">Date Form Filled</em></th>
+                <th class="col-memberstatus">Status Keanggotaan<br/><em class="th-en">Membership Status</em></th>
+                <th class="col-action">Tindakan<br/><em class="th-en">Action</em></th>
+              </tr>
+            </thead>
+            <tbody id="adminTableBody"></tbody>
+          </table>
+          <div class="admin-empty" id="adminEmpty" style="display:none;">
+            <p>Tiada rekod pendaftaran. / No registration records found.</p>
+          </div>
+        </div>
+
+      </div><!-- /admin-content-card -->
+    </main>
+
+    <footer class="site-footer">
+      <p>&copy; <span id="adminFooterYear"></span> BEM On The Rock. Hak Cipta Terpelihara / All Rights Reserved.</p>
+    </footer>
+
+  </div><!-- /admin-page -->
+
+  <!-- ═══ VIEW MODAL ═══ -->
+  <div class="modal-overlay" id="viewModal" style="display:none;">
+    <div class="modal-card modal-card--lg">
+      <div class="modal-header">
+        <h3 class="modal-title">Maklumat Pendaftar / Applicant Information</h3>
+        <button class="modal-close" id="closeViewModal">&times;</button>
+      </div>
+      <div class="modal-body" id="viewModalBody"></div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="closeViewModalBtn">Tutup / Close</button>
+        <button class="btn btn-primary" id="editModalBtn">✏️ Edit</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ DELETE CONFIRM MODAL ═══ -->
+  <div class="modal-overlay" id="deleteModal" style="display:none;">
+    <div class="modal-card modal-card--sm">
+      <div class="modal-header">
+        <h3 class="modal-title">Padam Rekod / Delete Record</h3>
+        <button class="modal-close" id="closeDeleteModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="delete-confirm-text">
+          Pastikah anda ingin memadam data jemaat ini?<br/>
+          <em>Are you sure you want to delete this member's data?</em>
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="cancelDeleteBtn">Tidak / No</button>
+        <button class="btn btn-danger" id="confirmDeleteBtn">Ya / Yes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ ACTIVATE MODAL ═══ -->
+  <div class="modal-overlay" id="activateModal" style="display:none;">
+    <div class="modal-card modal-card--sm">
+      <div class="modal-header">
+        <h3 class="modal-title" id="activateModalTitle">Aktifkan Keanggotaan / Activate Membership</h3>
+        <button class="modal-close" id="closeActivateModal">&times;</button>
+      </div>
+      <div class="modal-body" style="text-align:center;">
+        <p id="activateModalText" style="font-size:1.05rem;line-height:1.7;margin-bottom:1.2rem;"></p>
+        <div style="text-align:left;max-width:280px;margin:0 auto;">
+          <label class="form-label" for="activateDate" style="font-size:0.85rem;margin-bottom:0.3rem;display:block;">
+            Tarikh Pengaktifan / Activation Date
+          </label>
+          <input type="date" id="activateDate" class="form-input"
+            style="font-size:0.92rem;padding:0.5rem 0.8rem;"/>
+          <p class="field-hint" style="margin-top:0.3rem;font-size:0.75rem;">
+            Boleh diubah untuk ahli lama / Can be changed for existing members
+          </p>
+        </div>
+      </div>
+      <div class="modal-footer" style="justify-content:center;gap:1rem;">
+        <button class="btn btn-secondary" id="cancelActivateBtn">Batal / Cancel</button>
+        <button class="btn btn-primary" id="confirmActivateBtn">Aktifkan / Activate</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ DEACTIVATE MODAL ═══ -->
+  <div class="modal-overlay" id="deactivateModal" style="display:none;">
+    <div class="modal-card modal-card--sm">
+      <div class="modal-header">
+        <h3 class="modal-title" style="color:var(--error);">⚠️ Nyahaktifkan Keanggotaan / Deactivate Membership</h3>
+        <button class="modal-close" id="closeDeactivateModal">&times;</button>
+      </div>
+      <div class="modal-body" style="text-align:center;">
+        <p id="deactivateModalText" style="font-size:1.05rem;line-height:1.7;"></p>
+      </div>
+      <div class="modal-footer" style="justify-content:center;gap:1rem;">
+        <button class="btn btn-secondary" id="cancelDeactivateBtn">Batal / Cancel</button>
+        <button class="btn btn-danger" id="confirmDeactivateBtn" disabled>
+          Nyahaktifkan / Deactivate <span id="deactivateCountdown" style="font-size:0.85rem;opacity:0.8;">(10)</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ MEMBERSHIP CARD MODAL ═══ -->
+  <div class="modal-overlay" id="membershipCardModal" style="display:none;">
+    <div class="modal-card" style="max-width:600px;">
+      <div class="modal-header">
+        <h3 class="modal-title">🪪 Kad Keanggotaan / Membership Card</h3>
+        <button class="modal-close" id="closeMCModal">&times;</button>
+      </div>
+      <div class="modal-body" style="display:flex;flex-direction:column;align-items:center;gap:1.5rem;padding:2rem 1.5rem;">
+
+        <!-- Card preview — same structure as member-facing page -->
+        <div id="adminMembershipCard" style="
+          width:480px; height:286px;
+          background:linear-gradient(135deg,#0a0500 0%,#1a0e00 40%,#0a0a0a 100%);
+          border:2px solid #FF8C00; border-radius:16px; position:relative;
+          overflow:hidden; box-shadow:0 12px 40px rgba(255,140,0,0.3);
+          flex-shrink:0;">
+
+          <div style="position:absolute;top:0;left:0;right:0;height:5px;background:linear-gradient(90deg,#CC7000,#FF8C00,#FFA333,#FF8C00,#CC7000);"></div>
+          <div style="position:absolute;bottom:0;left:0;right:0;height:5px;background:linear-gradient(90deg,#CC7000,#FF8C00,#FFA333,#FF8C00,#CC7000);"></div>
+          <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 80% 20%,rgba(255,140,0,0.12) 0%,transparent 55%),radial-gradient(ellipse at 20% 80%,rgba(255,140,0,0.07) 0%,transparent 45%);pointer-events:none;"></div>
+
+          <!-- Title -->
+          <div style="position:absolute;top:14px;left:0;right:0;padding:0 14px 0 100px;display:flex;flex-direction:column;align-items:center;gap:2px;">
+            <div style="font-family:'Cinzel',serif;font-size:0.72rem;font-weight:700;letter-spacing:0.12em;color:#FFA333;text-transform:uppercase;text-align:center;text-shadow:0 0 12px rgba(255,140,0,0.5);line-height:1.2;">BEM On The Rock<br/>Member Card</div>
+            <div style="font-family:'Cinzel',serif;font-size:0.55rem;letter-spacing:0.08em;color:#C0C0C0;font-style:italic;">Kad Keanggotaan Gereja</div>
+          </div>
+
+          <!-- Logo -->
+          <img src="Images/logo.jpg" style="position:absolute;top:10px;right:14px;width:40px;height:40px;object-fit:contain;opacity:0.9;" alt="Logo"/>
+
+          <!-- Photo area -->
+          <div id="mcPhotoArea" style="position:absolute;top:10px;left:14px;width:68px;height:85px;border-radius:6px;border:2px solid #FF8C00;background:#1a1a1a;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:1.8rem;color:#555;"></div>
+
+          <!-- Info -->
+          <div style="position:absolute;top:104px;left:14px;right:14px;">
+            <div id="mcName" style="font-family:'Cinzel',serif;font-size:0.95rem;font-weight:700;color:#FFF8E7;letter-spacing:0.05em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:5px;"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px 14px;">
+              <div style="display:flex;flex-direction:column;gap:1px;">
+                <span style="font-family:'Cinzel',serif;font-size:0.48rem;letter-spacing:0.1em;color:#FF8C00;text-transform:uppercase;">ID</span>
+                <span id="mcUID" style="font-size:0.75rem;color:#F5F5F0;font-weight:600;"></span>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:1px;">
+                <span style="font-family:'Cinzel',serif;font-size:0.48rem;letter-spacing:0.1em;color:#FF8C00;text-transform:uppercase;">Jantina / Gender</span>
+                <span id="mcGender" style="font-size:0.75rem;color:#F5F5F0;font-weight:600;"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Validity -->
+          <div style="position:absolute;bottom:12px;left:14px;right:14px;display:flex;justify-content:space-between;align-items:flex-end;">
+            <div style="display:flex;flex-direction:column;gap:1px;">
+              <span style="font-family:'Cinzel',serif;font-size:0.46rem;letter-spacing:0.1em;color:#FF8C00;text-transform:uppercase;">Sah Dari / Valid From</span>
+              <span id="mcValidFrom" style="font-size:0.75rem;color:#F5F5F0;font-weight:600;"></span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:1px;">
+              <span style="font-family:'Cinzel',serif;font-size:0.46rem;letter-spacing:0.1em;color:#FF8C00;text-transform:uppercase;">Sah Hingga / Valid Until</span>
+              <span id="mcValidUntil" style="font-size:0.75rem;color:#F5F5F0;font-weight:600;"></span>
+            </div>
+            <div id="mcStatusBadge" style="background:linear-gradient(135deg,#2E7D32,#388E3C);color:#fff;font-family:'Cinzel',serif;font-size:0.54rem;letter-spacing:0.1em;text-transform:uppercase;padding:3px 9px;border-radius:999px;border:1px solid #4CAF50;">Aktif</div>
+          </div>
+        </div><!-- /adminMembershipCard -->
+
+        <!-- Download buttons -->
+        <div style="display:flex;gap:0.85rem;flex-wrap:wrap;justify-content:center;">
+          <button class="mc-dl-btn mc-dl-btn--png" id="adminBtnDLPNG">🖼 Muat Turun PNG</button>
+          <button class="mc-dl-btn mc-dl-btn--pdf" id="adminBtnDLPDF">📄 Muat Turun PDF</button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="closeMCModalBtn">Tutup / Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ ACTION MODAL (replaces dropdown) ═══ -->
+  <div class="modal-overlay" id="actionModal" style="display:none;">
+    <div class="modal-card modal-card--sm">
+      <div class="modal-header">
+        <h3 class="modal-title" id="actionModalName">Tindakan / Action</h3>
+        <button class="modal-close" id="closeActionModal">&times;</button>
+      </div>
+      <div class="modal-body" style="display:flex;flex-direction:column;gap:0.5rem;padding:1rem 1.5rem;">
+        <button class="action-dropdown-item" id="actionBtnView"   style="width:100%;text-align:left;"><span class="action-icon">📄</span> Lihat / View</button>
+        <button class="action-dropdown-item" id="actionBtnPrint"  style="width:100%;text-align:left;"><span class="action-icon">🖨️</span> Cetak / Print</button>
+        <button class="action-dropdown-item" id="actionBtnStatus" style="width:100%;text-align:left;"><span class="action-icon">🔄</span> Tukar Status / Change Status</button>
+        <button class="action-dropdown-item" id="actionBtnCard"   style="width:100%;text-align:left;"><span class="action-icon">🪪</span> Kad Keanggotaan / Membership Card</button>
+        <button class="action-dropdown-item delete" id="actionBtnDelete" style="width:100%;text-align:left;"><span class="action-icon">🗑️</span> Padam / Delete</button>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="closeActionModalBtn">Batal / Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ UNPAID FEES WARNING MODAL ═══ -->
+  <div class="modal-overlay" id="unpaidWarningModal" style="display:none;">
+    <div class="modal-card modal-card--sm">
+      <div class="modal-header">
+        <h3 class="modal-title" style="color:#E8A000;">⚠️ Yuran Belum Dibayar / Unpaid Fees</h3>
+        <button class="modal-close" onclick="document.getElementById('unpaidWarningModal').style.display='none'">&times;</button>
+      </div>
+      <div class="modal-body" style="text-align:center;">
+        <p style="font-size:1rem;color:var(--text-primary);line-height:1.7;margin-bottom:0.5rem;">
+          Pengguna ini (<strong id="unpaidWarningName"></strong>) masih belum membayar yuran tahunannya
+          (<strong id="unpaidWarningAmount" style="color:var(--marigold-bright);"></strong>).
+        </p>
+        <p style="font-size:0.88rem;color:var(--text-muted);font-style:italic;line-height:1.6;">
+          This user has yet to pay their annual fee. Would you like to activate their membership status anyway?
+        </p>
+      </div>
+      <div class="modal-footer" style="justify-content:center;gap:1rem;">
+        <button class="btn btn-secondary" id="btnCancelUnpaid">Tidak / No</button>
+        <button class="btn btn-primary" id="btnActivateAnyway">Ya, Aktifkan / Yes, Activate</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase CDN -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="theme.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="membership-card.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>

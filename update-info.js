@@ -5,27 +5,6 @@
 
 document.getElementById("updateFooterYear").textContent = new Date().getFullYear();
 
-// ── Auto-verify if IC passed via URL (admin edit flow) ──
-(async function checkURLParam() {
-  const params = new URLSearchParams(window.location.search);
-  const icParam = params.get("ic");
-  if (!icParam) return;
-  // Small delay to let Firebase init
-  await new Promise(r => setTimeout(r, 600));
-  try {
-    const ic   = icParam.replace(/-/g,"");
-    const snap = await db.collection("registrations").where("icNo","==",ic).limit(1).get();
-    if (!snap.empty) {
-      memberDocId = snap.docs[0].id;
-      memberData  = snap.docs[0].data();
-      // Fill IC field for visual reference
-      const icEl = document.getElementById("verifyIC");
-      if (icEl) icEl.value = icParam;
-      showPreviewModal();
-    }
-  } catch(e) { /* silent — admin falls back to manual entry */ }
-})();
-
 let memberDocId     = null;
 let memberData      = null;
 let currentStep     = "a";
@@ -45,15 +24,44 @@ function escHtml(s) {
   return String(s||"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 }
 
+// ── Use active class (not style.display) to match CSS ──
 function showScreen(id) {
-  ["screen-verify","screen-edit"].forEach(s => {
-    const el = document.getElementById(s);
-    if (!el) return;
-    el.style.display = s===id ? "" : "none";
-    el.classList.toggle("active", s===id);
-  });
+  document.getElementById("screen-verify").classList.toggle("active", id==="screen-verify");
+  const editEl = document.getElementById("screen-edit");
+  if (editEl) {
+    editEl.classList.toggle("active", id==="screen-edit");
+    editEl.style.display = id==="screen-edit" ? "" : "none";
+  }
   window.scrollTo({top:0,behavior:"smooth"});
 }
+
+// ── Auto-verify from ?ic= URL param (admin flow) — waits for Firebase auth ──
+function tryAutoVerify() {
+  const params  = new URLSearchParams(window.location.search);
+  const icParam = params.get("ic");
+  if (!icParam) return;
+
+  // Wait for Firebase to be ready by hooking into auth state
+  const unsubscribe = auth.onAuthStateChanged(async () => {
+    unsubscribe(); // only run once
+    try {
+      const ic   = icParam.replace(/-/g,"");
+      const snap = await db.collection("registrations").where("icNo","==",ic).limit(1).get();
+      if (!snap.empty) {
+        memberDocId = snap.docs[0].id;
+        memberData  = snap.docs[0].data();
+        const icEl  = document.getElementById("verifyIC");
+        if (icEl) icEl.value = icParam;
+        showPreviewModal();
+      }
+    } catch(e) { /* silent — fall back to manual entry */ }
+  });
+}
+
+// Wait for DOM + Firebase ready
+document.addEventListener("DOMContentLoaded", () => {
+  tryAutoVerify();
+});
 
 // ══════════════════════════════════════════════
 // VERIFY — IC lookup
