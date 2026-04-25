@@ -25,7 +25,7 @@
     <a href="home.html" class="back-home-btn">&#8592; Kembali ke Halaman Rumah / Back to Home Page</a>
 
     <!-- ══ SCREEN 1: Verify IC ══ -->
-    <section class="form-section active" id="screen-verify">
+    <section id="screen-verify" style="display:block;">
       <div class="section-header">
         <div class="section-badge">🔍</div>
         <div>
@@ -34,21 +34,23 @@
           <p class="section-subtitle">Enter your IC No. to proceed.</p>
         </div>
       </div>
-      <div class="form-grid">
-        <div class="form-group full-width">
+      <div style="background:var(--bg-card);backdrop-filter:blur(8px);border:1px solid var(--border-card);
+        border-radius:var(--radius-lg);padding:2rem 1.5rem;max-width:520px;margin:0 auto;
+        box-shadow:0 8px 32px rgba(0,0,0,0.3);">
+        <div class="form-group" style="margin-bottom:1.2rem;">
           <label class="form-label" for="verifyIC">No. KP / IC No. <span class="required">*</span></label>
           <input type="text" id="verifyIC" class="form-input" placeholder="cth/e.g. 901231-14-5678" maxlength="14"/>
           <span class="error-msg" id="err-verifyIC"></span>
         </div>
+        <div style="display:flex;justify-content:flex-end;">
+          <button class="btn btn-primary" id="btnVerifyIC">Semak / Verify &rarr;</button>
+        </div>
+        <div class="draft-notice" id="verifyNotice" style="margin-top:0.8rem;"></div>
       </div>
-      <div class="form-actions form-actions--end">
-        <button class="btn btn-primary" id="btnVerifyIC">Semak / Verify &rarr;</button>
-      </div>
-      <div class="draft-notice" id="verifyNotice"></div>
     </section>
 
-    <!-- ══ SCREEN 2: Edit Form (index.html content injected here) ══ -->
-    <section class="form-section" id="screen-edit" style="display:none;">
+    <!-- ══ SCREEN 2: Edit Form ══ -->
+    <section id="screen-edit" style="display:none;">
       <!-- Step nav -->
       <div class="step-nav" id="editStepNav">
         <div class="step active" data-section="a">

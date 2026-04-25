@@ -24,14 +24,10 @@ function escHtml(s) {
   return String(s||"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 }
 
-// ── Use active class (not style.display) to match CSS ──
+// ── Screen switching using style.display only ──
 function showScreen(id) {
-  document.getElementById("screen-verify").classList.toggle("active", id==="screen-verify");
-  const editEl = document.getElementById("screen-edit");
-  if (editEl) {
-    editEl.classList.toggle("active", id==="screen-edit");
-    editEl.style.display = id==="screen-edit" ? "" : "none";
-  }
+  document.getElementById("screen-verify").style.display = id==="screen-verify" ? "block" : "none";
+  document.getElementById("screen-edit").style.display   = id==="screen-edit"   ? "block" : "none";
   window.scrollTo({top:0,behavior:"smooth"});
 }
 
@@ -222,11 +218,8 @@ document.getElementById("btnPreviewEdit").addEventListener("click", () => {
   document.getElementById("previewModal").style.display = "none";
   newPhotoDataURL = null;
   currentStep = "a";
-  document.getElementById("screen-verify").style.display = "none";
-  document.getElementById("screen-verify").classList.remove("active");
-  document.getElementById("screen-edit").style.display = "";
+  showScreen("screen-edit");
   renderStep("a");
-  window.scrollTo({top:0,behavior:"smooth"});
 });
 
 // ══════════════════════════════════════════════
