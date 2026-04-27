@@ -59,14 +59,44 @@ function renderSummary() {
   const inactive   = allData.filter(r => !r.approved && !r.transferred && !r.deceased).length;
   const transferred= allData.filter(r => r.transferred).length;
   const baptised   = allData.filter(r => r.sectionA?.baptismStatus === "baptised").length;
-  const withKids   = allData.filter(r => countValidChildren(r) > 0).length;
+
+  // ── Unique children count (deduplicated across partner pairs) ──
+  // Strategy: group members by their partner relationship.
+  // For each couple (matched by partnerName ↔ fullName), only count children once.
+  // Use a Set keyed by normalised child name to avoid counting the same child twice.
+  const countedChildKeys = new Set();
+  let uniqueChildrenCount = 0;
+
+  allData.forEach(reg => {
+    const children = countValidChildren(reg);
+    if (children === 0) return;
+
+    const myName      = (reg.sectionA?.fullName || reg.name || "").toUpperCase().trim();
+    const partnerName = (reg.sectionA?.partnerName || "").toUpperCase().trim();
+    const ms          = reg.sectionA?.maritalStatus;
+
+    // Build a couple key — sorted alphabetically so A+B === B+A
+    let coupleKey;
+    if ((ms === "married" || ms === "engaged") && partnerName) {
+      const names = [myName, partnerName].sort();
+      coupleKey = names.join("|");
+    } else {
+      coupleKey = myName; // single parent — use their own name
+    }
+
+    // Only count this person's children if we haven't already counted this couple
+    if (!countedChildKeys.has(coupleKey)) {
+      countedChildKeys.add(coupleKey);
+      uniqueChildrenCount += children;
+    }
+  });
 
   document.getElementById("totalMembers").textContent     = total;
   document.getElementById("activeMembers").textContent    = active;
   document.getElementById("inactiveMembers").textContent  = inactive;
   document.getElementById("transferredMembers").textContent = transferred;
   document.getElementById("baptisedMembers").textContent  = `${baptised} / ${total}`;
-  document.getElementById("withChildren").textContent     = withKids;
+  document.getElementById("withChildren").textContent     = uniqueChildrenCount;
 }
 
 // ── Count only filled children (name + gender both required) ──

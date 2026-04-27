@@ -11,6 +11,9 @@ auth.onAuthStateChanged(user => {
 async function loadAffiliated() {
   const snap = await db.collection("affiliatedMembers").get();
   allAff = snap.docs.map(d => ({id:d.id,...d.data()}));
+  // Update total counter
+  const countEl = document.getElementById("affTotalCount");
+  if (countEl) countEl.textContent = allAff.length;
   renderTable(allAff);
 }
 
