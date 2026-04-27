@@ -9,7 +9,13 @@ document.addEventListener("DOMContentLoaded", () => {
   buildYearDropdown();
   buildBaptismYearPicker();
   setFooterYear();
-  loadDraft();
+
+  // Only restore draft for fresh registrations — never in edit mode
+  // (edit mode loads from Firestore, not localStorage)
+  if (!IS_EDIT_MODE) {
+    loadDraft();
+  }
+
   bindEvents();
   bindPhotoUpload();
   bindMaritalStatus();
@@ -18,6 +24,14 @@ document.addEventListener("DOMContentLoaded", () => {
   initAffiliatedMode();
   initPartnerAddressModal();
   if (IS_EDIT_MODE) initEditMode();
+
+  // In edit mode: clear drafts if user navigates away (tab close, back button etc.)
+  if (IS_EDIT_MODE) {
+    window.addEventListener("beforeunload", () => {
+      ["bem_otr_draft_sectionA","bem_otr_draft_sectionB","bem_otr_draft_sectionC"]
+        .forEach(k => localStorage.removeItem(k));
+    });
+  }
 
   // Affiliated autofill modal buttons
   document.getElementById("btnAffiliatedYes")?.addEventListener("click", () => {
@@ -615,6 +629,12 @@ let editOriginalData = null; // snapshot of data before edits
 async function initEditMode() {
   if (!EDIT_DOC_ID) { console.warn("Edit mode: no docId"); return; }
 
+  // ── Clear ALL localStorage drafts immediately ──
+  // Edit mode loads from Firestore only. This prevents a previous user's
+  // edit session from leaking into the next person's fresh registration.
+  ["bem_otr_draft_sectionA","bem_otr_draft_sectionB","bem_otr_draft_sectionC"]
+    .forEach(k => localStorage.removeItem(k));
+
   // Update UI for edit context
   const subtitle = document.querySelector(".church-subtitle");
   if (subtitle) subtitle.textContent = "Kemas Kini Maklumat / Update Information";
@@ -1198,6 +1218,9 @@ function collectSectionAData() {
 }
 
 function saveDraft() {
+  // Never write to localStorage in edit mode — Firestore is the source of truth
+  // This prevents edit session data from leaking into the next fresh registration
+  if (IS_EDIT_MODE) return;
   const data = collectSectionAData();
   localStorage.setItem(DRAFT_KEY, JSON.stringify(data));
 }
