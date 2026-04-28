@@ -178,6 +178,9 @@ function renderTable() {
     }
 
     tr.innerHTML = `
+      <td class="row-checkbox-cell" style="display:none;text-align:center;width:36px;">
+        <input type="checkbox" class="row-select-cb" data-id="${reg.id}"/>
+      </td>
       <td class="col-photo">${photoHTML}</td>
       <td class="col-nameID">
         <div class="admin-name-bold">${(reg.name||"—")}</div>
@@ -194,6 +197,20 @@ function renderTable() {
       </td>`;
     tbody.appendChild(tr);
   });
+
+  // If select mode is active, show checkbox cells and restore checked state
+  if (isSelectMode) {
+    document.querySelectorAll(".row-checkbox-cell").forEach(td => td.style.display = "");
+    document.querySelectorAll(".row-select-cb").forEach(cb => {
+      if (selectedIds.has(cb.dataset.id)) cb.checked = true;
+      cb.addEventListener("change", function() {
+        if (this.checked) selectedIds.add(this.dataset.id);
+        else { selectedIds.delete(this.dataset.id); document.getElementById("selectAllCheckbox").checked = false; }
+        updateBulkCount();
+      });
+    });
+  }
+
   bindTableEvents();
 }
 
@@ -201,6 +218,15 @@ function renderTable() {
 let currentActionId = null;
 
 function bindTableEvents() {
+  // Row checkboxes
+  document.querySelectorAll(".row-select-cb").forEach(cb => {
+    cb.addEventListener("change", function() {
+      if (this.checked) selectedIds.add(this.dataset.id);
+      else { selectedIds.delete(this.dataset.id); document.getElementById("selectAllCheckbox").checked = false; }
+      updateBulkCount();
+    });
+  });
+
   document.querySelectorAll(".btn-action-dots").forEach(btn => {
     btn.addEventListener("click", function(e) {
       e.stopPropagation();
@@ -465,6 +491,112 @@ document.getElementById("editModalBtn")?.addEventListener("click", () => {
   const id = currentActionId;
   if (id) window.location.href = `index.html?from=admin&mode=edit&docId=${encodeURIComponent(id)}`;
 });
+
+// ══════════════════════════════════════════════
+// MULTI-SELECT & BULK ACTIONS
+// ══════════════════════════════════════════════
+let isSelectMode = false;
+let selectedIds  = new Set();
+
+function enterSelectMode() {
+  isSelectMode = true;
+  selectedIds.clear();
+  document.getElementById("bulkActionBar").style.display   = "flex";
+  document.getElementById("btnToggleSelect").style.display = "none";
+  document.getElementById("colCheckHeader").style.display  = "";
+  document.querySelectorAll(".row-checkbox-cell").forEach(td => td.style.display = "");
+  updateBulkCount();
+}
+
+function exitSelectMode() {
+  isSelectMode = false;
+  selectedIds.clear();
+  document.getElementById("bulkActionBar").style.display   = "none";
+  document.getElementById("btnToggleSelect").style.display = "";
+  document.getElementById("colCheckHeader").style.display  = "none";
+  document.querySelectorAll(".row-checkbox-cell").forEach(td => td.style.display = "none");
+  document.querySelectorAll(".row-select-cb").forEach(cb => cb.checked = false);
+  document.getElementById("selectAllCheckbox").checked = false;
+  updateBulkCount();
+}
+
+function updateBulkCount() {
+  document.getElementById("bulkSelectedCount").textContent =
+    `${selectedIds.size} dipilih / selected`;
+}
+
+document.getElementById("btnToggleSelect").addEventListener("click", enterSelectMode);
+document.getElementById("btnCancelSelect").addEventListener("click",  exitSelectMode);
+
+document.getElementById("selectAllCheckbox").addEventListener("change", function() {
+  document.querySelectorAll(".row-select-cb").forEach(cb => {
+    cb.checked = this.checked;
+    if (this.checked) selectedIds.add(cb.dataset.id);
+    else selectedIds.delete(cb.dataset.id);
+  });
+  updateBulkCount();
+});
+
+document.getElementById("btnSelectAll").addEventListener("click", () => {
+  document.querySelectorAll(".row-select-cb").forEach(cb => {
+    cb.checked = true; selectedIds.add(cb.dataset.id);
+  });
+  document.getElementById("selectAllCheckbox").checked = true;
+  updateBulkCount();
+});
+
+document.getElementById("btnBulkActivate").addEventListener("click",   () => showBulkConfirm("activate"));
+document.getElementById("btnBulkDeactivate").addEventListener("click", () => showBulkConfirm("deactivate"));
+document.getElementById("btnBulkDelete").addEventListener("click",     () => showBulkConfirm("delete"));
+document.getElementById("btnBulkNo").addEventListener("click", () => {
+  document.getElementById("bulkConfirmModal").style.display = "none";
+});
+
+function showBulkConfirm(action) {
+  if (selectedIds.size === 0) {
+    alert("Sila pilih sekurang-kurangnya satu ahli / Please select at least one member.");
+    return;
+  }
+  const n = selectedIds.size;
+  const bm = { activate:"aktifkan", deactivate:"nyahaktifkan", delete:"padam" }[action];
+  const en = { activate:"activate", deactivate:"deactivate",   delete:"delete" }[action];
+  const titleMap = {
+    activate:   "Aktifkan Keanggotaan / Activate Membership",
+    deactivate: "Nyahaktifkan Keanggotaan / Deactivate Membership",
+    delete:     "Padam Rekod / Delete Records",
+  };
+  document.getElementById("bulkConfirmTitle").textContent = titleMap[action];
+  document.getElementById("bulkConfirmText").innerHTML =
+    `Adakah anda pasti untuk <strong>${bm}</strong> kesemua
+     <strong style="color:var(--marigold-bright)">${n}</strong> jemaat yang dipilih?<br/>
+     <em style="color:var(--text-muted);font-size:0.88rem;">
+       Are you sure to <strong>${en}</strong> all <strong>${n}</strong> selected members?
+     </em>`;
+  document.getElementById("bulkConfirmModal").style.display = "flex";
+  document.getElementById("btnBulkYes").onclick = async () => {
+    document.getElementById("bulkConfirmModal").style.display = "none";
+    await executeBulkAction(action);
+  };
+}
+
+async function executeBulkAction(action) {
+  const ids = [...selectedIds];
+  const now = firebase.firestore.Timestamp.fromDate(new Date());
+  // Firestore batches support max 500 ops — chunk if needed
+  const CHUNK = 450;
+  for (let i = 0; i < ids.length; i += CHUNK) {
+    const batch = db.batch();
+    ids.slice(i, i + CHUNK).forEach(id => {
+      const ref = db.collection("registrations").doc(id);
+      if      (action === "activate")   batch.update(ref, { approved:true, approvedAt:now });
+      else if (action === "deactivate") batch.update(ref, { approved:false });
+      else if (action === "delete")     batch.delete(ref);
+    });
+    await batch.commit();
+  }
+  exitSelectMode();
+}
+
 async function cancelTransfer(id, name) {
   if (!confirm(`Batal pemindahan ${name}?\nCancel transfer for ${name}?`)) return;
   try {

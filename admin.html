@@ -112,6 +112,37 @@
               <option value="desc">Menurun / Descending</option>
             </select>
           </div>
+          <div class="admin-sort-group">
+            <button class="btn btn-secondary" id="btnToggleSelect" style="white-space:nowrap;">
+              ☑ Pilih Berbilang / Multi-Select
+            </button>
+          </div>
+        </div>
+
+        <!-- Bulk Action Bar (hidden until multi-select active) -->
+        <div id="bulkActionBar" style="display:none;align-items:center;gap:0.75rem;flex-wrap:wrap;
+          padding:0.8rem 1rem;background:rgba(255,140,0,0.07);border:1px solid rgba(255,140,0,0.25);
+          border-radius:var(--radius);margin-bottom:0.8rem;">
+          <span id="bulkSelectedCount" style="font-family:var(--font-display);font-size:0.82rem;
+            letter-spacing:0.05em;color:var(--marigold-bright);min-width:120px;">0 dipilih / selected</span>
+          <button class="btn btn-secondary" id="btnSelectAll" style="font-size:0.78rem;padding:0.4rem 0.9rem;">
+            ✔ Pilih Semua / Select All
+          </button>
+          <button class="btn btn-secondary" id="btnBulkActivate" style="font-size:0.78rem;padding:0.4rem 0.9rem;
+            color:#4CAF7D;border-color:#4CAF7D;">
+            🟢 Aktifkan Semua / Activate All
+          </button>
+          <button class="btn btn-secondary" id="btnBulkDeactivate" style="font-size:0.78rem;padding:0.4rem 0.9rem;
+            color:#E05555;border-color:#E05555;">
+            🔴 Nyahaktifkan Semua / Deactivate All
+          </button>
+          <button class="btn btn-secondary" id="btnBulkDelete" style="font-size:0.78rem;padding:0.4rem 0.9rem;
+            color:#E05555;border-color:#E05555;">
+            🗑️ Padam Semua / Delete All
+          </button>
+          <button class="btn btn-secondary" id="btnCancelSelect" style="font-size:0.78rem;padding:0.4rem 0.9rem;">
+            ✖ Batal / Cancel
+          </button>
         </div>
 
         <!-- Registrations Table -->
@@ -119,6 +150,9 @@
           <table class="admin-table" id="adminTable">
             <thead>
               <tr>
+                <th class="col-check" id="colCheckHeader" style="display:none;width:36px;text-align:center;">
+                  <input type="checkbox" id="selectAllCheckbox" title="Select all"/>
+                </th>
                 <th class="col-photo">Gambar<br/><em class="th-en">Photo</em></th>
                 <th class="col-nameID">Nama &amp; ID<br/><em class="th-en">Name &amp; ID</em></th>
                 <th>No. KP<br/><em class="th-en">IC Num.</em></th>
@@ -295,6 +329,22 @@
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" id="closeMCModalBtn">Tutup / Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ BULK ACTION CONFIRM MODAL ═══ -->
+  <div class="modal-overlay" id="bulkConfirmModal" style="display:none;">
+    <div class="modal-card modal-card--sm">
+      <div class="modal-header">
+        <h3 class="modal-title" id="bulkConfirmTitle">Pengesahan / Confirmation</h3>
+      </div>
+      <div class="modal-body" style="text-align:center;padding:1.5rem;">
+        <p id="bulkConfirmText" style="font-size:1rem;color:var(--text-primary);line-height:1.7;"></p>
+      </div>
+      <div class="modal-footer" style="justify-content:center;gap:1rem;">
+        <button class="btn btn-secondary" id="btnBulkNo">Tidak / No</button>
+        <button class="btn btn-primary" id="btnBulkYes">Ya / Yes</button>
       </div>
     </div>
   </div>
