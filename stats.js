@@ -60,36 +60,9 @@ function renderSummary() {
   const transferred= allData.filter(r => r.transferred).length;
   const baptised   = allData.filter(r => r.sectionA?.baptismStatus === "baptised").length;
 
-  // ── Unique children count (deduplicated across partner pairs) ──
-  // Strategy: group members by their partner relationship.
-  // For each couple (matched by partnerName ↔ fullName), only count children once.
-  // Use a Set keyed by normalised child name to avoid counting the same child twice.
-  const countedChildKeys = new Set();
-  let uniqueChildrenCount = 0;
-
-  allData.forEach(reg => {
-    const children = countValidChildren(reg);
-    if (children === 0) return;
-
-    const myName      = (reg.sectionA?.fullName || reg.name || "").toUpperCase().trim();
-    const partnerName = (reg.sectionA?.partnerName || "").toUpperCase().trim();
-    const ms          = reg.sectionA?.maritalStatus;
-
-    // Build a couple key — sorted alphabetically so A+B === B+A
-    let coupleKey;
-    if ((ms === "married" || ms === "engaged") && partnerName) {
-      const names = [myName, partnerName].sort();
-      coupleKey = names.join("|");
-    } else {
-      coupleKey = myName; // single parent — use their own name
-    }
-
-    // Only count this person's children if we haven't already counted this couple
-    if (!countedChildKeys.has(coupleKey)) {
-      countedChildKeys.add(coupleKey);
-      uniqueChildrenCount += children;
-    }
-  });
+  // ── Unique children count using couple deduplication ──
+  const coupleGroups       = buildCoupleGroups(allData);
+  const uniqueChildrenCount = coupleGroups.reduce((sum, g) => sum + g.total, 0);
 
   document.getElementById("totalMembers").textContent     = total;
   document.getElementById("activeMembers").textContent    = active;
@@ -408,13 +381,77 @@ function renderKomselTable() {
 // ══════════════════════════════════════════════
 // CHILDREN CHART + LIST MODAL
 // ══════════════════════════════════════════════
-function renderChildrenChart() {
-  const buckets = {0:0,1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0};
-  allData.forEach(r => {
-    const n = countValidChildren(r);
-    if (n >= 8) buckets[8]++;
-    else buckets[n]++;
+
+// Build couple groups — deduplicate children across married/engaged partners
+function buildCoupleGroups(data) {
+  const processed = new Set();
+  const groups    = [];
+
+  data.forEach(reg => {
+    if (processed.has(reg.id)) return;
+    const kids = (reg.sectionC?.children || []).filter(c => c.name?.trim() && c.gender);
+    if (kids.length === 0) { processed.add(reg.id); return; }
+
+    const myName      = (reg.sectionA?.fullName || reg.name || "").toUpperCase().trim();
+    const partnerName = (reg.sectionA?.partnerName || "").toUpperCase().trim();
+    const ms          = reg.sectionA?.maritalStatus || "";
+    const isDeceased  = !!reg.deceased;
+
+    let partnerReg = null;
+    if ((ms === "married" || ms === "engaged" || ms === "widowed") && partnerName) {
+      partnerReg = data.find(r =>
+        r.id !== reg.id &&
+        !processed.has(r.id) &&
+        (r.sectionA?.fullName || r.name || "").toUpperCase().trim() === partnerName
+      );
+    }
+
+    const group = {
+      parents:  [{ name: myName, deceased: isDeceased, uid: reg.uniqueID || "—" }],
+      status:   ms,
+      children: kids,
+      boys:     kids.filter(c => c.gender === "male").length,
+      girls:    kids.filter(c => c.gender === "female").length,
+      total:    kids.length,
+    };
+
+    processed.add(reg.id);
+
+    if (partnerReg) {
+      group.parents.push({
+        name:     (partnerReg.sectionA?.fullName || partnerReg.name || "").toUpperCase().trim(),
+        deceased: !!partnerReg.deceased,
+        uid:      partnerReg.uniqueID || "—",
+      });
+      const partnerKids = (partnerReg.sectionC?.children || []).filter(c => c.name?.trim() && c.gender);
+      if (partnerKids.length > kids.length) {
+        group.children = partnerKids;
+        group.boys     = partnerKids.filter(c => c.gender === "male").length;
+        group.girls    = partnerKids.filter(c => c.gender === "female").length;
+        group.total    = partnerKids.length;
+      }
+      processed.add(partnerReg.id);
+    }
+
+    groups.push(group);
   });
+
+  return groups;
+}
+
+function renderChildrenChart() {
+  const groups = buildCoupleGroups(allData);
+
+  const buckets = {0:0,1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0};
+  groups.forEach(g => {
+    const n = g.total;
+    buckets[Math.min(n,8)]++;
+  });
+  const singleNoKids = allData.filter(r => {
+    const kids = (r.sectionC?.children||[]).filter(c=>c.name?.trim()&&c.gender);
+    return kids.length === 0;
+  }).length;
+  buckets[0] = singleNoKids;
 
   const labels = ["Tiada anak","1 anak","2 anak","3 anak","4 anak","5 anak","6 anak","7 anak","8+ anak"];
 
@@ -425,7 +462,7 @@ function renderChildrenChart() {
     type: "bar",
     data: {
       labels,
-      datasets: [{ label:"Bilangan Ahli / Members", data: Object.values(buckets), backgroundColor: MARIGOLD, borderRadius:6 }]
+      datasets: [{ label:"Bilangan Keluarga / Families", data: Object.values(buckets), backgroundColor: MARIGOLD, borderRadius:6 }]
     },
     options: {
       ...barOpts(),
@@ -437,29 +474,60 @@ function renderChildrenChart() {
     }
   });
 
-  document.getElementById("btnChildrenList")?.addEventListener("click", () => {
-    const withKids = allData
-      .filter(r => countValidChildren(r)>0)
-      .map(r => {
-        const kids  = (r.sectionC?.children||[]).filter(c=>c.name?.trim()&&c.gender);
-        return { name:(r.name||r.sectionA?.fullName||"—"), boys:kids.filter(c=>c.gender==="male").length, girls:kids.filter(c=>c.gender==="female").length, total:kids.length };
-      })
-      .sort((a,b) => b.total-a.total);
+  const oldBtn = document.getElementById("btnChildrenList");
+  if (oldBtn) {
+    const newBtn = oldBtn.cloneNode(true);
+    oldBtn.parentNode.replaceChild(newBtn, oldBtn);
+    newBtn.addEventListener("click", () => showChildrenListModal(groups));
+  }
+}
 
-    openListModal("Senarai Ahli yang Mempunyai Anak / Members with Children",
-      `<table class="stats-modal-table">
-        <thead><tr><th>Nama Anggota / Name</th><th>Anak Lelaki / Boy(s)</th><th>Anak Perempuan / Girl(s)</th><th>Jumlah / Total</th></tr></thead>
-        <tbody>${withKids.map(m=>`
-          <tr>
-            <td>${(m.name||"—").toUpperCase()}</td>
-            <td style="text-align:center">${m.boys}</td>
-            <td style="text-align:center">${m.girls}</td>
-            <td style="text-align:center;font-weight:700;color:var(--marigold-bright)">${m.total}</td>
-          </tr>`).join("")}
-        </tbody>
-      </table>`
-    );
-  });
+function showChildrenListModal(groups) {
+  const msMap = {
+    married:"Berkahwin / Married", engaged:"Bertunang / Engaged",
+    divorced:"Bercerai / Divorced", widowed:"Duda/Balu / Widowed", single:"Bujang / Single"
+  };
+
+  const sorted = [...groups].sort((a,b) => b.total - a.total);
+  let totalChildren = 0;
+
+  const rows = sorted.map(g => {
+    totalChildren += g.total;
+    const parentCells = g.parents.map(p =>
+      `${p.name}${p.deceased
+        ? ' <span style="color:#E05555;font-size:0.7rem;font-family:var(--font-display);background:rgba(224,85,85,0.1);border:1px solid rgba(224,85,85,0.3);border-radius:999px;padding:1px 6px;">✝ Meninggal/Deceased</span>'
+        : ""}`
+    ).join("<br/>");
+
+    return `<tr style="border-bottom:1px solid var(--border-card);">
+      <td style="padding:0.6rem 0.8rem;vertical-align:middle;">${parentCells}</td>
+      <td style="padding:0.6rem 0.8rem;text-align:center;vertical-align:middle;white-space:nowrap;">${msMap[g.status]||g.status||"—"}</td>
+      <td style="padding:0.6rem 0.8rem;text-align:center;vertical-align:middle;">${g.boys}</td>
+      <td style="padding:0.6rem 0.8rem;text-align:center;vertical-align:middle;">${g.girls}</td>
+      <td style="padding:0.6rem 0.8rem;text-align:center;vertical-align:middle;font-weight:700;color:var(--marigold-bright);">${g.total}</td>
+    </tr>`;
+  }).join("");
+
+  const tableHTML = `<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
+    <table class="stats-modal-table" style="min-width:520px;">
+      <thead><tr>
+        <th style="padding:0.65rem 0.8rem;text-align:left;">Ibu Bapa / Parent(s)</th>
+        <th style="padding:0.65rem 0.8rem;text-align:center;white-space:nowrap;">Status</th>
+        <th style="padding:0.65rem 0.8rem;text-align:center;">Anak Lelaki<br/><em style="font-weight:400;">Boy(s)</em></th>
+        <th style="padding:0.65rem 0.8rem;text-align:center;">Anak Perempuan<br/><em style="font-weight:400;">Girl(s)</em></th>
+        <th style="padding:0.65rem 0.8rem;text-align:center;">Jumlah<br/><em style="font-weight:400;">Total</em></th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+      <tfoot><tr style="background:rgba(255,140,0,0.07);">
+        <td colspan="4" style="padding:0.65rem 0.8rem;font-family:var(--font-display);font-size:0.8rem;letter-spacing:0.05em;color:var(--marigold-bright);">
+          Jumlah Keseluruhan / Total Children
+        </td>
+        <td style="padding:0.65rem 0.8rem;text-align:center;font-weight:700;font-size:1.1rem;color:var(--marigold-bright);">${totalChildren}</td>
+      </tr></tfoot>
+    </table>
+  </div>`;
+
+  openListModal("Senarai Anggota yang Mempunyai Anak / Members with Children", tableHTML);
 }
 
 // ══════════════════════════════════════════════

@@ -1672,21 +1672,26 @@ function createChildCard(num, data = {}) {
   card.className = "child-card";
   card.dataset.childNum = num;
 
-  const genderMaleChecked  = data.gender === "male"   ? "checked" : "";
+  const genderMaleChecked   = data.gender === "male"   ? "checked" : "";
   const genderFemaleChecked = data.gender === "female" ? "checked" : "";
+
+  // Pre-compute age from myKid if available
+  let detectedAge = "";
+  let ageFromMyKid = false;
+  if (data.myKid) {
+    const a = getAgeFromMyKid(data.myKid);
+    if (a !== null) { detectedAge = a; ageFromMyKid = true; }
+  }
+  const ageValue   = data.age !== undefined ? data.age : detectedAge;
+  const ageReadOnly = ageFromMyKid && !data.age ? 'readonly style="opacity:0.7;cursor:not-allowed;"' : '';
 
   card.innerHTML = `
     <div class="child-card-header">
-      <span class="child-card-title">
-        Anak Ke-${num} &nbsp;/&nbsp; Child No. ${num}
-      </span>
-      <button type="button" class="btn-remove-child" data-child="${num}">
-        ✕ Padam / Remove
-      </button>
+      <span class="child-card-title">Anak Ke-${num} &nbsp;/&nbsp; Child No. ${num}</span>
+      <button type="button" class="btn-remove-child" data-child="${num}">✕ Padam / Remove</button>
     </div>
 
     <div class="form-grid">
-
       <!-- Full Name -->
       <div class="form-group full-width">
         <label class="form-label" for="childName-${num}">
@@ -1695,56 +1700,102 @@ function createChildCard(num, data = {}) {
         <input type="text" id="childName-${num}" name="childName-${num}"
           class="form-input child-field"
           placeholder="Masukkan nama penuh / Enter full name"
-          value="${data.name || ''}" />
+          value="${data.name || ''}"/>
       </div>
 
       <!-- Gender -->
       <div class="form-group">
-        <label class="form-label">
-          Jantina <span class="label-en">/ Gender</span>
-        </label>
+        <label class="form-label">Jantina <span class="label-en">/ Gender</span></label>
         <div class="checkbox-group">
           <label class="checkbox-label">
-            <input type="radio" name="childGender-${num}" value="male" ${genderMaleChecked} />
-            <span class="custom-radio"></span>
-            Lelaki <em>/ Boy</em>
+            <input type="radio" name="childGender-${num}" value="male" ${genderMaleChecked}/>
+            <span class="custom-radio"></span>Lelaki <em>/ Boy</em>
           </label>
           <label class="checkbox-label">
-            <input type="radio" name="childGender-${num}" value="female" ${genderFemaleChecked} />
-            <span class="custom-radio"></span>
-            Perempuan <em>/ Girl</em>
+            <input type="radio" name="childGender-${num}" value="female" ${genderFemaleChecked}/>
+            <span class="custom-radio"></span>Perempuan <em>/ Girl</em>
           </label>
         </div>
+      </div>
+
+      <!-- Age -->
+      <div class="form-group">
+        <label class="form-label" for="childAge-${num}">
+          Umur Anak <span class="label-en">/ Child's Age</span>
+        </label>
+        <input type="number" id="childAge-${num}" name="childAge-${num}"
+          class="form-input child-field child-age-field"
+          placeholder="Umur / Age" min="0" max="12"
+          value="${ageValue !== "" ? ageValue : ''}"
+          ${ageReadOnly}
+          style="max-width:100px;"/>
+        ${ageFromMyKid && !data.age
+          ? `<span class="field-hint">Diisi automatik dari MyKid / Auto-filled from MyKid</span>` : ""}
+        <span class="error-msg" id="err-childAge-${num}"></span>
       </div>
 
       <!-- MyKid -->
       <div class="form-group">
         <label class="form-label" for="childMyKid-${num}">
-          MyKid <span class="label-en">/ MyKid</span>
+          MyKid <span class="label-en">/ MyKid No.</span>
         </label>
         <input type="text" id="childMyKid-${num}" name="childMyKid-${num}"
           class="form-input child-field"
           placeholder="cth/e.g. 120131-14-1234"
-          value="${data.myKid || ''}" />
+          value="${data.myKid || ''}"/>
       </div>
-
     </div>
   `;
 
+  // Auto-fill age from MyKid when typed
+  const myKidInput = card.querySelector(`#childMyKid-${num}`);
+  const ageInput   = card.querySelector(`#childAge-${num}`);
+  myKidInput.addEventListener("input", function() {
+    const age = getAgeFromMyKid(this.value);
+    if (age !== null) {
+      ageInput.value    = age;
+      ageInput.readOnly = true;
+      ageInput.style.opacity = "0.7";
+      ageInput.style.cursor  = "not-allowed";
+    } else {
+      ageInput.readOnly = false;
+      ageInput.style.opacity = "";
+      ageInput.style.cursor  = "";
+    }
+    saveSectionCDraft();
+  });
+
   // Remove button
-  card.querySelector(".btn-remove-child").addEventListener("click", function () {
+  card.querySelector(".btn-remove-child").addEventListener("click", function() {
     card.remove();
     renumberChildren();
     saveSectionCDraft();
   });
 
-  // Auto-save on any input change
+  // Auto-save
   card.querySelectorAll("input").forEach(input => {
-    input.addEventListener("input", saveSectionCDraft);
+    input.addEventListener("input",  saveSectionCDraft);
     input.addEventListener("change", saveSectionCDraft);
   });
 
   return card;
+}
+
+// Extract age from MyKid number (first 6 digits = YYMMDD)
+function getAgeFromMyKid(myKid) {
+  const clean = (myKid || "").replace(/\D/g, "");
+  if (clean.length < 6) return null;
+  const yy = parseInt(clean.substring(0, 2), 10);
+  const mm = parseInt(clean.substring(2, 4), 10);
+  const dd = parseInt(clean.substring(4, 6), 10);
+  if (mm < 1 || mm > 12 || dd < 1 || dd > 31) return null;
+  const fullYear = yy + (yy <= new Date().getFullYear() % 100 ? 2000 : 1900);
+  const dob = new Date(fullYear, mm - 1, dd);
+  if (isNaN(dob)) return null;
+  const today = new Date();
+  let age = today.getFullYear() - dob.getFullYear();
+  if (today < new Date(today.getFullYear(), dob.getMonth(), dob.getDate())) age--;
+  return age;
 }
 
 function renumberChildren() {
@@ -1777,8 +1828,73 @@ function bindSectionCEvents() {
 
   document.getElementById("btnNextC").addEventListener("click", () => {
     saveSectionCDraft();
+
+    // ── Check for children aged 13+ ──
+    const overAgeChildren = [];
+    document.querySelectorAll(".child-card").forEach(card => {
+      const name   = card.querySelector(`[id^="childName-"]`)?.value?.trim() || "";
+      const ageEl  = card.querySelector(`[id^="childAge-"]`);
+      const age    = ageEl ? parseInt(ageEl.value) : NaN;
+      if (name && !isNaN(age) && age >= 13) {
+        overAgeChildren.push({ name, age });
+      }
+    });
+
+    if (overAgeChildren.length > 0) {
+      showOverAgeModal(overAgeChildren);
+      return; // Block navigation
+    }
+
     navigateTo("d");
   });
+}
+
+// ── Over-age children modal ──
+function showOverAgeModal(children) {
+  let modal = document.getElementById("overAgeModal");
+  if (!modal) {
+    modal = document.createElement("div");
+    modal.id = "overAgeModal";
+    modal.className = "modal-overlay";
+    modal.style.display = "flex";
+    modal.innerHTML = `
+      <div class="modal-card modal-card--sm">
+        <div class="modal-header">
+          <h3 class="modal-title" style="color:#E8A000;">⚠️ Umur Anak Melebihi Had / Child Over Age Limit</h3>
+        </div>
+        <div class="modal-body" style="padding:1.2rem 1.5rem;">
+          <p style="font-size:0.92rem;color:var(--text-primary);line-height:1.7;margin-bottom:0.8rem;">
+            Bahagian ini adalah untuk kanak-kanak berumur 12 tahun dan ke bawah sahaja. Kanak-kanak berikut tidak memenuhi kriteria kerana mereka berumur 13 tahun ke atas. Kami menggalakkan supaya mereka mendaftarkan diri sebagai anggota gereja atau sebagai ahli bersekutu jika mereka tidak menyertai mana-mana KOMSEL. Sila padam maklumat kanak-kanak anda yang berumur 13 tahun dan ke atas.
+          </p>
+          <p style="font-size:0.82rem;color:var(--text-muted);font-style:italic;line-height:1.6;margin-bottom:1rem;">
+            This section is for children aged 12 and below only. The following children do not meet the criteria since they're aged 13 and above. We recommend registering them as a member on their own or as an affiliated member if they don't have any cell group. Please remove the children information that's aged 13 and above.
+          </p>
+          <div id="overAgeList" style="background:rgba(232,160,0,0.08);border:1px solid rgba(232,160,0,0.25);
+            border-radius:var(--radius);padding:0.8rem 1rem;margin-bottom:0.5rem;"></div>
+        </div>
+        <div class="modal-footer" style="justify-content:center;">
+          <button class="btn btn-primary" id="btnOverAgeOk">Saya Faham / I Understand</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+    document.getElementById("btnOverAgeOk").addEventListener("click", () => {
+      modal.style.display = "none";
+    });
+  }
+
+  // Populate the list of over-age children
+  const list = document.getElementById("overAgeList");
+  list.innerHTML = children.map(c =>
+    `<div style="display:flex;justify-content:space-between;padding:0.3rem 0;
+      border-bottom:1px solid rgba(255,255,255,0.06);font-size:0.9rem;">
+      <span style="color:var(--text-primary);font-weight:600;">${c.name}</span>
+      <span style="color:#E8A000;font-family:var(--font-display);font-size:0.82rem;">
+        ${c.age} tahun / years old
+      </span>
+    </div>`
+  ).join("");
+
+  modal.style.display = "flex";
 }
 
 // ── Draft ──
@@ -1789,9 +1905,10 @@ function collectSectionCData() {
     const name     = card.querySelector(`[id^="childName-"]`)?.value?.trim() || "";
     const gender   = genderEl?.value || "";
     const myKid    = card.querySelector(`[id^="childMyKid-"]`)?.value || "";
-    // Only include child if name AND gender are both filled
+    const ageEl    = card.querySelector(`[id^="childAge-"]`);
+    const age      = ageEl ? parseInt(ageEl.value) || "" : "";
     if (name && gender) {
-      children.push({ name, gender, myKid });
+      children.push({ name, gender, myKid, age });
     }
   });
   return { children, savedAt: new Date().toISOString() };
